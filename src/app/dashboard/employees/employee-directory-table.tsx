@@ -49,10 +49,11 @@ type UnitOption = {
 
 type EmployeeDirectoryTableProps = {
   rows: EmployeeRow[];
-  rolesByUser: Map<string, string[]>;
-  positionsByUser: Map<string, string[]>;
+  rolesByUser: Record<string, string[]>;
+  positionsByUser: Record<string, string[]>;
   units: UnitOption[];
   canManageEmployees: boolean;
+  canEditPosition: boolean;
 };
 
 export function EmployeeDirectoryTable({
@@ -61,6 +62,7 @@ export function EmployeeDirectoryTable({
   positionsByUser,
   units,
   canManageEmployees,
+  canEditPosition,
 }: EmployeeDirectoryTableProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -106,10 +108,10 @@ export function EmployeeDirectoryTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <PillList values={positionsByUser.get(row.id) ?? []} fallback="-" />
+                  <PillList values={positionsByUser[row.id] ?? []} fallback="-" />
                 </TableCell>
                 <TableCell>
-                  <PillList values={rolesByUser.get(row.id) ?? []} fallback="PEGAWAI" />
+                  <PillList values={rolesByUser[row.id] ?? []} fallback="PEGAWAI" />
                 </TableCell>
                 <TableCell>
                   <div className="space-y-0.5 text-sm">
@@ -128,7 +130,7 @@ export function EmployeeDirectoryTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {canManageEmployees && (
+                  {(canManageEmployees || canEditPosition) && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -158,13 +160,13 @@ export function EmployeeDirectoryTable({
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4">
-            <Tabs defaultValue="profil">
+            <Tabs defaultValue={canManageEmployees ? "profil" : "jabatan"}>
               <TabsList>
-                <TabsTrigger value="profil">Profil</TabsTrigger>
-                <TabsTrigger value="role">Role</TabsTrigger>
+                {canManageEmployees && <TabsTrigger value="profil">Profil</TabsTrigger>}
+                {canManageEmployees && <TabsTrigger value="role">Role</TabsTrigger>}
                 <TabsTrigger value="jabatan">Jabatan</TabsTrigger>
               </TabsList>
-              <TabsContent value="profil" className="space-y-4 py-4">
+              {canManageEmployees && <TabsContent value="profil" className="space-y-4 py-4">
   {selectedEmployee && (
     <form action={updateEmployeeProfileAction} className="space-y-4">
       <input type="hidden" name="id" value={selectedEmployee.id} />
@@ -271,8 +273,8 @@ export function EmployeeDirectoryTable({
       </Button>
     </form>
   )}
-</TabsContent>
-              <TabsContent value="role" className="space-y-4 py-4">
+</TabsContent>}
+              {canManageEmployees && <TabsContent value="role" className="space-y-4 py-4">
   {selectedEmployee && (
     <form action={updateEmployeeRolesAction} className="space-y-4">
       <input type="hidden" name="user_id" value={selectedEmployee.id} />
@@ -288,7 +290,7 @@ export function EmployeeDirectoryTable({
               type="checkbox"
               id="role_pegawai"
               name="PEGAWAI"
-              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("PEGAWAI")}
+              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("PEGAWAI")}
             />
             <label htmlFor="role_pegawai" className="text-sm font-medium">
               PEGAWAI
@@ -300,7 +302,7 @@ export function EmployeeDirectoryTable({
               type="checkbox"
               id="role_kepala_unit"
               name="KEPALA_UNIT"
-              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("KEPALA_UNIT")}
+              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("KEPALA_UNIT")}
             />
             <label htmlFor="role_kepala_unit" className="text-sm font-medium">
               KEPALA_UNIT
@@ -312,7 +314,7 @@ export function EmployeeDirectoryTable({
               type="checkbox"
               id="role_hrd"
               name="HRD"
-              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("HRD")}
+              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("HRD")}
             />
             <label htmlFor="role_hrd" className="text-sm font-medium">
               HRD
@@ -324,7 +326,7 @@ export function EmployeeDirectoryTable({
               type="checkbox"
               id="role_admin"
               name="ADMIN"
-              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("ADMIN")}
+              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("ADMIN")}
             />
             <label htmlFor="role_admin" className="text-sm font-medium">
               ADMIN
@@ -338,7 +340,7 @@ export function EmployeeDirectoryTable({
       </Button>
     </form>
   )}
-</TabsContent>
+</TabsContent>}
               <TabsContent value="jabatan" className="space-y-4 py-4">
   {selectedEmployee && (
     <form action={updateEmployeeCurrentPositionAction} className="space-y-4">
@@ -351,7 +353,7 @@ export function EmployeeDirectoryTable({
         <Input
           id="position_name"
           name="position_name"
-          defaultValue={positionsByUser.get(selectedEmployee.id)?.[0] ?? ""}
+          defaultValue={positionsByUser[selectedEmployee.id]?.[0] ?? ""}
           placeholder="Contoh: Kepala Unit, Guru Matematika"
           required
         />

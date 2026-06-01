@@ -1,6 +1,7 @@
 ﻿import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
-import { Building2, Mail, Phone, Search, Users } from "lucide-react";
+import { Building2, Search, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,20 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import {
-  updateEmployeeCurrentPositionAction,
-  updateEmployeeProfileAction,
-  updateEmployeeRolesAction,
-} from "./actions";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
 
 export const metadata: Metadata = { title: "Direktori Pegawai - Nurussunnah Hub" };
@@ -64,18 +52,6 @@ function paramValue(
 ) {
   const value = params[key];
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
-}
-
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    TETAP: "Tetap",
-    TIDAK_TETAP: "Tidak Tetap",
-    KONTRAK: "Kontrak",
-    HONORER: "Honorer",
-    PENSIUN: "Pensiun",
-  };
-
-  return labels[status] ?? status;
 }
 
 export default async function EmployeesPage({ searchParams }: PageProps) {
@@ -245,16 +221,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           <CardDescription>
             {rows.length} pegawai ditemukan
             {(q || unitId || active !== "active") && (
-              <Button
-                variant="link"
-                size="sm"
-                className="ml-2"
-                onClick={() => {
-                  window.location.href = "/dashboard/employees";
-                }}
-              >
+              <Link href="/dashboard/employees" className="ml-2 text-sm font-medium text-primary">
                 Reset filter
-              </Button>
+              </Link>
             )}
           </CardDescription>
         </CardHeader>
@@ -264,10 +233,11 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           ) : (
             <EmployeeDirectoryTable
               rows={rows}
-              rolesByUser={rolesByUser}
-              positionsByUser={positionsByUser}
+              rolesByUser={Object.fromEntries(rolesByUser)}
+              positionsByUser={Object.fromEntries(positionsByUser)}
               units={units}
               canManageEmployees={canManageEmployees}
+              canEditPosition={canManageEmployees || roles.includes("KEPALA_UNIT")}
             />
           )}
         </CardContent>
