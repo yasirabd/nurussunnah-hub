@@ -13,13 +13,43 @@ function redirectWith(ok: boolean, message: string): never {
   redirect(`/dashboard/employees?${ok ? 'success' : 'error'}=${encodeURIComponent(message)}`);
 }
 
+type EmployeeRole = 'PEGAWAI' | 'KEPALA_UNIT' | 'HRD' | 'ADMIN';
+
+function hasAnyRole(roles: string[], allowed: EmployeeRole[]) {
+  return allowed.some((role) => roles.includes(role));
+}
+
+async function getAllowedKepalaUnitIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+) {
+  const [{ data: assignments }, { data: profile }] = await Promise.all([
+    supabase
+      .from('user_unit_assignments')
+      .select('unit_id')
+      .eq('user_id', userId)
+      .eq('assignment_type', 'HOME'),
+    supabase.from('profiles').select('home_unit_id').eq('id', userId).maybeSingle(),
+  ]);
+
+  return Array.from(
+    new Set(
+      [
+        ...(assignments ?? []).map((item) => item.unit_id).filter(Boolean),
+        profile?.home_unit_id,
+      ].filter((unitId): unitId is string => Boolean(unitId))
+    )
+  );
+}
+
 async function ensureCanManageEmployees() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 
   const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
-  const canManage = (roles ?? []).some((item) => item.role === 'HRD' || item.role === 'ADMIN');
+  const roleNames = (roles ?? []).map((item) => item.role);
+  const canManage = hasAnyRole(roleNames, ['HRD', 'ADMIN']);
   if (!canManage) redirect('/dashboard');
 
   return supabase;
@@ -100,6 +130,59 @@ export async function updateEmployeeRolesAction(formData: FormData) {
 
   revalidatePath('/dashboard/employees');
   redirectWith(!error, error ? error.message : 'Role pegawai berhasil diperbarui.');
+}
+
+export async function updateEmployeeCurrentPositionAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login');
+
+  const userId = text(formData, 'user_id');
+  const positionName = text(formData, 'position_name');
+  if (!positionName) redirectWith(false, 'Nama jabatan wajib diisi.');
+
+  const { data: roleRows } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id);
+  const roles = (roleRows ?? []).map((item) => item.role);
+  const isManager = hasAnyRole(roles, ['HRD', 'ADMIN']);
+  const isKepalaUnit = roles.includes('KEPALA_UNIT');
+
+  if (!isManager && !isKepalaUnit) redirect('/dashboard');
+
+  if (!isManager) {
+    const allowedUnitIds = await getAllowedKepalaUnitIds(supabase, user.id);
+    const { data: targetProfile, error: targetError } = await supabase
+      .from('profiles')
+      .select('home_unit_id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (targetError) redirectWith(false, targetError.message);
+    if (!targetProfile?.home_unit_id || !allowedUnitIds.includes(targetProfile.home_unit_id)) {
+      redirectWith(false, 'Anda tidak berwenang mengubah jabatan pegawai di luar unit Anda.');
+    }
+  }
+
+  const { data: existingPosition, error: existingError } = await supabase
+    .from('position_histories')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_current', true)
+    .maybeSingle();
+
+  if (existingError) redirectWith(false, existingError.message);
+  if (!existingPosition?.id) redirectWith(false, 'Pegawai belum memiliki jabatan aktif.');
+
+  const { error } = await supabase
+    .from('position_histories')
+    .update({ position_name: positionName })
+    .eq('id', existingPosition.id)
+    .eq('is_current', true);
+
+  revalidatePath('/dashboard/employees');
+  redirectWith(!error, error ? error.message : 'Jabatan pegawai berhasil diperbarui.');
 }
 
 
