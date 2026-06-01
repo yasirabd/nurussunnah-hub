@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Building2, Mail, Phone, Search, Users } from "lucide-react";
 
@@ -26,6 +26,7 @@ import {
   updateEmployeeProfileAction,
   updateEmployeeRolesAction,
 } from "./actions";
+import { EmployeeDirectoryTable } from "./employee-directory-table";
 
 export const metadata: Metadata = { title: "Direktori Pegawai - Nurussunnah Hub" };
 
@@ -238,144 +239,43 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         </CardContent>
       </Card>
 
-      <Card>
+            <Card>
         <CardHeader>
           <CardTitle>Daftar Pegawai</CardTitle>
           <CardDescription>
-            HRD/Admin melihat lintas unit; Kepala Unit mengikuti kebijakan RLS unitnya.
+            {rows.length} pegawai ditemukan
+            {(q || unitId || active !== "active") && (
+              <Button
+                variant="link"
+                size="sm"
+                className="ml-2"
+                onClick={() => {
+                  window.location.href = "/dashboard/employees";
+                }}
+              >
+                Reset filter
+              </Button>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {error ? (
-            <p className="rounded-[var(--radius-md)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error.message}
-            </p>
-          ) : rows.length === 0 ? (
-            <p className="rounded-[var(--radius-md)] border bg-secondary/60 px-4 py-8 text-center text-sm text-muted-foreground">
-              Tidak ada pegawai sesuai filter.
-            </p>
+            <p className="text-sm text-destructive">Error: {error.message}</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pegawai</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Jabatan</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Kontak</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <div className="min-w-52">
-                        <p className="font-medium">{row.full_name}</p>
-                        <p className="text-xs text-muted-foreground">NIY {row.employee_no}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="min-w-40">
-                        <p>{row.units?.name ?? "-"}</p>
-                        <p className="text-xs text-muted-foreground">{row.units?.code ?? "-"}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="min-w-56 space-y-2">
-                        <PillList values={positionsByUser.get(row.id) ?? []} fallback="-" />
-                        {(canManageEmployees || roles.includes("KEPALA_UNIT")) && (
-                          <form action={updateEmployeeCurrentPositionAction} className="flex gap-2">
-                            <input type="hidden" name="user_id" value={row.id} />
-                            <Input
-                              name="position_name"
-                              defaultValue={(positionsByUser.get(row.id) ?? [""])[0]}
-                              placeholder="Jabatan aktif"
-                              className="h-9 min-w-40"
-                            />
-                            <Button type="submit" variant="outline" size="sm">
-                              Simpan
-                            </Button>
-                          </form>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <PillList values={rolesByUser.get(row.id) ?? []} fallback="PEGAWAI" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="min-w-56 space-y-1 text-sm">
-                        <p className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                          {row.email}
-                        </p>
-                        <p className="flex items-center gap-2 text-muted-foreground">
-                          <Phone className="h-3.5 w-3.5" />
-                          {row.phone || "-"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Badge variant={row.is_active ? "default" : "secondary"} className="w-fit">
-                          {row.is_active ? "Aktif" : "Non-aktif"}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {statusLabel(row.employee_status)}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <EmployeeDirectoryTable
+              rows={rows}
+              rolesByUser={rolesByUser}
+              positionsByUser={positionsByUser}
+              units={units}
+              canManageEmployees={canManageEmployees}
+            />
           )}
         </CardContent>
       </Card>
-      {canManageEmployees && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Kelola Pegawai</CardTitle>
-            <CardDescription>HRD/Admin dapat memperbarui data operasional dan role pegawai.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {rows.map((row) => (
-              <div key={row.id} className="rounded-[var(--radius-md)] border p-4">
-                <form action={updateEmployeeProfileAction} className="grid gap-3 lg:grid-cols-4">
-                  <input type="hidden" name="id" value={row.id} />
-                  <Input name="full_name" defaultValue={row.full_name} placeholder="Nama" />
-                  <Input name="employee_no" defaultValue={row.employee_no} placeholder="NIY" />
-                  <Input name="email" defaultValue={row.email} placeholder="Email" />
-                  <Input name="phone" defaultValue={row.phone ?? ""} placeholder="No. HP" />
-                  <select name="employee_status" defaultValue={row.employee_status} className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm">
-                    <option value="TETAP">Tetap</option>
-                    <option value="TIDAK_TETAP">Tidak Tetap</option>
-                    <option value="KONTRAK">Kontrak</option>
-                    <option value="HONORER">Honorer</option>
-                    <option value="PENSIUN">Pensiun</option>
-                  </select>
-                  <select name="home_unit_id" defaultValue={row.home_unit_id ?? ""} className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm">
-                    <option value="">Tanpa unit</option>
-                    {(units ?? []).map((unit) => <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>)}
-                  </select>
-                  <label className="flex items-center gap-2 text-sm"><input name="is_active" type="checkbox" defaultChecked={row.is_active} /> Aktif</label>
-                  <Button type="submit">Simpan data</Button>
-                </form>
-                <form action={updateEmployeeRolesAction} className="mt-3 flex flex-wrap items-center gap-3">
-                  <input type="hidden" name="user_id" value={row.id} />
-                  {['PEGAWAI', 'KEPALA_UNIT', 'HRD', 'ADMIN'].map((role) => (
-                    <label key={role} className="flex items-center gap-2 text-sm"><input name={role} type="checkbox" defaultChecked={(rolesByUser.get(row.id) ?? []).includes(role)} /> {role}</label>
-                  ))}
-                  <Button type="submit" variant="outline" size="sm">Simpan role</Button>
-                </form>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
+
 
 function groupByUser(rows: RoleRow[] | PositionRow[]) {
   const grouped = new Map<string, string[]>();
@@ -412,23 +312,3 @@ function MetricCard({
     </Card>
   );
 }
-
-function PillList({ values, fallback }: { values: string[]; fallback: string }) {
-  if (!values.length) return <span className="text-sm text-muted-foreground">{fallback}</span>;
-
-  return (
-    <div className="flex min-w-44 flex-wrap gap-1.5">
-      {values.map((value) => (
-        <Badge key={value} variant="secondary" className="font-normal">
-          {value}
-        </Badge>
-      ))}
-    </div>
-  );
-}
-
-
-
-
-
-
