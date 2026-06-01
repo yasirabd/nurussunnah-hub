@@ -184,6 +184,7 @@ export function ProfileView({
               value={profile.last_education}
               icon={<GraduationCap className="h-3.5 w-3.5" />}
             />
+            {profile.study_program && <Row label="Program Studi" value={profile.study_program} />}
           </InfoCard>
 
           <InfoCard title="Kepegawaian">

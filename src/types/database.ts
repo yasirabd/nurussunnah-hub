@@ -208,6 +208,7 @@ export type Database = {
           last_education: string | null
           marital_status: string | null
           phone: string | null
+          study_program: string | null
           twitter: string | null
           updated_at: string
         }
@@ -231,6 +232,7 @@ export type Database = {
           last_education?: string | null
           marital_status?: string | null
           phone?: string | null
+          study_program?: string | null
           twitter?: string | null
           updated_at?: string
         }
@@ -254,6 +256,7 @@ export type Database = {
           last_education?: string | null
           marital_status?: string | null
           phone?: string | null
+          study_program?: string | null
           twitter?: string | null
           updated_at?: string
         }
