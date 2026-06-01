@@ -272,9 +272,73 @@ export function EmployeeDirectoryTable({
     </form>
   )}
 </TabsContent>
-              <TabsContent value="role">
-                <p className="text-sm text-muted-foreground">Role form placeholder</p>
-              </TabsContent>
+              <TabsContent value="role" className="space-y-4 py-4">
+  {selectedEmployee && (
+    <form action={updateEmployeeRolesAction} className="space-y-4">
+      <input type="hidden" name="user_id" value={selectedEmployee.id} />
+      
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Pilih role yang sesuai untuk pegawai ini:
+        </p>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="role_pegawai"
+              name="PEGAWAI"
+              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("PEGAWAI")}
+            />
+            <label htmlFor="role_pegawai" className="text-sm font-medium">
+              PEGAWAI
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="role_kepala_unit"
+              name="KEPALA_UNIT"
+              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("KEPALA_UNIT")}
+            />
+            <label htmlFor="role_kepala_unit" className="text-sm font-medium">
+              KEPALA_UNIT
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="role_hrd"
+              name="HRD"
+              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("HRD")}
+            />
+            <label htmlFor="role_hrd" className="text-sm font-medium">
+              HRD
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="role_admin"
+              name="ADMIN"
+              defaultChecked={rolesByUser.get(selectedEmployee.id)?.includes("ADMIN")}
+            />
+            <label htmlFor="role_admin" className="text-sm font-medium">
+              ADMIN
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <Button type="submit" className="w-full">
+        Simpan Role
+      </Button>
+    </form>
+  )}
+</TabsContent>
               <TabsContent value="jabatan">
                 <p className="text-sm text-muted-foreground">Jabatan form placeholder</p>
               </TabsContent>
