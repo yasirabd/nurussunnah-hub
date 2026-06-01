@@ -29,6 +29,7 @@ export async function updateEmployeeProfileAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();
   const id = text(formData, 'id');
   const employeeNo = text(formData, 'employee_no').replace(/\s/g, '');
+  const homeUnitId = text(formData, 'home_unit_id') || null;
 
   const { error } = await supabase.from('profiles').update({
     full_name: text(formData, 'full_name'),
@@ -37,11 +38,52 @@ export async function updateEmployeeProfileAction(formData: FormData) {
     phone: text(formData, 'phone') || null,
     employee_status: text(formData, 'employee_status') as EmployeeStatus,
     is_active: formData.get('is_active') === 'on',
-    home_unit_id: text(formData, 'home_unit_id') || null,
+    home_unit_id: homeUnitId,
   }).eq('id', id);
 
+  if (error) {
+    revalidatePath('/dashboard/employees');
+    redirectWith(false, error.message);
+  }
+
+  const { data: activeYear } = await supabase
+    .from('academic_years')
+    .select('id')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (activeYear?.id) {
+    const { error: deleteAssignmentError } = await supabase
+      .from('user_unit_assignments')
+      .delete()
+      .eq('user_id', id)
+      .eq('assignment_type', 'HOME')
+      .eq('academic_year_id', activeYear.id);
+
+    if (deleteAssignmentError) {
+      revalidatePath('/dashboard/employees');
+      redirectWith(false, deleteAssignmentError.message);
+    }
+
+    if (homeUnitId) {
+      const { error: insertAssignmentError } = await supabase
+        .from('user_unit_assignments')
+        .insert({
+          user_id: id,
+          unit_id: homeUnitId,
+          assignment_type: 'HOME',
+          academic_year_id: activeYear.id,
+        });
+
+      if (insertAssignmentError) {
+        revalidatePath('/dashboard/employees');
+        redirectWith(false, insertAssignmentError.message);
+      }
+    }
+  }
+
   revalidatePath('/dashboard/employees');
-  redirectWith(!error, error ? error.message : 'Data pegawai berhasil diperbarui.');
+  redirectWith(true, 'Data pegawai berhasil diperbarui.');
 }
 
 export async function updateEmployeeRolesAction(formData: FormData) {
