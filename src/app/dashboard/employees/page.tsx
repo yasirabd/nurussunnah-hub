@@ -21,7 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import { updateEmployeeProfileAction, updateEmployeeRolesAction } from "./actions";
+import {
+  updateEmployeeCurrentPositionAction,
+  updateEmployeeProfileAction,
+  updateEmployeeRolesAction,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Direktori Pegawai - Nurussunnah Hub" };
 
@@ -50,6 +54,8 @@ type PositionRow = {
   user_id: string;
   position_name: string;
 };
+
+type UnitRow = { id: string; name: string; code: string };
 
 function paramValue(
   params: Record<string, string | string[] | undefined>,
@@ -86,20 +92,42 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
 
   const roles = (roleData ?? []).map((item) => item.role);
   const canManageEmployees = roles.includes("HRD") || roles.includes("ADMIN");
+  const canFilterInactive = canManageEmployees;
   const canOpenDirectory =
     roles.includes("HRD") || roles.includes("ADMIN") || roles.includes("KEPALA_UNIT");
   if (!canOpenDirectory) redirect("/dashboard");
 
   const q = paramValue(params, "q").trim();
   const unitId = paramValue(params, "unit");
-  const active = paramValue(params, "active") || "active";
+  const requestedActive = paramValue(params, "active") || "active";
   const success = paramValue(params, "success");
   const errorMessage = paramValue(params, "error");
+  const active = canFilterInactive ? requestedActive : "active";
 
-  const { data: units } = await supabase
-    .from("units")
-    .select("id, name, code")
-    .order("code", { ascending: true });
+  const [{ data: allUnits }, { data: myAssignments }, { data: myProfile }] = await Promise.all([
+    supabase.from("units").select("id, name, code").order("code", { ascending: true }),
+    supabase
+      .from("user_unit_assignments")
+      .select("unit_id")
+      .eq("user_id", user.id)
+      .eq("assignment_type", "HOME"),
+    supabase.from("profiles").select("home_unit_id").eq("id", user.id).maybeSingle(),
+  ]);
+
+  const allowedUnitIds = canManageEmployees
+    ? []
+    : Array.from(
+        new Set(
+          [
+            ...(myAssignments ?? []).map((item) => item.unit_id).filter(Boolean),
+            myProfile?.home_unit_id,
+          ].filter((id): id is string => Boolean(id))
+        )
+      );
+  const units = canManageEmployees
+    ? ((allUnits ?? []) as UnitRow[])
+    : ((allUnits ?? []) as UnitRow[]).filter((unit) => allowedUnitIds.includes(unit.id));
+  const normalizedUnitId = canManageEmployees || allowedUnitIds.includes(unitId) ? unitId : "";
 
   let query = supabase
     .from("profiles")
@@ -112,7 +140,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
     query = query.or(`full_name.ilike.%${q}%,employee_no.ilike.%${q}%,email.ilike.%${q}%`);
   }
 
-  if (unitId) query = query.eq("home_unit_id", unitId);
+  if (normalizedUnitId) query = query.eq("home_unit_id", normalizedUnitId);
   if (active === "active") query = query.eq("is_active", true);
   if (active === "inactive") query = query.eq("is_active", false);
 
@@ -182,7 +210,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
             </div>
             <select
               name="unit"
-              defaultValue={unitId}
+              defaultValue={normalizedUnitId}
               className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm"
             >
               <option value="">Semua unit</option>
@@ -198,8 +226,8 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm"
             >
               <option value="active">Aktif</option>
-              <option value="inactive">Non-aktif</option>
-              <option value="all">Semua status</option>
+              {canFilterInactive && <option value="inactive">Non-aktif</option>}
+              {canFilterInactive && <option value="all">Semua status</option>}
             </select>
             <Button type="submit">Terapkan</Button>
           </form>
@@ -250,7 +278,23 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <PillList values={positionsByUser.get(row.id) ?? []} fallback="-" />
+                      <div className="min-w-56 space-y-2">
+                        <PillList values={positionsByUser.get(row.id) ?? []} fallback="-" />
+                        {(canManageEmployees || roles.includes("KEPALA_UNIT")) && (
+                          <form action={updateEmployeeCurrentPositionAction} className="flex gap-2">
+                            <input type="hidden" name="user_id" value={row.id} />
+                            <Input
+                              name="position_name"
+                              defaultValue={(positionsByUser.get(row.id) ?? [""])[0]}
+                              placeholder="Jabatan aktif"
+                              className="h-9 min-w-40"
+                            />
+                            <Button type="submit" variant="outline" size="sm">
+                              Simpan
+                            </Button>
+                          </form>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <PillList values={rolesByUser.get(row.id) ?? []} fallback="PEGAWAI" />
