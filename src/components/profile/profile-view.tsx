@@ -1,10 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
-import { updateMyProfileAction } from "@/app/dashboard/profile/actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,10 +10,12 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
+  Edit3,
   GraduationCap,
   Mail,
   MapPin,
   Phone,
+  UserRound,
 } from "lucide-react";
 import type {
   AcademicYear,
@@ -150,16 +150,22 @@ export function ProfileView({
             </div>
           </div>
 
-          {profile.units && (
-            <div className="flex items-center gap-2 rounded-[var(--radius-full)] border bg-secondary px-3 py-2 text-sm">
-              <Building2 className="h-4 w-4 text-primary" />
-              <span>{profile.units.code}</span>
-            </div>
-          )}
+          <div className="flex flex-col gap-2 sm:items-end">
+            <Link href="/dashboard/profile/edit" className={buttonVariants()}>
+              <Edit3 className="h-4 w-4" />
+              Edit Profil
+            </Link>
+            {profile.units && (
+              <div className="flex items-center gap-2 rounded-[var(--radius-full)] border bg-secondary px-3 py-2 text-sm">
+                <Building2 className="h-4 w-4 text-primary" />
+                <span>{profile.units.code}</span>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-3">
         <InfoCard title="Data Pribadi">
           <Row label="Jenis Kelamin" value={profile.gender === "L" ? "Laki-laki" : "Perempuan"} />
           <Row label="Status Pernikahan" value={profile.marital_status} />
@@ -187,35 +193,28 @@ export function ProfileView({
           {profile.facebook && <Row label="Facebook" value={profile.facebook} />}
           {profile.instagram && <Row label="Instagram" value={`@${profile.instagram}`} />}
         </InfoCard>
+
+        <InfoCard title="Kepegawaian">
+          <Row label="NIY" value={profile.employee_no} icon={<UserRound className="h-3.5 w-3.5" />} />
+          <Row label="Unit Induk" value={profile.units?.name} icon={<Building2 className="h-3.5 w-3.5" />} />
+          <Row
+            label="Status Pegawai"
+            value={EMPLOYEE_STATUS_LABELS[profile.employee_status] ?? profile.employee_status}
+            icon={<Briefcase className="h-3.5 w-3.5" />}
+          />
+          <Row label="Status Akun" value={profile.is_active ? "Aktif" : "Non-aktif"} />
+        </InfoCard>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Ubah Data Personal</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Briefcase className="h-4 w-4 text-primary" />
+            Histori Jabatan
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateMyProfileAction} className="grid gap-4 sm:grid-cols-2">
-            <Input name="phone" defaultValue={profile.phone ?? ""} placeholder="No. HP" />
-            <Input name="avatar_url" defaultValue={profile.avatar_url ?? ""} placeholder="URL avatar" />
-            <Input name="facebook" defaultValue={profile.facebook ?? ""} placeholder="Facebook" />
-            <Input name="instagram" defaultValue={profile.instagram ?? ""} placeholder="Instagram" />
-            <Input name="twitter" defaultValue={profile.twitter ?? ""} placeholder="Twitter" />
-            <Textarea name="address_ktp" defaultValue={profile.address_ktp ?? ""} placeholder="Alamat KTP" className="sm:col-span-2" />
-            <Textarea name="address_domicile" defaultValue={profile.address_domicile ?? ""} placeholder="Alamat domisili" className="sm:col-span-2" />
-            <Button type="submit" className="sm:col-span-2">Simpan data personal</Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {positionHistories.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Briefcase className="h-4 w-4 text-primary" />
-              Histori Jabatan
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          {positionHistories.length > 0 ? (
             <div className="space-y-3">
               {positionHistories.map((history) => (
                 <div key={history.id} className="flex items-start gap-3 rounded-[var(--radius-md)] border bg-secondary/40 p-3">
@@ -237,19 +236,21 @@ export function ProfileView({
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <EmptyState message="Belum ada histori jabatan yang tercatat." />
+          )}
+        </CardContent>
+      </Card>
 
-      {unitAssignments.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="h-4 w-4 text-primary" />
-              Penugasan Unit
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Building2 className="h-4 w-4 text-primary" />
+            Penugasan Unit
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {unitAssignments.length > 0 ? (
             <div className="grid gap-2 sm:grid-cols-2">
               {unitAssignments.map((assignment) => (
                 <div
@@ -271,9 +272,11 @@ export function ProfileView({
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <EmptyState message="Belum ada penugasan unit yang tercatat." />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -307,6 +310,14 @@ function Row({
       <span className={value ? "mt-1 block text-foreground" : "mt-1 block italic text-muted-foreground/60"}>
         {value ?? "-"}
       </span>
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-[var(--radius-md)] border border-dashed bg-secondary/30 p-4 text-sm text-muted-foreground">
+      {message}
     </div>
   );
 }
