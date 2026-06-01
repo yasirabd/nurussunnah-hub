@@ -339,9 +339,33 @@ export function EmployeeDirectoryTable({
     </form>
   )}
 </TabsContent>
-              <TabsContent value="jabatan">
-                <p className="text-sm text-muted-foreground">Jabatan form placeholder</p>
-              </TabsContent>
+              <TabsContent value="jabatan" className="space-y-4 py-4">
+  {selectedEmployee && (
+    <form action={updateEmployeeCurrentPositionAction} className="space-y-4">
+      <input type="hidden" name="user_id" value={selectedEmployee.id} />
+      
+      <div className="space-y-2">
+        <label htmlFor="position_name" className="text-sm font-medium">
+          Jabatan Aktif
+        </label>
+        <Input
+          id="position_name"
+          name="position_name"
+          defaultValue={positionsByUser.get(selectedEmployee.id)?.[0] ?? ""}
+          placeholder="Contoh: Kepala Unit, Guru Matematika"
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          Jabatan yang sedang aktif untuk pegawai ini.
+        </p>
+      </div>
+
+      <Button type="submit" className="w-full">
+        Simpan Jabatan
+      </Button>
+    </form>
+  )}
+</TabsContent>
             </Tabs>
           </div>
           <DrawerFooter>
