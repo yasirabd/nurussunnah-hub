@@ -2,6 +2,21 @@
 
 ---
 
+## 1 Juni 2026 - Penghapusan Modul App Surat Pernyataan Kerja
+
+**Status:** SELESAI, app module dihapus dari pengalaman pengguna tanpa migrasi destruktif.
+
+Modul Surat Pernyataan Kerja dihapus dari navigation, dashboard, route, action, dan UI cetak/upload karena tidak lagi dibutuhkan di aplikasi ini. Artifact Supabase terkait tetap dipertahankan untuk keamanan migration history dan reproducibility: tabel `work_statements`, `statement_reviews`, RPC, policy, migration, storage bucket, dan generated database types tidak dihapus.
+
+### Hasil Eksekusi
+
+| Area | Status | Catatan |
+|------|--------|---------|
+| Sidebar | Selesai | Menu Surat Kerja dihapus |
+| Dashboard | Selesai | Card dan query `work_statements` dihapus |
+| Route app | Selesai | `/dashboard/work-statements` dan print route dihapus dari source app |
+| Database | Dipertahankan | Tidak ada drop table/RPC/policy/migration/storage |
+
 ## 19 Mei 2026 - Eksekusi Fase 4
 
 **Status:** SELESAI, sudah dieksekusi di repo lokal dan Supabase live.
@@ -293,3 +308,4 @@ Hardening Fase 4 sudah aktif dengan audit trigger otomatis, RLS initplan optimiz
 ### Catatan Security Advisor
 
 Warning `anon_security_definer_function_executable` untuk `get_feedback_monitoring_scoped` sudah ditutup. Warning `authenticated_security_definer_function_executable` masih tersisa untuk RPC yang memang dipanggil aplikasi atau helper role yang dipakai RLS. Fungsi `is_admin`, `is_hrd`, dan `is_kepala_unit` tidak dicabut dari `authenticated` karena dipakai policy RLS dan pencabutan berisiko memutus akses tabel. `auth_leaked_password_protection` masih perlu diaktifkan dari Supabase Auth dashboard.
+
