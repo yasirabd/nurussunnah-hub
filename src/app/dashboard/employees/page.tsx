@@ -127,7 +127,11 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   const units = canManageEmployees
     ? ((allUnits ?? []) as UnitRow[])
     : ((allUnits ?? []) as UnitRow[]).filter((unit) => allowedUnitIds.includes(unit.id));
-  const normalizedUnitId = canManageEmployees || allowedUnitIds.includes(unitId) ? unitId : "";
+  const normalizedUnitId = canManageEmployees
+    ? unitId
+    : allowedUnitIds.includes(unitId)
+      ? unitId
+      : units[0]?.id ?? "";
 
   let query = supabase
     .from("profiles")
@@ -213,7 +217,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               defaultValue={normalizedUnitId}
               className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm"
             >
-              <option value="">Semua unit</option>
+              {canManageEmployees && <option value="">Semua unit</option>}
               {(units ?? []).map((unit) => (
                 <option key={unit.id} value={unit.id}>
                   {unit.code} - {unit.name}
