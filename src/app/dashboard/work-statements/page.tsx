@@ -30,6 +30,7 @@ import {
   reviewWorkStatementAction,
   saveDraftAction,
   submitWorkStatementAction,
+  uploadWorkStatementPdfAction,
 } from "./actions";
 
 export const metadata: Metadata = {
@@ -322,6 +323,13 @@ export default async function WorkStatementsPage({ searchParams }: PageProps) {
                     </Link>
                   )}
                 </div>
+                {ownStatement?.status === "APPROVED" && (
+                  <form action={uploadWorkStatementPdfAction} className="flex flex-col gap-2 sm:flex-row">
+                    <input type="hidden" name="work_statement_id" value={ownStatement.id} />
+                    <Input name="pdf" type="file" accept="application/pdf" className="max-w-64" />
+                    <Button type="submit" variant="outline">Simpan PDF</Button>
+                  </form>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -542,3 +550,6 @@ function ReviewButton({
     </Button>
   );
 }
+
+
+
