@@ -165,44 +165,46 @@ export function ProfileView({
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <InfoCard title="Data Pribadi">
-          <Row label="Jenis Kelamin" value={profile.gender === "L" ? "Laki-laki" : "Perempuan"} />
-          <Row label="Status Pernikahan" value={profile.marital_status} />
-          <Row
-            label="Tempat, Tanggal Lahir"
-            value={
-              profile.birth_place && profile.birth_date
-                ? `${profile.birth_place}, ${formatDate(profile.birth_date)}`
-                : profile.birth_place ?? (profile.birth_date ? formatDate(profile.birth_date) : null)
-            }
-            icon={<CalendarDays className="h-3.5 w-3.5" />}
-          />
-          <Row
-            label="Pendidikan Terakhir"
-            value={profile.last_education}
-            icon={<GraduationCap className="h-3.5 w-3.5" />}
-          />
-        </InfoCard>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.45fr)]">
+        <div className="grid gap-4">
+          <InfoCard title="Data Pribadi">
+            <Row label="Jenis Kelamin" value={profile.gender === "L" ? "Laki-laki" : "Perempuan"} />
+            <Row label="Status Pernikahan" value={profile.marital_status} />
+            <Row
+              label="Tempat, Tanggal Lahir"
+              value={
+                profile.birth_place && profile.birth_date
+                  ? `${profile.birth_place}, ${formatDate(profile.birth_date)}`
+                  : profile.birth_place ?? (profile.birth_date ? formatDate(profile.birth_date) : null)
+              }
+              icon={<CalendarDays className="h-3.5 w-3.5" />}
+            />
+            <Row
+              label="Pendidikan Terakhir"
+              value={profile.last_education}
+              icon={<GraduationCap className="h-3.5 w-3.5" />}
+            />
+          </InfoCard>
+
+          <InfoCard title="Kepegawaian">
+            <Row label="NIY" value={profile.employee_no} icon={<UserRound className="h-3.5 w-3.5" />} />
+            <Row label="Unit Induk" value={profile.units?.name} icon={<Building2 className="h-3.5 w-3.5" />} />
+            <Row
+              label="Status Pegawai"
+              value={EMPLOYEE_STATUS_LABELS[profile.employee_status] ?? profile.employee_status}
+              icon={<Briefcase className="h-3.5 w-3.5" />}
+            />
+            <Row label="Status Akun" value={profile.is_active ? "Aktif" : "Non-aktif"} />
+          </InfoCard>
+        </div>
 
         <InfoCard title="Kontak">
-          <Row label="Email" value={userEmail} icon={<Mail className="h-3.5 w-3.5" />} />
+          <Row label="Email" value={userEmail} icon={<Mail className="h-3.5 w-3.5" />} span="full" />
           <Row label="No. HP" value={profile.phone} icon={<Phone className="h-3.5 w-3.5" />} />
-          <Row label="Alamat KTP" value={profile.address_ktp} icon={<MapPin className="h-3.5 w-3.5" />} />
-          <Row label="Alamat Domisili" value={profile.address_domicile} />
+          <Row label="Alamat KTP" value={profile.address_ktp} icon={<MapPin className="h-3.5 w-3.5" />} span="full" />
+          <Row label="Alamat Domisili" value={profile.address_domicile} span="full" />
           {profile.facebook && <Row label="Facebook" value={profile.facebook} />}
           {profile.instagram && <Row label="Instagram" value={`@${profile.instagram}`} />}
-        </InfoCard>
-
-        <InfoCard title="Kepegawaian">
-          <Row label="NIY" value={profile.employee_no} icon={<UserRound className="h-3.5 w-3.5" />} />
-          <Row label="Unit Induk" value={profile.units?.name} icon={<Building2 className="h-3.5 w-3.5" />} />
-          <Row
-            label="Status Pegawai"
-            value={EMPLOYEE_STATUS_LABELS[profile.employee_status] ?? profile.employee_status}
-            icon={<Briefcase className="h-3.5 w-3.5" />}
-          />
-          <Row label="Status Akun" value={profile.is_active ? "Aktif" : "Non-aktif"} />
         </InfoCard>
       </div>
 
@@ -281,9 +283,17 @@ export function ProfileView({
   );
 }
 
-function InfoCard({ title, children }: { title: string; children: ReactNode }) {
+function InfoCard({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
@@ -296,18 +306,20 @@ function Row({
   label,
   value,
   icon,
+  span = "default",
 }: {
   label: string;
   value?: string | null;
   icon?: ReactNode;
+  span?: "default" | "full";
 }) {
   return (
-    <div className="rounded-[var(--radius-md)] bg-secondary/60 p-3">
+    <div className={span === "full" ? "rounded-[var(--radius-md)] bg-secondary/60 p-3 sm:col-span-2" : "rounded-[var(--radius-md)] bg-secondary/60 p-3"}>
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
         {icon}
         {label}
       </span>
-      <span className={value ? "mt-1 block text-foreground" : "mt-1 block italic text-muted-foreground/60"}>
+      <span className={value ? "mt-1 block break-words text-foreground" : "mt-1 block italic text-muted-foreground/60"}>
         {value ?? "-"}
       </span>
     </div>
