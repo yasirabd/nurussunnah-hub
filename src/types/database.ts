@@ -541,6 +541,10 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["work_statements"]["Row"]
       }
+      resolve_login_email: {
+        Args: { p_identifier: string }
+        Returns: string | null
+      }
       save_work_statement_draft: {
         Args: {
           p_academic_year_id: string

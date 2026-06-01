@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { CheckCircle2, Eye, MessageSquareMore, Users } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Eye, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -20,27 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
-import { submitFeedbackAction } from "./actions";
+import {
+  FeedbackTargetCarousel,
+  type FeedbackTarget,
+} from "./feedback-target-carousel";
 
 export const metadata: Metadata = { title: "Feedback Rekan Kerja" };
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
-
-type FeedbackTarget = {
-  receiver_user_id: string;
-  full_name: string;
-  employee_no: string;
-  unit_name: string | null;
-  unit_code: string | null;
-  rating: number | null;
-  feedback_text: string | null;
-  is_completed: boolean;
-  feedback_id: string | null;
 };
 
 type MonitoringRow = {
@@ -53,6 +42,13 @@ type MonitoringRow = {
   completed_count: number;
   is_complete: boolean;
 };
+
+type UnitOption = {
+  key: string;
+  label: string;
+};
+
+const PAGE_SIZE = 10;
 
 type IdentifiedFeedback = {
   feedback_id: string;
@@ -83,6 +79,68 @@ function messageValue(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function paramValue(
+  searchParams: Record<string, string | string[] | undefined>,
+  key: string
+) {
+  const value = searchParams[key];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function positivePage(value: string | undefined) {
+  const parsed = Number.parseInt(value ?? "1", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function unitKey(row: { unit_code: string | null; unit_name: string | null }) {
+  return row.unit_code || row.unit_name || "__none";
+}
+
+function unitLabel(row: { unit_code: string | null; unit_name: string | null }) {
+  return row.unit_name || row.unit_code || "Tanpa unit";
+}
+
+function unitOptions<T extends { unit_code: string | null; unit_name: string | null }>(
+  rows: T[]
+) {
+  const options = new Map<string, string>();
+  rows.forEach((row) => options.set(unitKey(row), unitLabel(row)));
+  return Array.from(options, ([key, label]) => ({ key, label })).sort((a, b) =>
+    a.label.localeCompare(b.label, "id")
+  );
+}
+
+function pageCount(total: number) {
+  return Math.max(1, Math.ceil(total / PAGE_SIZE));
+}
+
+function clampPage(page: number, total: number) {
+  return Math.min(page, pageCount(total));
+}
+
+function pageSlice<T>(rows: T[], page: number) {
+  const start = (page - 1) * PAGE_SIZE;
+  return rows.slice(start, start + PAGE_SIZE);
+}
+
+function buildFeedbackHref(
+  params: Record<string, string | string[] | undefined>,
+  updates: Record<string, string | number | null>
+) {
+  const next = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (key === "success" || key === "error") return;
+    const normalized = Array.isArray(value) ? value[0] : value;
+    if (normalized) next.set(key, normalized);
+  });
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value === null || value === "") next.delete(key);
+    else next.set(key, String(value));
+  });
+  const query = next.toString();
+  return query ? `/dashboard/feedback?${query}` : "/dashboard/feedback";
+}
+
 export default async function FeedbackPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const supabase = await createClient();
@@ -97,7 +155,8 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
     .eq("user_id", user.id);
 
   const roles = (rolesData ?? []).map((item) => item.role);
-  const canMonitor = roles.includes("HRD") || roles.includes("ADMIN") || roles.includes("KEPALA_UNIT");
+  const canViewIdentified = roles.includes("HRD") || roles.includes("ADMIN");
+  const canMonitor = canViewIdentified || roles.includes("KEPALA_UNIT");
 
   const { data: activeYear } = await supabase
     .from("academic_years")
@@ -125,7 +184,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
       : { data: [] };
 
   const { data: identifiedData } =
-    activeYear && canMonitor
+    activeYear && canViewIdentified
       ? await supabase.rpc("get_feedback_identified", {
           p_academic_year_id: activeYear.id,
         })
@@ -135,6 +194,32 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
   const received = receivedData ?? [];
   const monitoring = (monitoringData ?? []) as MonitoringRow[];
   const identified = (identifiedData ?? []) as IdentifiedFeedback[];
+  const monitorUnit = paramValue(params, "monitorUnit") ?? "all";
+  const identifiedUnit = canViewIdentified
+    ? paramValue(params, "identifiedUnit") ?? "all"
+    : "all";
+  const monitorOptions = unitOptions(monitoring);
+  const identifiedOptions = unitOptions(identified);
+  const filteredMonitoring =
+    monitorUnit === "all"
+      ? monitoring
+      : monitoring.filter((row) => unitKey(row) === monitorUnit);
+  const filteredIdentified =
+    identifiedUnit === "all"
+      ? identified
+      : identified.filter((row) => unitKey(row) === identifiedUnit);
+  const monitorPage = clampPage(
+    positivePage(paramValue(params, "monitorPage")),
+    filteredMonitoring.length
+  );
+  const identifiedPage = canViewIdentified
+    ? clampPage(positivePage(paramValue(params, "identifiedPage")), filteredIdentified.length)
+    : 1;
+  const pagedMonitoring = pageSlice(filteredMonitoring, monitorPage);
+  const pagedIdentified = pageSlice(filteredIdentified, identifiedPage);
+  const monitorTotalPages = pageCount(filteredMonitoring.length);
+  const identifiedTotalPages = pageCount(filteredIdentified.length);
+  const unitReminderProgress = buildUnitReminderProgress(monitoring);
   const completedCount = targets.filter((target) => target.is_completed).length;
   const targetCount = targets.length;
   const completionPercent = targetCount
@@ -241,19 +326,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {targets.length === 0 ? (
-          <p className="rounded-[var(--radius-md)] border bg-secondary/60 px-4 py-6 text-center text-sm text-muted-foreground">
-                    Belum ada target feedback untuk akun ini.
-                  </p>
-                ) : (
-                  targets.map((target) => (
-                    <FeedbackTargetCard
-                      key={target.receiver_user_id}
-                      target={target}
-                      academicYearId={activeYear.id}
-                    />
-                  ))
-                )}
+                <FeedbackTargetCarousel targets={targets} academicYearId={activeYear.id} />
               </CardContent>
             </Card>
 
@@ -264,23 +337,25 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                   Identitas pemberi tidak ditampilkan di area pegawai.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent>
                 {received.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Belum ada feedback masuk.</p>
                 ) : (
-                  received.map((item) => (
-        <div key={item.feedback_id} className="rounded-[var(--radius-md)] border bg-secondary/40 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <RatingBadge rating={item.rating} />
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(item.created_at)}
-                        </span>
+                  <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                    {received.map((item) => (
+                      <div key={item.feedback_id} className="rounded-[var(--radius-md)] border bg-secondary/40 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <RatingBadge rating={item.rating} />
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(item.created_at)}
+                          </span>
+                        </div>
+                        <p className="mt-2 whitespace-pre-line text-sm leading-6">
+                          {item.feedback_text || "Tanpa catatan tertulis."}
+                        </p>
                       </div>
-                      <p className="mt-2 whitespace-pre-line text-sm leading-6">
-                        {item.feedback_text || "Tanpa catatan tertulis."}
-                      </p>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -288,116 +363,204 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
 
           {canMonitor && (
             <section className="space-y-6">
-              {monitoring.some((row) => !row.is_complete) && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pengingat Feedback</CardTitle>
-                    <CardDescription>Pegawai berikut belum menyelesaikan kewajiban feedback.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    {monitoring.filter((row) => !row.is_complete).map((row) => (
-                      <Badge key={row.user_id} variant="secondary" className="border-0 bg-warning/12 text-warning">
-                        {row.full_name}: {row.completed_count}/{row.target_count}
-                      </Badge>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
               <Card>
                 <CardHeader>
-                  <CardTitle>Monitoring Feedback</CardTitle>
-                  <CardDescription>
-                    Progress penyelesaian feedback wajib per pegawai aktif.
-                  </CardDescription>
+                  <CardTitle>Pengingat Feedback</CardTitle>
+                  <CardDescription>Progress penyelesaian feedback per unit.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Pegawai</TableHead>
-                        <TableHead>Unit</TableHead>
-                        <TableHead>Progress</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {monitoring.map((row) => (
-                        <TableRow key={row.user_id}>
-                          <TableCell>
-                            <p className="font-medium">{row.full_name}</p>
-                            <p className="text-xs text-muted-foreground">{row.employee_no}</p>
-                          </TableCell>
-                          <TableCell>{row.unit_name ?? "-"}</TableCell>
-                          <TableCell>
-                            {row.completed_count}/{row.target_count}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "border-0",
-                                row.is_complete
-                  ? "bg-primary/10 text-primary"
-                                  : "bg-warning/12 text-warning"
-                              )}
-                            >
-                              {row.is_complete ? "Selesai" : "Belum selesai"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <CardContent className="grid gap-3 md:grid-cols-2">
+                  {unitReminderProgress.length === 0 ? (
+                    <p className="rounded-[var(--radius-md)] border bg-secondary/60 px-4 py-6 text-center text-sm text-muted-foreground md:col-span-2">
+                      Belum ada data monitoring feedback.
+                    </p>
+                  ) : (
+                    unitReminderProgress.map((unit) => (
+                      <div key={unit.key} className="rounded-[var(--radius-md)] border bg-secondary/40 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{unit.label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {unit.incompleteEmployees} pegawai belum selesai
+                            </p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "border-0",
+                              unit.percent === 100
+                                ? "bg-primary/10 text-primary"
+                                : "bg-warning/12 text-warning"
+                            )}
+                          >
+                            {unit.percent}%
+                          </Badge>
+                        </div>
+                        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${unit.percent}%` }}
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {unit.completedTargets}/{unit.totalTargets} target feedback selesai
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Feedback Teridentifikasi</CardTitle>
-                  <CardDescription>
-                    Area ini hanya untuk HRD/Admin dan menampilkan identitas pemberi.
-                  </CardDescription>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                      <CardTitle>Monitoring Feedback</CardTitle>
+                      <CardDescription>
+                        Progress penyelesaian feedback wajib per pegawai aktif.
+                      </CardDescription>
+                    </div>
+                    <UnitFilterForm
+                      name="monitorUnit"
+                      value={monitorUnit}
+                      options={monitorOptions}
+                      hiddenFields={{
+                        identifiedUnit,
+                        identifiedPage,
+                        monitorPage: 1,
+                      }}
+                    />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  {identified.length === 0 ? (
-          <p className="rounded-[var(--radius-md)] border bg-secondary/60 px-4 py-6 text-center text-sm text-muted-foreground">
-                      Belum ada feedback yang dikirim.
-                    </p>
+                <CardContent className="space-y-4">
+                  <TableMeta
+                    total={filteredMonitoring.length}
+                    page={monitorPage}
+                    totalPages={monitorTotalPages}
+                    resetHref={buildFeedbackHref(params, { monitorUnit: null, monitorPage: null })}
+                    showReset={monitorUnit !== "all"}
+                  />
+                  {filteredMonitoring.length === 0 ? (
+                    <EmptyTable message="Tidak ada pegawai pada filter unit ini." />
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Pemberi</TableHead>
-                          <TableHead>Penerima</TableHead>
-                          <TableHead>Rating</TableHead>
-                          <TableHead>Catatan</TableHead>
-                          <TableHead>Waktu</TableHead>
+                          <TableHead>Pegawai</TableHead>
+                          <TableHead>Unit</TableHead>
+                          <TableHead>Progress</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {identified.map((item) => (
-                          <TableRow key={item.feedback_id}>
-                            <TableCell>{item.giver_name}</TableCell>
+                        {pagedMonitoring.map((row) => (
+                          <TableRow key={row.user_id}>
                             <TableCell>
-                              <p className="font-medium">{item.receiver_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {item.unit_name ?? "-"}
-                              </p>
+                              <p className="font-medium">{row.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{row.employee_no}</p>
+                            </TableCell>
+                            <TableCell>{row.unit_name ?? "-"}</TableCell>
+                            <TableCell>
+                              {row.completed_count}/{row.target_count}
                             </TableCell>
                             <TableCell>
-                              <RatingBadge rating={item.rating} />
+                              <Badge
+                                variant="secondary"
+                                className={cn(
+                                  "border-0",
+                                  row.is_complete
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-warning/12 text-warning"
+                                )}
+                              >
+                                {row.is_complete ? "Selesai" : "Belum selesai"}
+                              </Badge>
                             </TableCell>
-                            <TableCell className="max-w-sm whitespace-normal leading-6">
-                              {item.feedback_text || "-"}
-                            </TableCell>
-                            <TableCell>{formatDate(item.created_at)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   )}
+                  <PaginationLinks
+                    page={monitorPage}
+                    totalPages={monitorTotalPages}
+                    pageHref={(page) => buildFeedbackHref(params, { monitorPage: page })}
+                  />
                 </CardContent>
               </Card>
+
+              {canViewIdentified && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                      <div>
+                        <CardTitle>Feedback Teridentifikasi</CardTitle>
+                        <CardDescription>
+                          Area ini hanya untuk HRD/Admin dan menampilkan identitas pemberi.
+                        </CardDescription>
+                      </div>
+                      <UnitFilterForm
+                        name="identifiedUnit"
+                        value={identifiedUnit}
+                        options={identifiedOptions}
+                        hiddenFields={{
+                          monitorUnit,
+                          monitorPage,
+                          identifiedPage: 1,
+                        }}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <TableMeta
+                      total={filteredIdentified.length}
+                      page={identifiedPage}
+                      totalPages={identifiedTotalPages}
+                      resetHref={buildFeedbackHref(params, { identifiedUnit: null, identifiedPage: null })}
+                      showReset={identifiedUnit !== "all"}
+                    />
+                    {filteredIdentified.length === 0 ? (
+                      <EmptyTable message="Belum ada feedback yang sesuai filter." />
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Pemberi</TableHead>
+                            <TableHead>Penerima</TableHead>
+                            <TableHead>Rating</TableHead>
+                            <TableHead>Catatan</TableHead>
+                            <TableHead>Waktu</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pagedIdentified.map((item) => (
+                            <TableRow key={item.feedback_id}>
+                              <TableCell>{item.giver_name}</TableCell>
+                              <TableCell>
+                                <p className="font-medium">{item.receiver_name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.unit_name ?? "-"}
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <RatingBadge rating={item.rating} />
+                              </TableCell>
+                              <TableCell className="max-w-sm whitespace-normal leading-6">
+                                {item.feedback_text || "-"}
+                              </TableCell>
+                              <TableCell>{formatDate(item.created_at)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                    <PaginationLinks
+                      page={identifiedPage}
+                      totalPages={identifiedTotalPages}
+                      pageHref={(page) => buildFeedbackHref(params, { identifiedPage: page })}
+                    />
+                  </CardContent>
+                </Card>
+              )}
             </section>
           )}
         </>
@@ -435,65 +598,211 @@ function MetricCard({
   );
 }
 
-function FeedbackTargetCard({
-  target,
-  academicYearId,
+function buildUnitReminderProgress(rows: MonitoringRow[]) {
+  const map = new Map<
+    string,
+    {
+      key: string;
+      label: string;
+      completedTargets: number;
+      totalTargets: number;
+      incompleteEmployees: number;
+    }
+  >();
+
+  rows.forEach((row) => {
+    const key = unitKey(row);
+    const current = map.get(key) ?? {
+      key,
+      label: unitLabel(row),
+      completedTargets: 0,
+      totalTargets: 0,
+      incompleteEmployees: 0,
+    };
+    current.completedTargets += row.completed_count;
+    current.totalTargets += row.target_count;
+    if (!row.is_complete) current.incompleteEmployees += 1;
+    map.set(key, current);
+  });
+
+  return Array.from(map.values())
+    .map((unit) => ({
+      ...unit,
+      percent: unit.totalTargets
+        ? Math.round((unit.completedTargets / unit.totalTargets) * 100)
+        : 0,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "id"));
+}
+
+function UnitFilterForm({
+  name,
+  value,
+  options,
+  hiddenFields,
 }: {
-  target: FeedbackTarget;
-  academicYearId: string;
+  name: string;
+  value: string;
+  options: UnitOption[];
+  hiddenFields: Record<string, string | number>;
 }) {
   return (
-    <form action={submitFeedbackAction} className="rounded-[var(--radius-lg)] border bg-card p-4 elevation-1">
-      <input type="hidden" name="academic_year_id" value={academicYearId} />
-      <input type="hidden" name="receiver_user_id" value={target.receiver_user_id} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold">{target.full_name}</h2>
-            {target.is_completed && (
-              <Badge className="border-0 bg-primary/10 text-primary">
-                Selesai
-              </Badge>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {target.employee_no} · {target.unit_name ?? "-"}
-          </p>
-        </div>
-        <div className="w-full sm:w-32">
-          <Label htmlFor={`rating-${target.receiver_user_id}`}>Rating</Label>
-          <select
-            id={`rating-${target.receiver_user_id}`}
-            name="rating"
-            defaultValue={target.rating ?? 5}
-            className="mt-2 h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            {[5, 4, 3, 2, 1].map((rating) => (
-              <option key={rating} value={rating}>
-                {rating}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <Label htmlFor={`feedback-${target.receiver_user_id}`}>Catatan feedback</Label>
-        <Textarea
-          id={`feedback-${target.receiver_user_id}`}
-          name="feedback_text"
-          defaultValue={target.feedback_text ?? ""}
-          placeholder="Tuliskan apresiasi, masukan, atau catatan kerja yang relevan."
-        />
-      </div>
-
-      <div className="mt-4 flex justify-end">
-        <Button type="submit" size="sm">
-          <MessageSquareMore className="h-4 w-4" />
-          {target.is_completed ? "Perbarui feedback" : "Kirim feedback"}
-        </Button>
-      </div>
+    <form action="/dashboard/feedback" className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      {Object.entries(hiddenFields).map(([key, fieldValue]) =>
+        fieldValue && fieldValue !== "all" ? (
+          <input key={key} type="hidden" name={key} value={fieldValue} />
+        ) : null
+      )}
+      <select
+        name={name}
+        defaultValue={value}
+        className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <option value="all">Semua unit</option>
+        {options.map((option) => (
+          <option key={option.key} value={option.key}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <button className="h-10 rounded-[var(--radius-full)] bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
+        Filter
+      </button>
     </form>
+  );
+}
+
+function TableMeta({
+  total,
+  page,
+  totalPages,
+  resetHref,
+  showReset,
+}: {
+  total: number;
+  page: number;
+  totalPages: number;
+  resetHref: string;
+  showReset: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <span>
+        {total} data - halaman {page}/{totalPages}
+      </span>
+      {showReset && (
+        <Link className="text-primary hover:underline" href={resetHref}>
+          Reset filter
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function EmptyTable({ message }: { message: string }) {
+  return (
+    <p className="rounded-[var(--radius-md)] border bg-secondary/60 px-4 py-6 text-center text-sm text-muted-foreground">
+      {message}
+    </p>
+  );
+}
+
+function PaginationLinks({
+  page,
+  totalPages,
+  pageHref,
+}: {
+  page: number;
+  totalPages: number;
+  pageHref: (page: number) => string;
+}) {
+  if (totalPages <= 1) return null;
+
+  const pages = paginationWindow(page, totalPages);
+
+  return (
+    <Table>
+      <TableBody>
+        <TableRow className="hover:bg-transparent">
+          <TableCell className="text-sm text-muted-foreground">
+            Halaman {page} dari {totalPages}
+          </TableCell>
+          <TableCell className="text-right">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <PaginationButton
+                disabled={page <= 1}
+                href={pageHref(page - 1)}
+                label="Sebelumnya"
+              />
+              {pages.map((item, index) =>
+                item === "ellipsis" ? (
+                  <span key={`${item}-${index}`} className="px-1 text-sm text-muted-foreground">
+                    ...
+                  </span>
+                ) : (
+                  <Link
+                    key={item}
+                    href={pageHref(item)}
+                    className={cn(
+                      "flex h-8 min-w-8 items-center justify-center rounded-[var(--radius-full)] border px-2 text-sm font-medium",
+                      item === page
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:bg-primary/6"
+                    )}
+                  >
+                    {item}
+                  </Link>
+                )
+              )}
+              <PaginationButton
+                disabled={page >= totalPages}
+                href={pageHref(page + 1)}
+                label="Berikutnya"
+              />
+            </div>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
+}
+
+function paginationWindow(page: number, totalPages: number) {
+  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const pages: Array<number | "ellipsis"> = [1];
+  const start = Math.max(2, page - 1);
+  const end = Math.min(totalPages - 1, page + 1);
+
+  if (start > 2) pages.push("ellipsis");
+  for (let item = start; item <= end; item += 1) pages.push(item);
+  if (end < totalPages - 1) pages.push("ellipsis");
+  pages.push(totalPages);
+
+  return pages;
+}
+
+function PaginationButton({
+  disabled,
+  href,
+  label,
+}: {
+  disabled: boolean;
+  href: string;
+  label: string;
+}) {
+  if (disabled) {
+    return (
+      <span className="rounded-[var(--radius-full)] border px-3 py-1.5 text-sm text-muted-foreground opacity-50">
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <Link className="rounded-[var(--radius-full)] border px-3 py-1.5 text-sm font-medium hover:bg-primary/6" href={href}>
+      {label}
+    </Link>
   );
 }
 
