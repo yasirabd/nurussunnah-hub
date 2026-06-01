@@ -97,7 +97,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
     .eq("user_id", user.id);
 
   const roles = (rolesData ?? []).map((item) => item.role);
-  const canMonitor = roles.includes("HRD") || roles.includes("ADMIN");
+  const canMonitor = roles.includes("HRD") || roles.includes("ADMIN") || roles.includes("KEPALA_UNIT");
 
   const { data: activeYear } = await supabase
     .from("academic_years")
@@ -119,7 +119,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
 
   const { data: monitoringData } =
     activeYear && canMonitor
-      ? await supabase.rpc("get_feedback_monitoring", {
+      ? await supabase.rpc("get_feedback_monitoring_scoped", {
           p_academic_year_id: activeYear.id,
         })
       : { data: [] };
@@ -288,9 +288,24 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
 
           {canMonitor && (
             <section className="space-y-6">
+              {monitoring.some((row) => !row.is_complete) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pengingat Feedback</CardTitle>
+                    <CardDescription>Pegawai berikut belum menyelesaikan kewajiban feedback.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    {monitoring.filter((row) => !row.is_complete).map((row) => (
+                      <Badge key={row.user_id} variant="secondary" className="border-0 bg-warning/12 text-warning">
+                        {row.full_name}: {row.completed_count}/{row.target_count}
+                      </Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardHeader>
-                  <CardTitle>Monitoring HRD</CardTitle>
+                  <CardTitle>Monitoring Feedback</CardTitle>
                   <CardDescription>
                     Progress penyelesaian feedback wajib per pegawai aktif.
                   </CardDescription>
@@ -489,3 +504,5 @@ function RatingBadge({ rating }: { rating: number }) {
     </Badge>
   );
 }
+
+
