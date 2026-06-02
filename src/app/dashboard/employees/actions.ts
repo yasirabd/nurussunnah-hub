@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import type { EmployeeStatus, UserRoleEnum } from '@/types/database';
 
@@ -46,7 +47,7 @@ function profilePayload(formData: FormData) {
     employee_no: normalizeEmployeeNo(formData),
     email: text(formData, 'email').toLowerCase(),
     phone: nullableText(formData, 'phone'),
-    gender: text(formData, 'gender') === 'P' ? 'P' : 'L',
+    gender: text(formData, 'gender') === 'P' ? ('P' as const) : ('L' as const),
     marital_status: nullableText(formData, 'marital_status'),
     birth_place: nullableText(formData, 'birth_place'),
     birth_date: nullableDate(formData, 'birth_date'),
@@ -99,80 +100,143 @@ async function ensureCanManageEmployees() {
   return supabase;
 }
 
-export async function updateEmployeeProfileAction(formData: FormData) {
-  const supabase = await ensureCanManageEmployees();
-  const id = text(formData, 'id');
-  const employeeNo = text(formData, 'employee_no').replace(/\s/g, '');
-  const homeUnitId = text(formData, 'home_unit_id') || null;
-
-  const { error } = await supabase.from('profiles').update({
-    full_name: text(formData, 'full_name'),
-    employee_no: employeeNo,
-    email: text(formData, 'email'),
-    phone: text(formData, 'phone') || null,
-    employee_status: text(formData, 'employee_status') as EmployeeStatus,
-    is_active: formData.get('is_active') === 'on',
-    home_unit_id: homeUnitId,
-  }).eq('id', id);
-
-  if (error) {
-    revalidatePath('/dashboard/employees');
-    redirectWith(false, error.message);
-  }
-
+async function syncHomeAssignment(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  homeUnitId: string | null
+) {
   const { data: activeYear } = await supabase
     .from('academic_years')
     .select('id')
     .eq('is_active', true)
     .maybeSingle();
 
-  if (activeYear?.id) {
-    const { error: deleteAssignmentError } = await supabase
-      .from('user_unit_assignments')
-      .delete()
-      .eq('user_id', id)
-      .eq('assignment_type', 'HOME')
-      .eq('academic_year_id', activeYear.id);
+  if (!activeYear?.id) return;
 
-    if (deleteAssignmentError) {
-      revalidatePath('/dashboard/employees');
-      redirectWith(false, deleteAssignmentError.message);
-    }
+  const { error: deleteError } = await supabase
+    .from('user_unit_assignments')
+    .delete()
+    .eq('user_id', userId)
+    .eq('assignment_type', 'HOME')
+    .eq('academic_year_id', activeYear.id);
+  if (deleteError) throw deleteError;
 
-    if (homeUnitId) {
-      const { error: insertAssignmentError } = await supabase
-        .from('user_unit_assignments')
-        .insert({
-          user_id: id,
-          unit_id: homeUnitId,
-          assignment_type: 'HOME',
-          academic_year_id: activeYear.id,
-        });
+  if (!homeUnitId) return;
 
-      if (insertAssignmentError) {
-        revalidatePath('/dashboard/employees');
-        redirectWith(false, insertAssignmentError.message);
-      }
-    }
+  const { error: insertError } = await supabase.from('user_unit_assignments').insert({
+    user_id: userId,
+    unit_id: homeUnitId,
+    assignment_type: 'HOME',
+    academic_year_id: activeYear.id,
+  });
+  if (insertError) throw insertError;
+}
+
+async function replaceRoles(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  roles: UserRoleEnum[]
+) {
+  const { error: deleteError } = await supabase.from('user_roles').delete().eq('user_id', userId);
+  if (deleteError) throw deleteError;
+
+  const { error: insertError } = await supabase
+    .from('user_roles')
+    .insert(roles.map((role) => ({ user_id: userId, role })));
+  if (insertError) throw insertError;
+}
+
+export async function updateEmployeeProfileAction(formData: FormData) {
+  const supabase = await ensureCanManageEmployees();
+  const id = text(formData, 'id');
+  const payload = profilePayload(formData);
+
+  const { error } = await supabase.from('profiles').update(payload).eq('id', id);
+
+  if (error) {
+    revalidatePath('/dashboard/employees');
+    redirectWith(false, error.message);
+  }
+
+  try {
+    await syncHomeAssignment(supabase, id, payload.home_unit_id);
+  } catch (syncError) {
+    revalidatePath('/dashboard/employees');
+    redirectWith(false, syncError instanceof Error ? syncError.message : 'Gagal menyimpan unit pegawai.');
   }
 
   revalidatePath('/dashboard/employees');
   redirectWith(true, 'Data pegawai berhasil diperbarui.');
 }
 
+export async function createEmployeeAction(formData: FormData) {
+  const supabase = await ensureCanManageEmployees();
+  const admin = createAdminClient();
+  const payload = profilePayload(formData);
+
+  if (!payload.full_name) redirectWith(false, 'Nama lengkap wajib diisi.');
+  if (!payload.employee_no) redirectWith(false, 'NIY wajib diisi.');
+  if (!payload.email) redirectWith(false, 'Email wajib diisi.');
+
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email: payload.email,
+    password: DEFAULT_EMPLOYEE_PASSWORD,
+    email_confirm: true,
+    user_metadata: {
+      full_name: payload.full_name,
+      employee_no: payload.employee_no,
+      gender: payload.gender,
+    },
+  });
+
+  if (authError || !authData.user?.id) {
+    redirectWith(false, authError?.message ?? 'Gagal membuat akun login pegawai.');
+  }
+
+  const userId = authData.user.id;
+  const { error: profileError } = await supabase.from('profiles').upsert({
+    id: userId,
+    ...payload,
+    must_change_password: true,
+  });
+  if (profileError) redirectWith(false, profileError.message);
+
+  try {
+    await replaceRoles(supabase, userId, selectedRoles(formData));
+    await syncHomeAssignment(supabase, userId, payload.home_unit_id);
+  } catch (relationError) {
+    redirectWith(false, relationError instanceof Error ? relationError.message : 'Gagal menyimpan relasi pegawai.');
+  }
+
+  const positionName = text(formData, 'position_name');
+  if (positionName) {
+    const { error: positionError } = await supabase.from('position_histories').insert({
+      user_id: userId,
+      unit_id: payload.home_unit_id,
+      position_name: positionName,
+      start_date: new Date().toISOString().slice(0, 10),
+      is_current: true,
+    });
+    if (positionError) redirectWith(false, positionError.message);
+  }
+
+  revalidatePath('/dashboard/employees');
+  redirectWith(true, 'Pegawai baru berhasil ditambahkan. Password awal: bismillahns.');
+}
+
 export async function updateEmployeeRolesAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();
   const userId = text(formData, 'user_id');
-  const roles = roleOptions.filter((role) => formData.get(role) === 'on');
+  const roles = selectedRoles(formData);
 
-  const { error: deleteError } = await supabase.from('user_roles').delete().eq('user_id', userId);
-  if (deleteError) redirectWith(false, deleteError.message);
-
-  const rows = roles.map((role) => ({ user_id: userId, role }));
-  const { error } = rows.length ? await supabase.from('user_roles').insert(rows) : { error: null };
+  try {
+    await replaceRoles(supabase, userId, roles);
+  } catch (roleError) {
+    redirectWith(false, roleError instanceof Error ? roleError.message : 'Gagal menyimpan role pegawai.');
+  }
 
   revalidatePath('/dashboard/employees');
-  redirectWith(!error, error ? error.message : 'Role pegawai berhasil diperbarui.');
+  redirectWith(true, 'Role pegawai berhasil diperbarui.');
 }
 
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
