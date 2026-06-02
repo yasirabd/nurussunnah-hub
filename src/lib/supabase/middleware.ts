@@ -42,6 +42,30 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  if (user && !isAuthRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_active, must_change_password')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile && !profile.is_active && url.pathname !== '/auth/logout') {
+      url.pathname = '/auth/logout'
+      return NextResponse.redirect(url)
+    }
+
+    const isChangePasswordRoute = url.pathname === '/dashboard/change-password'
+    if (profile?.must_change_password && !isChangePasswordRoute) {
+      url.pathname = '/dashboard/change-password'
+      return NextResponse.redirect(url)
+    }
+
+    if (profile && !profile.must_change_password && isChangePasswordRoute) {
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
+
   if (user && isAuthRoute && !authPassThroughRoutes.includes(url.pathname)) {
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
