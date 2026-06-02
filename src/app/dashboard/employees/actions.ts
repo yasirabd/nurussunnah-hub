@@ -239,6 +239,26 @@ export async function updateEmployeeRolesAction(formData: FormData) {
   redirectWith(true, 'Role pegawai berhasil diperbarui.');
 }
 
+export async function deactivateEmployeeAction(formData: FormData) {
+  const supabase = await ensureCanManageEmployees();
+  const admin = createAdminClient();
+  const id = text(formData, 'id');
+  if (!id) redirectWith(false, 'ID pegawai tidak valid.');
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_active: false, employee_status: 'PENSIUN' })
+    .eq('id', id);
+  if (error) redirectWith(false, error.message);
+
+  await admin.auth.admin.updateUserById(id, {
+    app_metadata: { disabled_by_hrd: true },
+  });
+
+  revalidatePath('/dashboard/employees');
+  redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
+}
+
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
