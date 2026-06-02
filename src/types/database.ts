@@ -207,6 +207,7 @@ export type Database = {
           is_active: boolean
           last_education: string | null
           marital_status: string | null
+          must_change_password: boolean
           phone: string | null
           study_program: string | null
           twitter: string | null
@@ -231,6 +232,7 @@ export type Database = {
           is_active?: boolean
           last_education?: string | null
           marital_status?: string | null
+          must_change_password?: boolean
           phone?: string | null
           study_program?: string | null
           twitter?: string | null
@@ -255,6 +257,7 @@ export type Database = {
           is_active?: boolean
           last_education?: string | null
           marital_status?: string | null
+          must_change_password?: boolean
           phone?: string | null
           study_program?: string | null
           twitter?: string | null
