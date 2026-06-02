@@ -15,8 +15,52 @@ function redirectWith(ok: boolean, message: string): never {
 
 type EmployeeRole = 'PEGAWAI' | 'KEPALA_UNIT' | 'HRD' | 'ADMIN';
 
+const DEFAULT_EMPLOYEE_PASSWORD = 'bismillahns';
+const roleOptions: UserRoleEnum[] = ['PEGAWAI', 'KEPALA_UNIT', 'HRD', 'ADMIN'];
+
 function hasAnyRole(roles: string[], allowed: EmployeeRole[]) {
   return allowed.some((role) => roles.includes(role));
+}
+
+function nullableText(formData: FormData, key: string) {
+  return text(formData, key) || null;
+}
+
+function nullableDate(formData: FormData, key: string) {
+  const value = text(formData, key);
+  return value || null;
+}
+
+function normalizeEmployeeNo(formData: FormData) {
+  return text(formData, 'employee_no').replace(/\s/g, '').toUpperCase();
+}
+
+function selectedRoles(formData: FormData): UserRoleEnum[] {
+  const roles = roleOptions.filter((role) => formData.get(role) === 'on');
+  return roles.length ? roles : ['PEGAWAI'];
+}
+
+function profilePayload(formData: FormData) {
+  return {
+    full_name: text(formData, 'full_name'),
+    employee_no: normalizeEmployeeNo(formData),
+    email: text(formData, 'email').toLowerCase(),
+    phone: nullableText(formData, 'phone'),
+    gender: text(formData, 'gender') === 'P' ? 'P' : 'L',
+    marital_status: nullableText(formData, 'marital_status'),
+    birth_place: nullableText(formData, 'birth_place'),
+    birth_date: nullableDate(formData, 'birth_date'),
+    last_education: nullableText(formData, 'last_education'),
+    study_program: nullableText(formData, 'study_program'),
+    address_ktp: nullableText(formData, 'address_ktp'),
+    address_domicile: nullableText(formData, 'address_domicile'),
+    facebook: nullableText(formData, 'facebook'),
+    instagram: nullableText(formData, 'instagram'),
+    twitter: nullableText(formData, 'twitter'),
+    employee_status: text(formData, 'employee_status') as EmployeeStatus,
+    is_active: formData.get('is_active') === 'on',
+    home_unit_id: nullableText(formData, 'home_unit_id'),
+  };
 }
 
 async function getAllowedKepalaUnitIds(
@@ -119,7 +163,6 @@ export async function updateEmployeeProfileAction(formData: FormData) {
 export async function updateEmployeeRolesAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();
   const userId = text(formData, 'user_id');
-  const roleOptions: UserRoleEnum[] = ['PEGAWAI', 'KEPALA_UNIT', 'HRD', 'ADMIN'];
   const roles = roleOptions.filter((role) => formData.get(role) === 'on');
 
   const { error: deleteError } = await supabase.from('user_roles').delete().eq('user_id', userId);
