@@ -29,8 +29,20 @@ type ProfileRow = {
   home_unit_id: string | null;
   email: string;
   phone: string | null;
+  gender: "L" | "P";
+  marital_status: string | null;
+  birth_place: string | null;
+  birth_date: string | null;
+  last_education: string | null;
+  study_program: string | null;
+  address_ktp: string | null;
+  address_domicile: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  twitter: string | null;
   employee_status: string;
   is_active: boolean;
+  must_change_password: boolean;
   units: { id: string; name: string; code: string } | null;
 };
 
@@ -113,7 +125,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, full_name, employee_no, email, phone, employee_status, is_active, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)"
+      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, is_active, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)"
     )
     .order("full_name", { ascending: true });
 
