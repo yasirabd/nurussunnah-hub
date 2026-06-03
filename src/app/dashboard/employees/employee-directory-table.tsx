@@ -1,22 +1,28 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
+import { Pencil, Trash2, UserPlus } from "lucide-react";
+
 import {
+  createEmployeeAction,
+  deactivateEmployeeAction,
+  updateEmployeeCurrentPositionAction,
   updateEmployeeProfileAction,
   updateEmployeeRolesAction,
-  updateEmployeeCurrentPositionAction,
 } from "./actions";
-import { Pencil } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Drawer,
   DrawerClose,
@@ -26,8 +32,17 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 
 type EmployeeRow = {
   id: string;
@@ -35,8 +50,20 @@ type EmployeeRow = {
   employee_no: string;
   email: string;
   phone: string | null;
+  gender: "L" | "P";
+  marital_status: string | null;
+  birth_place: string | null;
+  birth_date: string | null;
+  last_education: string | null;
+  study_program: string | null;
+  address_ktp: string | null;
+  address_domicile: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  twitter: string | null;
   employee_status: string;
   is_active: boolean;
+  must_change_password: boolean;
   home_unit_id: string | null;
   units: { id: string; name: string; code: string } | null;
 };
@@ -56,6 +83,8 @@ type EmployeeDirectoryTableProps = {
   canEditPosition: boolean;
 };
 
+const roleOptions = ["PEGAWAI", "KEPALA_UNIT", "HRD", "ADMIN"] as const;
+
 export function EmployeeDirectoryTable({
   rows,
   rolesByUser,
@@ -66,9 +95,33 @@ export function EmployeeDirectoryTable({
 }: EmployeeDirectoryTableProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mode, setMode] = useState<"create" | "edit">("edit");
+
+  const isCreate = mode === "create";
+
+  function openCreate() {
+    setSelectedEmployee(null);
+    setMode("create");
+    setDrawerOpen(true);
+  }
+
+  function openEdit(row: EmployeeRow) {
+    setSelectedEmployee(row);
+    setMode("edit");
+    setDrawerOpen(true);
+  }
 
   return (
     <>
+      {canManageEmployees && (
+        <div className="mb-4 flex justify-end">
+          <Button type="button" onClick={openCreate}>
+            <UserPlus className="h-4 w-4" />
+            Tambah Pegawai
+          </Button>
+        </div>
+      )}
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -115,7 +168,7 @@ export function EmployeeDirectoryTable({
                 </TableCell>
                 <TableCell>
                   <div className="space-y-0.5 text-sm">
-                    <p>{row.email}</p>
+                    <p className="break-all">{row.email}</p>
                     <p className="text-muted-foreground">{row.phone || "-"}</p>
                   </div>
                 </TableCell>
@@ -130,18 +183,22 @@ export function EmployeeDirectoryTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {(canManageEmployees || canEditPosition) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedEmployee(row);
-                        setDrawerOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {(canManageEmployees || canEditPosition) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Edit ${row.full_name}`}
+                        onClick={() => openEdit(row)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    )}
+                    {canManageEmployees && (
+                      <DeactivateDialog employee={row} />
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -149,228 +206,32 @@ export function EmployeeDirectoryTable({
         </TableBody>
       </Table>
 
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} direction="right">
+        <DrawerContent className="sm:max-w-3xl">
           <DrawerHeader>
-            <DrawerTitle>
-              {selectedEmployee?.full_name}
-            </DrawerTitle>
+            <DrawerTitle>{isCreate ? "Tambah Pegawai" : selectedEmployee?.full_name}</DrawerTitle>
             <DrawerDescription>
-              NIY: {selectedEmployee?.employee_no} • Unit: {selectedEmployee?.units?.name || "-"} • Status: {selectedEmployee?.is_active ? "Aktif" : "Non-aktif"}
+              {isCreate
+                ? "Buat akun login, profil, role, unit, dan jabatan awal."
+                : `NIY: ${selectedEmployee?.employee_no} - Unit: ${selectedEmployee?.units?.name || "-"} - Status: ${selectedEmployee?.is_active ? "Aktif" : "Non-aktif"}`}
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4">
-            <Tabs defaultValue={canManageEmployees ? "profil" : "jabatan"}>
-              <TabsList>
-                {canManageEmployees && <TabsTrigger value="profil">Profil</TabsTrigger>}
-                {canManageEmployees && <TabsTrigger value="role">Role</TabsTrigger>}
-                <TabsTrigger value="jabatan">Jabatan</TabsTrigger>
-              </TabsList>
-              {canManageEmployees && <TabsContent value="profil" className="space-y-4 py-4">
-  {selectedEmployee && (
-    <form action={updateEmployeeProfileAction} className="space-y-4">
-      <input type="hidden" name="id" value={selectedEmployee.id} />
-      
-      <div className="space-y-2">
-        <label htmlFor="full_name" className="text-sm font-medium">
-          Nama Lengkap
-        </label>
-        <Input
-          id="full_name"
-          name="full_name"
-          defaultValue={selectedEmployee.full_name}
-          required
-        />
-      </div>
 
-      <div className="space-y-2">
-        <label htmlFor="employee_no" className="text-sm font-medium">
-          NIY
-        </label>
-        <Input
-          id="employee_no"
-          name="employee_no"
-          defaultValue={selectedEmployee.employee_no}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          defaultValue={selectedEmployee.email}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="phone" className="text-sm font-medium">
-          No. HP
-        </label>
-        <Input
-          id="phone"
-          name="phone"
-          defaultValue={selectedEmployee.phone ?? ""}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="employee_status" className="text-sm font-medium">
-          Status Pegawai
-        </label>
-        <select
-          id="employee_status"
-          name="employee_status"
-          defaultValue={selectedEmployee.employee_status}
-          className="flex h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="TETAP">Tetap</option>
-          <option value="TIDAK_TETAP">Tidak Tetap</option>
-          <option value="KONTRAK">Kontrak</option>
-          <option value="HONORER">Honorer</option>
-          <option value="PENSIUN">Pensiun</option>
-        </select>
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="home_unit_id" className="text-sm font-medium">
-          Unit Home
-        </label>
-        <select
-          id="home_unit_id"
-          name="home_unit_id"
-          defaultValue={selectedEmployee.home_unit_id ?? ""}
-          className="flex h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="">Tanpa unit</option>
-          {units.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.code} - {unit.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="is_active"
-          name="is_active"
-          defaultChecked={selectedEmployee.is_active}
-        />
-        <label htmlFor="is_active" className="text-sm font-medium">
-          Pegawai Aktif
-        </label>
-      </div>
-
-      <Button type="submit" className="w-full">
-        Simpan Profil
-      </Button>
-    </form>
-  )}
-</TabsContent>}
-              {canManageEmployees && <TabsContent value="role" className="space-y-4 py-4">
-  {selectedEmployee && (
-    <form action={updateEmployeeRolesAction} className="space-y-4">
-      <input type="hidden" name="user_id" value={selectedEmployee.id} />
-      
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Pilih role yang sesuai untuk pegawai ini:
-        </p>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="role_pegawai"
-              name="PEGAWAI"
-              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("PEGAWAI")}
-            />
-            <label htmlFor="role_pegawai" className="text-sm font-medium">
-              PEGAWAI
-            </label>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            {isCreate && canManageEmployees ? (
+              <CreateEmployeeForm units={units} />
+            ) : selectedEmployee ? (
+              <EditEmployeeTabs
+                employee={selectedEmployee}
+                roles={rolesByUser[selectedEmployee.id] ?? []}
+                positionName={positionsByUser[selectedEmployee.id]?.[0] ?? ""}
+                units={units}
+                canManageEmployees={canManageEmployees}
+              />
+            ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="role_kepala_unit"
-              name="KEPALA_UNIT"
-              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("KEPALA_UNIT")}
-            />
-            <label htmlFor="role_kepala_unit" className="text-sm font-medium">
-              KEPALA_UNIT
-            </label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="role_hrd"
-              name="HRD"
-              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("HRD")}
-            />
-            <label htmlFor="role_hrd" className="text-sm font-medium">
-              HRD
-            </label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="role_admin"
-              name="ADMIN"
-              defaultChecked={rolesByUser[selectedEmployee.id]?.includes("ADMIN")}
-            />
-            <label htmlFor="role_admin" className="text-sm font-medium">
-              ADMIN
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <Button type="submit" className="w-full">
-        Simpan Role
-      </Button>
-    </form>
-  )}
-</TabsContent>}
-              <TabsContent value="jabatan" className="space-y-4 py-4">
-  {selectedEmployee && (
-    <form action={updateEmployeeCurrentPositionAction} className="space-y-4">
-      <input type="hidden" name="user_id" value={selectedEmployee.id} />
-      
-      <div className="space-y-2">
-        <label htmlFor="position_name" className="text-sm font-medium">
-          Jabatan Aktif
-        </label>
-        <Input
-          id="position_name"
-          name="position_name"
-          defaultValue={positionsByUser[selectedEmployee.id]?.[0] ?? ""}
-          placeholder="Contoh: Kepala Unit, Guru Matematika"
-          required
-        />
-        <p className="text-xs text-muted-foreground">
-          Jabatan yang sedang aktif untuk pegawai ini.
-        </p>
-      </div>
-
-      <Button type="submit" className="w-full">
-        Simpan Jabatan
-      </Button>
-    </form>
-  )}
-</TabsContent>
-            </Tabs>
-          </div>
-          <DrawerFooter>
+          <DrawerFooter className="border-t bg-popover">
             <DrawerClose asChild>
               <Button variant="outline">Tutup</Button>
             </DrawerClose>
@@ -378,6 +239,246 @@ export function EmployeeDirectoryTable({
         </DrawerContent>
       </Drawer>
     </>
+  );
+}
+
+function CreateEmployeeForm({ units }: { units: UnitOption[] }) {
+  return (
+    <form action={createEmployeeAction} className="space-y-5">
+      <ProfileSections units={units} />
+      <FormSection title="Role Awal">
+        <RoleCheckboxes roles={["PEGAWAI"]} />
+      </FormSection>
+      <FormSection title="Jabatan Awal">
+        <Field label="Jabatan Aktif" name="position_name" placeholder="Contoh: Guru Matematika" />
+      </FormSection>
+      <div className="sticky bottom-0 -mx-4 border-t bg-popover px-4 py-3">
+        <Button type="submit" className="w-full">Tambah Pegawai</Button>
+      </div>
+    </form>
+  );
+}
+
+function EditEmployeeTabs({
+  employee,
+  roles,
+  positionName,
+  units,
+  canManageEmployees,
+}: {
+  employee: EmployeeRow;
+  roles: string[];
+  positionName: string;
+  units: UnitOption[];
+  canManageEmployees: boolean;
+}) {
+  if (!canManageEmployees) {
+    return <PositionForm employee={employee} positionName={positionName} />;
+  }
+
+  return (
+    <Tabs defaultValue="profil" className="gap-4">
+      <TabsList className="flex h-auto w-full flex-wrap justify-start">
+        <TabsTrigger value="profil">Profil</TabsTrigger>
+        <TabsTrigger value="role">Role</TabsTrigger>
+        <TabsTrigger value="jabatan">Jabatan</TabsTrigger>
+      </TabsList>
+      <TabsContent value="profil">
+        <form action={updateEmployeeProfileAction} className="space-y-5">
+          <input type="hidden" name="id" value={employee.id} />
+          <ProfileSections employee={employee} units={units} />
+          <Button type="submit" className="w-full">Simpan Profil</Button>
+        </form>
+      </TabsContent>
+      <TabsContent value="role">
+        <form action={updateEmployeeRolesAction} className="space-y-5">
+          <input type="hidden" name="user_id" value={employee.id} />
+          <FormSection title="Role Pegawai">
+            <RoleCheckboxes roles={roles} />
+          </FormSection>
+          <Button type="submit" className="w-full">Simpan Role</Button>
+        </form>
+      </TabsContent>
+      <TabsContent value="jabatan">
+        <PositionForm employee={employee} positionName={positionName} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function ProfileSections({ employee, units }: { employee?: EmployeeRow; units: UnitOption[] }) {
+  return (
+    <>
+      <FormSection title="Akun & Kepegawaian">
+        <Field label="Nama Lengkap" name="full_name" defaultValue={employee?.full_name} required />
+        <Field label="NIY" name="employee_no" defaultValue={employee?.employee_no} required />
+        <Field label="Email" name="email" type="email" defaultValue={employee?.email} required />
+        <Field label="No. HP" name="phone" defaultValue={employee?.phone} />
+        <SelectField label="Unit Home" name="home_unit_id" defaultValue={employee?.home_unit_id ?? ""}>
+          <option value="">Tanpa unit</option>
+          {units.map((unit) => (
+            <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>
+          ))}
+        </SelectField>
+        <SelectField label="Status Pegawai" name="employee_status" defaultValue={employee?.employee_status ?? "TETAP"}>
+          <option value="TETAP">Tetap</option>
+          <option value="TIDAK_TETAP">Tidak Tetap</option>
+          <option value="KONTRAK">Kontrak</option>
+          <option value="HONORER">Honorer</option>
+          <option value="PENSIUN">Pensiun</option>
+        </SelectField>
+        <CheckboxField label="Pegawai Aktif" name="is_active" defaultChecked={employee?.is_active ?? true} />
+      </FormSection>
+
+      <FormSection title="Data Pribadi">
+        <SelectField label="Jenis Kelamin" name="gender" defaultValue={employee?.gender ?? "L"}>
+          <option value="L">Laki-laki</option>
+          <option value="P">Perempuan</option>
+        </SelectField>
+        <SelectField label="Status Perkawinan" name="marital_status" defaultValue={employee?.marital_status ?? ""}>
+          <option value="">Pilih status</option>
+          <option value="Sudah Kawin">Sudah Kawin</option>
+          <option value="Belum Kawin">Belum Kawin</option>
+          <option value="Cerai">Cerai</option>
+        </SelectField>
+        <Field label="Tempat Lahir" name="birth_place" defaultValue={employee?.birth_place} />
+        <Field label="Tanggal Lahir" name="birth_date" type="date" defaultValue={employee?.birth_date} />
+        <SelectField label="Pendidikan Terakhir" name="last_education" defaultValue={employee?.last_education ?? ""}>
+          <option value="">Pilih pendidikan</option>
+          <option value="SD/Sederajat">SD/Sederajat</option>
+          <option value="SMP/Sederajat">SMP/Sederajat</option>
+          <option value="SMA/SMK/Sederajat">SMA/SMK/Sederajat</option>
+          <option value="D1/D2/D3">D1/D2/D3</option>
+          <option value="D4/S1">D4/S1</option>
+          <option value="S2">S2</option>
+          <option value="S3">S3</option>
+        </SelectField>
+        <Field label="Program Studi" name="study_program" defaultValue={employee?.study_program} />
+      </FormSection>
+
+      <FormSection title="Kontak & Alamat">
+        <Field label="Facebook" name="facebook" defaultValue={employee?.facebook} />
+        <Field label="Instagram" name="instagram" defaultValue={employee?.instagram} />
+        <Field label="Twitter" name="twitter" defaultValue={employee?.twitter} />
+        <TextareaField label="Alamat KTP" name="address_ktp" defaultValue={employee?.address_ktp} />
+        <TextareaField label="Alamat Domisili" name="address_domicile" defaultValue={employee?.address_domicile} />
+      </FormSection>
+    </>
+  );
+}
+
+function PositionForm({ employee, positionName }: { employee: EmployeeRow; positionName: string }) {
+  return (
+    <form action={updateEmployeeCurrentPositionAction} className="space-y-5">
+      <input type="hidden" name="user_id" value={employee.id} />
+      <FormSection title="Jabatan Aktif">
+        <Field
+          label="Jabatan Aktif"
+          name="position_name"
+          defaultValue={positionName}
+          placeholder="Contoh: Kepala Unit, Guru Matematika"
+          required
+        />
+      </FormSection>
+      <Button type="submit" className="w-full">Simpan Jabatan</Button>
+    </form>
+  );
+}
+
+function DeactivateDialog({ employee }: { employee: EmployeeRow }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger render={<Button variant="ghost" size="sm" aria-label={`Nonaktifkan ${employee.full_name}`} />}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+        <span className="sr-only">Nonaktifkan</span>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <form action={deactivateEmployeeAction}>
+          <input type="hidden" name="id" value={employee.id} />
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nonaktifkan pegawai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {employee.full_name} akan ditandai non-aktif dan Pensiun. Riwayat data tetap disimpan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction type="submit" variant="destructive">Nonaktifkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </form>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3 rounded-[var(--radius-md)] border bg-secondary/30 p-4">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+type NullableInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "defaultValue"> & {
+  label: string;
+  defaultValue?: string | number | readonly string[] | null;
+};
+
+type NullableTextareaProps = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "defaultValue"> & {
+  label: string;
+  defaultValue?: string | number | readonly string[] | null;
+};
+
+function Field({ label, defaultValue, ...props }: NullableInputProps) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-muted-foreground" htmlFor={props.id ?? props.name}>{label}</label>
+      <Input id={props.id ?? props.name} defaultValue={defaultValue ?? ""} {...props} />
+    </div>
+  );
+}
+
+function TextareaField({ label, defaultValue, ...props }: NullableTextareaProps) {
+  return (
+    <div className="space-y-1.5 sm:col-span-2">
+      <label className="text-xs font-medium text-muted-foreground" htmlFor={props.id ?? props.name}>{label}</label>
+      <Textarea id={props.id ?? props.name} defaultValue={defaultValue ?? ""} className="min-h-24" {...props} />
+    </div>
+  );
+}
+
+function SelectField({ label, className, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) {
+  return (
+    <div className={className ? `space-y-1.5 ${className}` : "space-y-1.5"}>
+      <label className="text-xs font-medium text-muted-foreground" htmlFor={props.id ?? props.name}>{label}</label>
+      <select
+        id={props.id ?? props.name}
+        className="h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        {...props}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
+function CheckboxField({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <div className="flex items-center gap-2 self-end rounded-[var(--radius-sm)] border bg-background px-3 py-2">
+      <input id={props.id ?? props.name} type="checkbox" className="h-4 w-4" {...props} />
+      <label className="text-sm font-medium" htmlFor={props.id ?? props.name}>{label}</label>
+    </div>
+  );
+}
+
+function RoleCheckboxes({ roles }: { roles: string[] }) {
+  return (
+    <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+      {roleOptions.map((role) => (
+        <CheckboxField key={role} label={role} name={role} defaultChecked={roles.includes(role)} />
+      ))}
+    </div>
   );
 }
 
