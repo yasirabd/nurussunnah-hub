@@ -1,0 +1,224 @@
+import type { ReactNode } from "react";
+
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+export type EmployeeFormValue = {
+  full_name?: string | null;
+  employee_no?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  gender?: "L" | "P" | null;
+  marital_status?: string | null;
+  birth_place?: string | null;
+  birth_date?: string | null;
+  last_education?: string | null;
+  study_program?: string | null;
+  address_ktp?: string | null;
+  address_domicile?: string | null;
+  facebook?: string | null;
+  instagram?: string | null;
+  twitter?: string | null;
+  employee_status?: string | null;
+  is_active?: boolean | null;
+  home_unit_id?: string | null;
+};
+
+export type UnitOption = {
+  id: string;
+  name: string;
+  code: string;
+};
+
+const roleOptions = ["PEGAWAI", "KEPALA_UNIT", "HRD", "ADMIN"] as const;
+
+export function EmployeeFormFields({
+  employee,
+  units,
+  showDefaultPasswordHelp = false,
+}: {
+  employee?: EmployeeFormValue | null;
+  units: UnitOption[];
+  showDefaultPasswordHelp?: boolean;
+}) {
+  return (
+    <>
+      <FormSection title="Akun & Kepegawaian">
+        <Field label="Nama Lengkap" name="full_name" defaultValue={employee?.full_name} required />
+        <Field
+          label="NIY"
+          name="employee_no"
+          defaultValue={employee?.employee_no}
+          helper="Spasi akan dihapus dan huruf dibuat kapital."
+          required
+        />
+        <Field label="Email" name="email" type="email" defaultValue={employee?.email} required />
+        <Field label="No. HP" name="phone" defaultValue={employee?.phone} />
+        <SelectField label="Unit Home" name="home_unit_id" defaultValue={employee?.home_unit_id ?? ""}>
+          <option value="">Pilih unit</option>
+          {units.map((unit) => (
+            <option key={unit.id} value={unit.id}>
+              {unit.code} - {unit.name}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField label="Status Pegawai" name="employee_status" defaultValue={employee?.employee_status ?? "TETAP"}>
+          <option value="TETAP">Tetap</option>
+          <option value="TIDAK_TETAP">Tidak Tetap</option>
+          <option value="KONTRAK">Kontrak</option>
+          <option value="HONORER">Honorer</option>
+          <option value="PENSIUN">Pensiun</option>
+        </SelectField>
+        <CheckboxField
+          label="Pegawai Aktif"
+          name="is_active"
+          helper="Nonaktifkan hanya jika pegawai tidak boleh mengakses sistem."
+          defaultChecked={employee?.is_active ?? true}
+        />
+        {showDefaultPasswordHelp && (
+          <p className="rounded-[var(--radius-md)] bg-primary/10 p-3 text-sm text-primary md:col-span-2">
+            Password awal pegawai baru adalah bismillahns dan wajib diganti saat login pertama.
+          </p>
+        )}
+      </FormSection>
+
+      <FormSection title="Data Pribadi">
+        <SelectField label="Jenis Kelamin" name="gender" defaultValue={employee?.gender ?? "L"}>
+          <option value="L">Laki-laki</option>
+          <option value="P">Perempuan</option>
+        </SelectField>
+        <SelectField label="Status Perkawinan" name="marital_status" defaultValue={employee?.marital_status ?? ""}>
+          <option value="">Pilih status</option>
+          <option value="Sudah Kawin">Sudah Kawin</option>
+          <option value="Belum Kawin">Belum Kawin</option>
+          <option value="Cerai">Cerai</option>
+        </SelectField>
+        <Field label="Tempat Lahir" name="birth_place" defaultValue={employee?.birth_place} />
+        <Field label="Tanggal Lahir" name="birth_date" type="date" defaultValue={employee?.birth_date} />
+        <SelectField label="Pendidikan Terakhir" name="last_education" defaultValue={employee?.last_education ?? ""}>
+          <option value="">Pilih pendidikan</option>
+          <option value="SD/Sederajat">SD/Sederajat</option>
+          <option value="SMP/Sederajat">SMP/Sederajat</option>
+          <option value="SMA/SMK/Sederajat">SMA/SMK/Sederajat</option>
+          <option value="D1/D2/D3">D1/D2/D3</option>
+          <option value="D4/S1">D4/S1</option>
+          <option value="S2">S2</option>
+          <option value="S3">S3</option>
+        </SelectField>
+        <Field label="Program Studi" name="study_program" defaultValue={employee?.study_program} />
+      </FormSection>
+
+      <FormSection title="Kontak & Alamat">
+        <Field label="Facebook" name="facebook" defaultValue={employee?.facebook} />
+        <Field label="Instagram" name="instagram" defaultValue={employee?.instagram} />
+        <Field label="Twitter" name="twitter" defaultValue={employee?.twitter} />
+        <TextareaField label="Alamat KTP" name="address_ktp" defaultValue={employee?.address_ktp} />
+        <TextareaField label="Alamat Domisili" name="address_domicile" defaultValue={employee?.address_domicile} />
+      </FormSection>
+    </>
+  );
+}
+
+export function RoleCheckboxes({ roles }: { roles: string[] }) {
+  return (
+    <FormSection title="Role">
+      <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
+        {roleOptions.map((role) => (
+          <CheckboxField key={role} label={role} name={role} defaultChecked={roles.includes(role)} />
+        ))}
+      </div>
+    </FormSection>
+  );
+}
+
+export function PositionField({ positionName }: { positionName?: string | null }) {
+  return (
+    <FormSection title="Jabatan">
+      <Field
+        label="Jabatan Aktif"
+        name="position_name"
+        defaultValue={positionName}
+        placeholder="Contoh: Kepala Unit, Guru Matematika"
+        helper="Isi jabatan aktif yang sedang berlaku."
+      />
+    </FormSection>
+  );
+}
+
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-4 rounded-[var(--radius-md)] border bg-secondary/30 p-4">
+      <h2 className="text-base font-semibold tracking-normal">{title}</h2>
+      <div className="grid gap-4 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+type NullableInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "defaultValue"> & {
+  label: string;
+  helper?: string;
+  defaultValue?: string | number | readonly string[] | null;
+};
+
+type NullableTextareaProps = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "defaultValue"> & {
+  label: string;
+  helper?: string;
+  defaultValue?: string | number | readonly string[] | null;
+};
+
+function Field({ label, helper, defaultValue, ...props }: NullableInputProps) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium" htmlFor={props.id ?? props.name}>{label}</label>
+      <Input id={props.id ?? props.name} defaultValue={defaultValue ?? ""} {...props} />
+      {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
+    </div>
+  );
+}
+
+function TextareaField({ label, helper, defaultValue, ...props }: NullableTextareaProps) {
+  return (
+    <div className="space-y-1.5 md:col-span-2">
+      <label className="text-sm font-medium" htmlFor={props.id ?? props.name}>{label}</label>
+      <Textarea id={props.id ?? props.name} defaultValue={defaultValue ?? ""} className="min-h-28" {...props} />
+      {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  helper,
+  children,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; helper?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium" htmlFor={props.id ?? props.name}>{label}</label>
+      <select
+        id={props.id ?? props.name}
+        className="h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        {...props}
+      >
+        {children}
+      </select>
+      {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
+    </div>
+  );
+}
+
+function CheckboxField({
+  label,
+  helper,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; helper?: string }) {
+  return (
+    <div className="space-y-1.5 rounded-[var(--radius-sm)] border bg-background p-3">
+      <div className="flex items-center gap-2">
+        <input id={props.id ?? props.name} type="checkbox" className="h-4 w-4" {...props} />
+        <label className="text-sm font-medium" htmlFor={props.id ?? props.name}>{label}</label>
+      </div>
+      {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
+    </div>
+  );
+}
