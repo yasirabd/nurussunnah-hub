@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/server";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
+import { PaginationControls } from "./_components/pagination-controls";
 
 export const metadata: Metadata = { title: "Direktori Pegawai - Nurussunnah Hub" };
 
@@ -66,6 +67,16 @@ function paramValue(
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
+function positiveInt(value: string, fallback: number) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function pageSizeValue(value: string) {
+  const parsed = positiveInt(value, 10);
+  return [10, 25, 50].includes(parsed) ? parsed : 10;
+}
+
 export default async function EmployeesPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const supabase = await createClient();
@@ -89,9 +100,13 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   const q = paramValue(params, "q").trim();
   const unitId = paramValue(params, "unit");
   const requestedActive = paramValue(params, "active") || "active";
+  const page = positiveInt(paramValue(params, "page"), 1);
+  const pageSize = pageSizeValue(paramValue(params, "pageSize"));
   const success = paramValue(params, "success");
   const errorMessage = paramValue(params, "error");
   const active = canFilterInactive ? requestedActive : "active";
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   const [{ data: allUnits }, { data: myAssignments }, { data: myProfile }] = await Promise.all([
     supabase.from("units").select("id, name, code").order("code", { ascending: true }),
@@ -125,9 +140,11 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, is_active, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)"
+      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, is_active, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)",
+      { count: "exact" }
     )
-    .order("full_name", { ascending: true });
+    .order("full_name", { ascending: true })
+    .range(from, to);
 
   if (q) {
     query = query.or(`full_name.ilike.%${q}%,employee_no.ilike.%${q}%,email.ilike.%${q}%`);
@@ -137,9 +154,10 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   if (active === "active") query = query.eq("is_active", true);
   if (active === "inactive") query = query.eq("is_active", false);
 
-  const { data: profiles, error } = await query;
+  const { data: profiles, error, count } = await query;
   const rows = (profiles ?? []) as ProfileRow[];
   const ids = rows.map((row) => row.id);
+  const totalRows = count ?? 0;
 
   const { data: userRoles } = ids.length
     ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
@@ -158,6 +176,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   const positionsByUser = groupByUser(positions ?? []);
   const activeCount = rows.filter((row) => row.is_active).length;
   const unitCount = new Set(rows.map((row) => row.units?.id).filter(Boolean)).size;
+  const flatParams = Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [key, Array.isArray(value) ? value[0] ?? "" : value ?? ""])
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -169,7 +190,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           </p>
         </div>
         <Badge className="h-7 w-fit rounded-[var(--radius-full)] border-0 bg-primary/10 px-3 text-primary">
-          {rows.length} pegawai tampil
+          {totalRows} pegawai ditemukan
         </Badge>
       </div>
 
@@ -185,9 +206,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
       )}
 
       <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon={Users} label="Pegawai tampil" value={String(rows.length)} />
-        <MetricCard icon={Users} label="Pegawai aktif" value={String(activeCount)} />
-        <MetricCard icon={Building2} label="Unit tercakup" value={String(unitCount)} />
+        <MetricCard icon={Users} label="Total hasil filter" value={String(totalRows)} />
+        <MetricCard icon={Users} label="Aktif di halaman ini" value={String(activeCount)} />
+        <MetricCard icon={Building2} label="Unit di halaman ini" value={String(unitCount)} />
       </div>
 
       <Card>
@@ -197,6 +218,8 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           <form className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto]">
+            <input type="hidden" name="page" value="1" />
+            <input type="hidden" name="pageSize" value={pageSize} />
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input name="q" defaultValue={q} className="pl-9" placeholder="Cari pegawai" />
@@ -231,7 +254,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         <CardHeader>
           <CardTitle>Daftar Pegawai</CardTitle>
           <CardDescription>
-            {rows.length} pegawai ditemukan
+            {totalRows} pegawai ditemukan
             {(q || unitId || active !== "active") && (
               <Link href="/dashboard/employees" className="ml-2 text-sm font-medium text-primary">
                 Reset filter
@@ -252,6 +275,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               canEditPosition={canManageEmployees || roles.includes("KEPALA_UNIT")}
             />
           )}
+          <div className="mt-4">
+            <PaginationControls page={page} pageSize={pageSize} total={totalRows} searchParams={flatParams} />
+          </div>
         </CardContent>
       </Card>
     </div>
