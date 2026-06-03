@@ -10,6 +10,16 @@ function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim();
 }
 
+function safeReturnTo(formData: FormData) {
+  const value = text(formData, 'return_to');
+  return value.startsWith('/dashboard/employees') ? value : '/dashboard/employees';
+}
+
+function redirectToPath(path: string, ok: boolean, message: string): never {
+  const separator = path.includes('?') ? '&' : '?';
+  redirect(`${path}${separator}${ok ? 'success' : 'error'}=${encodeURIComponent(message)}`);
+}
+
 function redirectWith(ok: boolean, message: string): never {
   redirect(`/dashboard/employees?${ok ? 'success' : 'error'}=${encodeURIComponent(message)}`);
 }
@@ -148,6 +158,7 @@ async function replaceRoles(
 
 export async function updateEmployeeProfileAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();
+  const returnTo = safeReturnTo(formData);
   const id = text(formData, 'id');
   const payload = profilePayload(formData);
 
@@ -155,28 +166,29 @@ export async function updateEmployeeProfileAction(formData: FormData) {
 
   if (error) {
     revalidatePath('/dashboard/employees');
-    redirectWith(false, error.message);
+    redirectToPath(returnTo, false, error.message);
   }
 
   try {
     await syncHomeAssignment(supabase, id, payload.home_unit_id);
   } catch (syncError) {
     revalidatePath('/dashboard/employees');
-    redirectWith(false, syncError instanceof Error ? syncError.message : 'Gagal menyimpan unit pegawai.');
+    redirectToPath(returnTo, false, syncError instanceof Error ? syncError.message : 'Gagal menyimpan unit pegawai.');
   }
 
   revalidatePath('/dashboard/employees');
-  redirectWith(true, 'Data pegawai berhasil diperbarui.');
+  redirectToPath(returnTo, true, 'Data pegawai berhasil diperbarui.');
 }
 
 export async function createEmployeeAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();
   const admin = createAdminClient();
+  const returnTo = safeReturnTo(formData);
   const payload = profilePayload(formData);
 
-  if (!payload.full_name) redirectWith(false, 'Nama lengkap wajib diisi.');
-  if (!payload.employee_no) redirectWith(false, 'NIY wajib diisi.');
-  if (!payload.email) redirectWith(false, 'Email wajib diisi.');
+  if (!payload.full_name) redirectToPath(returnTo, false, 'Nama lengkap wajib diisi.');
+  if (!payload.employee_no) redirectToPath(returnTo, false, 'NIY wajib diisi.');
+  if (!payload.email) redirectToPath(returnTo, false, 'Email wajib diisi.');
 
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email: payload.email,
@@ -190,7 +202,7 @@ export async function createEmployeeAction(formData: FormData) {
   });
 
   if (authError || !authData.user?.id) {
-    redirectWith(false, authError?.message ?? 'Gagal membuat akun login pegawai.');
+    redirectToPath(returnTo, false, authError?.message ?? 'Gagal membuat akun login pegawai.');
   }
 
   const userId = authData.user.id;
@@ -199,13 +211,13 @@ export async function createEmployeeAction(formData: FormData) {
     ...payload,
     must_change_password: true,
   });
-  if (profileError) redirectWith(false, profileError.message);
+  if (profileError) redirectToPath(returnTo, false, profileError.message);
 
   try {
     await replaceRoles(supabase, userId, selectedRoles(formData));
     await syncHomeAssignment(supabase, userId, payload.home_unit_id);
   } catch (relationError) {
-    redirectWith(false, relationError instanceof Error ? relationError.message : 'Gagal menyimpan relasi pegawai.');
+    redirectToPath(returnTo, false, relationError instanceof Error ? relationError.message : 'Gagal menyimpan relasi pegawai.');
   }
 
   const positionName = text(formData, 'position_name');
@@ -217,7 +229,7 @@ export async function createEmployeeAction(formData: FormData) {
       start_date: new Date().toISOString().slice(0, 10),
       is_current: true,
     });
-    if (positionError) redirectWith(false, positionError.message);
+    if (positionError) redirectToPath(returnTo, false, positionError.message);
   }
 
   revalidatePath('/dashboard/employees');
@@ -226,17 +238,18 @@ export async function createEmployeeAction(formData: FormData) {
 
 export async function updateEmployeeRolesAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();
+  const returnTo = safeReturnTo(formData);
   const userId = text(formData, 'user_id');
   const roles = selectedRoles(formData);
 
   try {
     await replaceRoles(supabase, userId, roles);
   } catch (roleError) {
-    redirectWith(false, roleError instanceof Error ? roleError.message : 'Gagal menyimpan role pegawai.');
+    redirectToPath(returnTo, false, roleError instanceof Error ? roleError.message : 'Gagal menyimpan role pegawai.');
   }
 
   revalidatePath('/dashboard/employees');
-  redirectWith(true, 'Role pegawai berhasil diperbarui.');
+  redirectToPath(returnTo, true, 'Role pegawai berhasil diperbarui.');
 }
 
 export async function deactivateEmployeeAction(formData: FormData) {
@@ -261,12 +274,13 @@ export async function deactivateEmployeeAction(formData: FormData) {
 
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
   const supabase = await createClient();
+  const returnTo = safeReturnTo(formData);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 
   const userId = text(formData, 'user_id');
   const positionName = text(formData, 'position_name');
-  if (!positionName) redirectWith(false, 'Nama jabatan wajib diisi.');
+  if (!positionName) redirectToPath(returnTo, false, 'Nama jabatan wajib diisi.');
 
   const { data: roleRows } = await supabase
     .from('user_roles')
@@ -286,9 +300,9 @@ export async function updateEmployeeCurrentPositionAction(formData: FormData) {
       .eq('id', userId)
       .maybeSingle();
 
-    if (targetError) redirectWith(false, targetError.message);
+    if (targetError) redirectToPath(returnTo, false, targetError.message);
     if (!targetProfile?.home_unit_id || !allowedUnitIds.includes(targetProfile.home_unit_id)) {
-      redirectWith(false, 'Anda tidak berwenang mengubah jabatan pegawai di luar unit Anda.');
+      redirectToPath(returnTo, false, 'Anda tidak berwenang mengubah jabatan pegawai di luar unit Anda.');
     }
   }
 
@@ -299,8 +313,8 @@ export async function updateEmployeeCurrentPositionAction(formData: FormData) {
     .eq('is_current', true)
     .maybeSingle();
 
-  if (existingError) redirectWith(false, existingError.message);
-  if (!existingPosition?.id) redirectWith(false, 'Pegawai belum memiliki jabatan aktif.');
+  if (existingError) redirectToPath(returnTo, false, existingError.message);
+  if (!existingPosition?.id) redirectToPath(returnTo, false, 'Pegawai belum memiliki jabatan aktif.');
 
   const { error } = await supabase
     .from('position_histories')
@@ -309,7 +323,7 @@ export async function updateEmployeeCurrentPositionAction(formData: FormData) {
     .eq('is_current', true);
 
   revalidatePath('/dashboard/employees');
-  redirectWith(!error, error ? error.message : 'Jabatan pegawai berhasil diperbarui.');
+  redirectToPath(returnTo, !error, error ? error.message : 'Jabatan pegawai berhasil diperbarui.');
 }
 
 
