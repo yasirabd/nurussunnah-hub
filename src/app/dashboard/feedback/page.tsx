@@ -20,8 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/server";
 import {
   FeedbackTargetCarousel,
   type FeedbackTarget,
@@ -152,20 +152,12 @@ function buildFeedbackHref(
 
 export default async function FeedbackPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  const context = await getDashboardUserContext();
+  if (!context) redirect("/auth/login");
 
-  const { data: rolesData } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id);
-
-  const roles = (rolesData ?? []).map((item) => item.role);
-  const canViewIdentified = roles.includes("HRD") || roles.includes("ADMIN");
-  const canMonitor = canViewIdentified || roles.includes("KEPALA_UNIT");
+  const supabase = context.supabase;
+  const canViewIdentified = context.isHrd || context.isAdmin;
+  const canMonitor = canViewIdentified || context.isKepalaUnit;
 
   const { data: activeYear } = await supabase
     .from("academic_years")
@@ -173,36 +165,31 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
     .eq("is_active", true)
     .single();
 
-  const { data: targetsData } = activeYear
-    ? await supabase.rpc("get_feedback_targets", {
-        p_academic_year_id: activeYear.id,
-      })
-    : { data: [] };
-
-  const { data: receivedData } = activeYear
-    ? await supabase.rpc("get_received_feedback_anonymous", {
-        p_academic_year_id: activeYear.id,
-      })
-    : { data: [] };
-
-  const { data: monitoringData } =
-    activeYear && canMonitor
-      ? await supabase.rpc("get_feedback_monitoring_scoped", {
+  const [targetsResult, receivedResult, monitoringResult, identifiedResult] = activeYear
+    ? await Promise.all([
+        supabase.rpc("get_feedback_targets", {
           p_academic_year_id: activeYear.id,
-        })
-      : { data: [] };
-
-  const { data: identifiedData } =
-    activeYear && canViewIdentified
-      ? await supabase.rpc("get_feedback_identified", {
+        }),
+        supabase.rpc("get_received_feedback_anonymous", {
           p_academic_year_id: activeYear.id,
-        })
-      : { data: [] };
+        }),
+        canMonitor
+          ? supabase.rpc("get_feedback_monitoring_scoped", {
+              p_academic_year_id: activeYear.id,
+            })
+          : Promise.resolve({ data: [] }),
+        canViewIdentified
+          ? supabase.rpc("get_feedback_identified", {
+              p_academic_year_id: activeYear.id,
+            })
+          : Promise.resolve({ data: [] }),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
-  const targets = (targetsData ?? []) as FeedbackTarget[];
-  const received = receivedData ?? [];
-  const monitoring = (monitoringData ?? []) as MonitoringRow[];
-  const identified = (identifiedData ?? []) as IdentifiedFeedback[];
+  const targets = (targetsResult.data ?? []) as FeedbackTarget[];
+  const received = receivedResult.data ?? [];
+  const monitoring = (monitoringResult.data ?? []) as MonitoringRow[];
+  const identified = (identifiedResult.data ?? []) as IdentifiedFeedback[];
   const monitorUnit = paramValue(params, "monitorUnit") ?? "all";
   const identifiedUnit = canViewIdentified
     ? paramValue(params, "identifiedUnit") ?? "all"

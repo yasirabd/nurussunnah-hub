@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/server";
+import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
 import { PaginationControls } from "./_components/pagination-controls";
 
@@ -79,22 +79,14 @@ function pageSizeValue(value: string) {
 
 export default async function EmployeesPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  const context = await getDashboardUserContext();
+  if (!context) redirect("/auth/login");
 
-  const { data: roleData } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id);
-
-  const roles = (roleData ?? []).map((item) => item.role);
-  const canManageEmployees = roles.includes("HRD") || roles.includes("ADMIN");
+  const supabase = context.supabase;
+  const roles = context.roles;
+  const canManageEmployees = context.isHrd || context.isAdmin;
   const canFilterInactive = canManageEmployees;
-  const canOpenDirectory =
-    roles.includes("HRD") || roles.includes("ADMIN") || roles.includes("KEPALA_UNIT");
+  const canOpenDirectory = canManageEmployees || context.isKepalaUnit;
   if (!canOpenDirectory) redirect("/dashboard");
 
   const q = paramValue(params, "q").trim();
@@ -113,9 +105,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
     supabase
       .from("user_unit_assignments")
       .select("unit_id")
-      .eq("user_id", user.id)
+      .eq("user_id", context.user.id)
       .eq("assignment_type", "HOME"),
-    supabase.from("profiles").select("home_unit_id").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("home_unit_id").eq("id", context.user.id).maybeSingle(),
   ]);
 
   const allowedUnitIds = canManageEmployees

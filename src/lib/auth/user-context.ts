@@ -10,11 +10,11 @@ type DashboardProfile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
-  employee_status: string | null;
+  employee_status: string;
   home_unit_id: string | null;
-  is_active: boolean | null;
-  must_change_password: boolean | null;
-  units: { name: string | null } | null;
+  is_active: boolean;
+  must_change_password: boolean;
+  units: { id: string; name: string; code: string } | null;
 };
 
 export type DashboardUserContext = {
@@ -40,7 +40,7 @@ export const getDashboardUserContext = cache(
       supabase
         .from("profiles")
         .select(
-          "id, full_name, avatar_url, employee_status, home_unit_id, is_active, must_change_password, units!profiles_home_unit_id_fkey(name)"
+          "id, full_name, avatar_url, employee_status, home_unit_id, is_active, must_change_password, units!profiles_home_unit_id_fkey(id, name, code)"
         )
         .eq("id", user.id)
         .maybeSingle(),
