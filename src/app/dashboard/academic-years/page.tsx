@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-import { createClient } from "@/lib/supabase/server";
+import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { AcademicYearsClient } from "./academic-years-client";
 
 export const metadata: Metadata = { title: "Tahun Pelajaran - Nurussunnah Hub" };
@@ -20,22 +20,13 @@ function messageValue(
 
 export default async function AcademicYearsPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  const context = await getDashboardUserContext();
+  if (!context) redirect("/auth/login");
 
-  const { data: roleData } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id);
-
-  const roles = (roleData ?? []).map((item) => item.role);
-  const canManage = roles.includes("HRD") || roles.includes("ADMIN");
+  const canManage = context.isHrd || context.isAdmin;
   if (!canManage) redirect("/dashboard");
 
-  const { data: years, error } = await supabase
+  const { data: years, error } = await context.supabase
     .from("academic_years")
     .select("*")
     .order("start_date", { ascending: false });

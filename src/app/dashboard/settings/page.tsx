@@ -5,17 +5,14 @@ import { Building2, CalendarDays, ShieldCheck, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/server';
+import { getDashboardUserContext } from '@/lib/auth/user-context';
 
 export const metadata: Metadata = { title: 'Pengaturan - Nurussunnah Hub' };
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login');
-
-  const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
-  if (!(roles ?? []).some((item) => item.role === 'ADMIN')) redirect('/dashboard');
+  const context = await getDashboardUserContext();
+  if (!context) redirect('/auth/login');
+  if (!context.isAdmin) redirect('/dashboard');
 
   const items = [
     { href: '/dashboard/units', icon: Building2, title: 'Unit & Organisasi', description: 'Kelola struktur yayasan dan unit sekolah.' },
