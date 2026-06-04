@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CheckCircle2, Eye, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { DataPagination } from "@/components/ui/data-pagination";
 import {
   Card,
   CardContent,
@@ -232,8 +233,12 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
     : 1;
   const pagedMonitoring = pageSlice(filteredMonitoring, monitorPage, monitorPageSize);
   const pagedIdentified = pageSlice(filteredIdentified, identifiedPage, identifiedPageSize);
-  const monitorTotalPages = pageCount(filteredMonitoring.length, monitorPageSize);
-  const identifiedTotalPages = pageCount(filteredIdentified.length, identifiedPageSize);
+  const flatParams = Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value[0] ?? "" : value ?? "",
+    ])
+  );
   const unitReminderProgress = buildUnitReminderProgress(monitoring);
   const completedCount = targets.filter((target) => target.is_completed).length;
   const targetCount = targets.length;
@@ -449,13 +454,16 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <TableMeta
-                    total={filteredMonitoring.length}
-                    page={monitorPage}
-                    totalPages={monitorTotalPages}
-                    resetHref={buildFeedbackHref(params, { monitorUnit: null, monitorPage: null })}
-                    showReset={monitorUnit !== "all"}
-                  />
+                  {monitorUnit !== "all" && (
+                    <div className="flex justify-end text-sm">
+                      <Link
+                        className="text-primary hover:underline"
+                        href={buildFeedbackHref(params, { monitorUnit: null, monitorPage: null })}
+                      >
+                        Reset filter
+                      </Link>
+                    </div>
+                  )}
                   {filteredMonitoring.length === 0 ? (
                     <EmptyTable message="Tidak ada pegawai pada filter unit ini." />
                   ) : (
@@ -497,10 +505,15 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                       </TableBody>
                     </Table>
                   )}
-                  <PaginationLinks
+                  <DataPagination
+                    basePath="/dashboard/feedback"
+                    searchParams={flatParams}
+                    pageParam="monitorPage"
+                    pageSizeParam="monitorPageSize"
                     page={monitorPage}
-                    totalPages={monitorTotalPages}
-                    pageHref={(page) => buildFeedbackHref(params, { monitorPage: page })}
+                    pageSize={monitorPageSize}
+                    total={filteredMonitoring.length}
+                    itemLabel="data monitoring"
                   />
                 </CardContent>
               </Card>
@@ -530,13 +543,16 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <TableMeta
-                      total={filteredIdentified.length}
-                      page={identifiedPage}
-                      totalPages={identifiedTotalPages}
-                      resetHref={buildFeedbackHref(params, { identifiedUnit: null, identifiedPage: null })}
-                      showReset={identifiedUnit !== "all"}
-                    />
+                    {identifiedUnit !== "all" && (
+                      <div className="flex justify-end text-sm">
+                        <Link
+                          className="text-primary hover:underline"
+                          href={buildFeedbackHref(params, { identifiedUnit: null, identifiedPage: null })}
+                        >
+                          Reset filter
+                        </Link>
+                      </div>
+                    )}
                     {filteredIdentified.length === 0 ? (
                       <EmptyTable message="Belum ada feedback yang sesuai filter." />
                     ) : (
@@ -572,10 +588,15 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                         </TableBody>
                       </Table>
                     )}
-                    <PaginationLinks
+                    <DataPagination
+                      basePath="/dashboard/feedback"
+                      searchParams={flatParams}
+                      pageParam="identifiedPage"
+                      pageSizeParam="identifiedPageSize"
                       page={identifiedPage}
-                      totalPages={identifiedTotalPages}
-                      pageHref={(page) => buildFeedbackHref(params, { identifiedPage: page })}
+                      pageSize={identifiedPageSize}
+                      total={filteredIdentified.length}
+                      itemLabel="feedback"
                     />
                   </CardContent>
                 </Card>
@@ -691,137 +712,11 @@ function UnitFilterForm({
   );
 }
 
-function TableMeta({
-  total,
-  page,
-  totalPages,
-  resetHref,
-  showReset,
-}: {
-  total: number;
-  page: number;
-  totalPages: number;
-  resetHref: string;
-  showReset: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-      <span>
-        {total} data - halaman {page}/{totalPages}
-      </span>
-      {showReset && (
-        <Link className="text-primary hover:underline" href={resetHref}>
-          Reset filter
-        </Link>
-      )}
-    </div>
-  );
-}
-
 function EmptyTable({ message }: { message: string }) {
   return (
     <p className="rounded-[var(--radius-md)] border bg-secondary/60 px-4 py-6 text-center text-sm text-muted-foreground">
       {message}
     </p>
-  );
-}
-
-function PaginationLinks({
-  page,
-  totalPages,
-  pageHref,
-}: {
-  page: number;
-  totalPages: number;
-  pageHref: (page: number) => string;
-}) {
-  if (totalPages <= 1) return null;
-
-  const pages = paginationWindow(page, totalPages);
-
-  return (
-    <Table>
-      <TableBody>
-        <TableRow className="hover:bg-transparent">
-          <TableCell className="text-sm text-muted-foreground">
-            Halaman {page} dari {totalPages}
-          </TableCell>
-          <TableCell className="text-right">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <PaginationButton
-                disabled={page <= 1}
-                href={pageHref(page - 1)}
-                label="Sebelumnya"
-              />
-              {pages.map((item, index) =>
-                item === "ellipsis" ? (
-                  <span key={`${item}-${index}`} className="px-1 text-sm text-muted-foreground">
-                    ...
-                  </span>
-                ) : (
-                  <Link
-                    key={item}
-                    href={pageHref(item)}
-                    className={cn(
-                      "flex h-8 min-w-8 items-center justify-center rounded-[var(--radius-full)] border px-2 text-sm font-medium",
-                      item === page
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "hover:bg-primary/6"
-                    )}
-                  >
-                    {item}
-                  </Link>
-                )
-              )}
-              <PaginationButton
-                disabled={page >= totalPages}
-                href={pageHref(page + 1)}
-                label="Berikutnya"
-              />
-            </div>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  );
-}
-
-function paginationWindow(page: number, totalPages: number) {
-  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
-
-  const pages: Array<number | "ellipsis"> = [1];
-  const start = Math.max(2, page - 1);
-  const end = Math.min(totalPages - 1, page + 1);
-
-  if (start > 2) pages.push("ellipsis");
-  for (let item = start; item <= end; item += 1) pages.push(item);
-  if (end < totalPages - 1) pages.push("ellipsis");
-  pages.push(totalPages);
-
-  return pages;
-}
-
-function PaginationButton({
-  disabled,
-  href,
-  label,
-}: {
-  disabled: boolean;
-  href: string;
-  label: string;
-}) {
-  if (disabled) {
-    return (
-      <span className="rounded-[var(--radius-full)] border px-3 py-1.5 text-sm text-muted-foreground opacity-50">
-        {label}
-      </span>
-    );
-  }
-
-  return (
-    <Link className="rounded-[var(--radius-full)] border px-3 py-1.5 text-sm font-medium hover:bg-primary/6" href={href}>
-      {label}
-    </Link>
   );
 }
 
