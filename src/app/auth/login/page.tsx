@@ -99,10 +99,10 @@ export default function LoginPage() {
 
       <div className="space-y-2 text-center">
         <h1 className="text-[28px] font-semibold tracking-normal text-foreground">
-          Masuk
+          Assalamu&apos;alaikum warahmatullahi wabarakatuh
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Gunakan email atau NIY beserta password Anda.
+          Masuk dengan email atau NIY untuk melanjutkan ke Nurussunnah Hub.
         </p>
       </div>
 
