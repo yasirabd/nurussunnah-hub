@@ -17,7 +17,7 @@ import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
 import { PaginationControls } from "./_components/pagination-controls";
 
-export const metadata: Metadata = { title: "Direktori Pegawai - Nurussunnah Hub" };
+export const metadata: Metadata = { title: "Direktori Pegawai" };
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

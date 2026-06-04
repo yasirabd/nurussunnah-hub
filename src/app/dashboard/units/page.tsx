@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { UnitsClient } from "./units-client";
 
-export const metadata: Metadata = { title: "Unit & Organisasi - Nurussunnah Hub" };
+export const metadata: Metadata = { title: "Unit & Organisasi" };
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

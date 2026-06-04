@@ -3,7 +3,7 @@ import { ProfileView } from "@/components/profile/profile-view";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Profil Saya - Nurussunnah Hub" };
+export const metadata: Metadata = { title: "Profil Saya" };
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

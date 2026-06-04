@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ProfileEditForm } from "@/components/profile/profile-edit-form";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Edit Profil - Nurussunnah Hub" };
+export const metadata: Metadata = { title: "Edit Profil" };
 
 export default async function EditProfilePage() {
   const supabase = await createClient();

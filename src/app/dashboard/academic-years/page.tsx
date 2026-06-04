@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { AcademicYearsClient } from "./academic-years-client";
 
-export const metadata: Metadata = { title: "Tahun Pelajaran - Nurussunnah Hub" };
+export const metadata: Metadata = { title: "Tahun Pelajaran" };
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

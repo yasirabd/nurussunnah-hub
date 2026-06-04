@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDashboardUserContext } from '@/lib/auth/user-context';
 
-export const metadata: Metadata = { title: 'Pengaturan - Nurussunnah Hub' };
+export const metadata: Metadata = { title: "Pengaturan" };
 
 export default async function SettingsPage() {
   const context = await getDashboardUserContext();

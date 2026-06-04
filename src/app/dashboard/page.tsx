@@ -4,7 +4,7 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Dashboard - Nurussunnah Hub" };
+export const metadata: Metadata = { title: "Dashboard" };
 
 type MonitoringRow = {
   user_id: string;
