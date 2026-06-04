@@ -87,25 +87,25 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-8">
-      {/* Mobile brand */}
-      <div className="flex items-center gap-3 lg:hidden">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-primary shadow-sm">
-          <span className="text-sm font-bold text-primary-foreground">N</span>
+      <div className="flex items-center justify-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-primary shadow-sm">
+          <span className="text-base font-bold text-primary-foreground">N</span>
         </div>
-        <span className="font-semibold text-base">Nurussunnah Hub</span>
+        <div className="min-w-0">
+          <p className="text-base font-semibold text-foreground">Nurussunnah Hub</p>
+          <p className="text-xs text-muted-foreground">Portal SDM Internal</p>
+        </div>
       </div>
 
-      {/* Header */}
-      <div className="space-y-2">
+      <div className="space-y-2 text-center">
         <h1 className="text-[28px] font-semibold tracking-normal text-foreground">
-          Masuk ke Sistem
+          Masuk
         </h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Gunakan email atau NIY beserta password Anda
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Gunakan email atau NIY beserta password Anda.
         </p>
       </div>
 
-      {/* Form */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
@@ -134,11 +134,11 @@ export default function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <FormLabel className="text-sm font-medium">Password</FormLabel>
                   <Link
                     href="/auth/forgot-password"
-                    className="text-xs font-medium text-primary hover:underline"
+                    className="shrink-0 text-xs font-medium text-primary hover:underline"
                   >
                     Lupa password?
                   </Link>
@@ -156,9 +156,10 @@ export default function LoginPage() {
                     />
                     <button
                       type="button"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
                       onClick={() => setShowPassword(!showPassword)}
-                      tabIndex={-1}
+                      disabled={isLoading}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -185,7 +186,7 @@ export default function LoginPage() {
         </form>
       </Form>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs leading-relaxed text-muted-foreground">
         Belum punya akun? Hubungi{" "}
         <span className="font-semibold text-foreground">Admin / HRD</span> untuk pendaftaran.
       </p>
