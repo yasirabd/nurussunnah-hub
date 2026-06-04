@@ -1,35 +1,33 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
+import { getDashboardUserContext } from "@/lib/auth/user-context";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  const context = await getDashboardUserContext();
+  if (!context) redirect("/auth/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, avatar_url, employee_status, home_unit_id, units!profiles_home_unit_id_fkey(name)")
-    .eq("id", user.id)
-    .single();
+  const pathname = (await headers()).get("x-pathname") ?? "/dashboard";
+  const isChangePasswordRoute = pathname === "/dashboard/change-password";
 
-  const { data: userRoles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id);
-
-  const roles: string[] = (userRoles ?? []).map((r) => r.role);
+  if (context.profile && !context.profile.is_active) redirect("/auth/logout");
+  if (context.profile?.must_change_password && !isChangePasswordRoute) {
+    redirect("/dashboard/change-password");
+  }
+  if (context.profile && !context.profile.must_change_password && isChangePasswordRoute) {
+    redirect("/dashboard");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <AppSidebar roles={roles} />
+      <AppSidebar roles={context.roles} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <AppHeader profile={profile} roles={roles} />
+        <AppHeader profile={context.profile} roles={context.roles} />
         <main className="flex-1 overflow-y-auto bg-background px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>

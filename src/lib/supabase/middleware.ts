@@ -3,7 +3,12 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/database'
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', request.nextUrl.pathname)
+
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +22,9 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -40,30 +47,6 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicRoute) {
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
-  }
-
-  if (user && !isAuthRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_active, must_change_password')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (profile && !profile.is_active && url.pathname !== '/auth/logout') {
-      url.pathname = '/auth/logout'
-      return NextResponse.redirect(url)
-    }
-
-    const isChangePasswordRoute = url.pathname === '/dashboard/change-password'
-    if (profile?.must_change_password && !isChangePasswordRoute) {
-      url.pathname = '/dashboard/change-password'
-      return NextResponse.redirect(url)
-    }
-
-    if (profile && !profile.must_change_password && isChangePasswordRoute) {
-      url.pathname = '/dashboard'
-      return NextResponse.redirect(url)
-    }
   }
 
   if (user && isAuthRoute && !authPassThroughRoutes.includes(url.pathname)) {
