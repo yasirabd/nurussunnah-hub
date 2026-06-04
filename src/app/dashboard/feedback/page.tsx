@@ -48,8 +48,6 @@ type UnitOption = {
   label: string;
 };
 
-const PAGE_SIZE = 10;
-
 type IdentifiedFeedback = {
   feedback_id: string;
   giver_name: string;
@@ -92,6 +90,16 @@ function positivePage(value: string | undefined) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
+function positiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number.parseInt(value ?? String(fallback), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function pageSizeValue(value: string | undefined) {
+  const parsed = positiveInt(value, 10);
+  return [10, 25, 50].includes(parsed) ? parsed : 10;
+}
+
 function unitKey(row: { unit_code: string | null; unit_name: string | null }) {
   return row.unit_code || row.unit_name || "__none";
 }
@@ -110,17 +118,17 @@ function unitOptions<T extends { unit_code: string | null; unit_name: string | n
   );
 }
 
-function pageCount(total: number) {
-  return Math.max(1, Math.ceil(total / PAGE_SIZE));
+function pageCount(total: number, pageSize: number) {
+  return Math.max(1, Math.ceil(total / pageSize));
 }
 
-function clampPage(page: number, total: number) {
-  return Math.min(page, pageCount(total));
+function clampPage(page: number, total: number, pageSize: number) {
+  return Math.min(page, pageCount(total, pageSize));
 }
 
-function pageSlice<T>(rows: T[], page: number) {
-  const start = (page - 1) * PAGE_SIZE;
-  return rows.slice(start, start + PAGE_SIZE);
+function pageSlice<T>(rows: T[], page: number, pageSize: number) {
+  const start = (page - 1) * pageSize;
+  return rows.slice(start, start + pageSize);
 }
 
 function buildFeedbackHref(
@@ -198,6 +206,8 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
   const identifiedUnit = canViewIdentified
     ? paramValue(params, "identifiedUnit") ?? "all"
     : "all";
+  const monitorPageSize = pageSizeValue(paramValue(params, "monitorPageSize"));
+  const identifiedPageSize = pageSizeValue(paramValue(params, "identifiedPageSize"));
   const monitorOptions = unitOptions(monitoring);
   const identifiedOptions = unitOptions(identified);
   const filteredMonitoring =
@@ -210,15 +220,20 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
       : identified.filter((row) => unitKey(row) === identifiedUnit);
   const monitorPage = clampPage(
     positivePage(paramValue(params, "monitorPage")),
-    filteredMonitoring.length
+    filteredMonitoring.length,
+    monitorPageSize
   );
   const identifiedPage = canViewIdentified
-    ? clampPage(positivePage(paramValue(params, "identifiedPage")), filteredIdentified.length)
+    ? clampPage(
+        positivePage(paramValue(params, "identifiedPage")),
+        filteredIdentified.length,
+        identifiedPageSize
+      )
     : 1;
-  const pagedMonitoring = pageSlice(filteredMonitoring, monitorPage);
-  const pagedIdentified = pageSlice(filteredIdentified, identifiedPage);
-  const monitorTotalPages = pageCount(filteredMonitoring.length);
-  const identifiedTotalPages = pageCount(filteredIdentified.length);
+  const pagedMonitoring = pageSlice(filteredMonitoring, monitorPage, monitorPageSize);
+  const pagedIdentified = pageSlice(filteredIdentified, identifiedPage, identifiedPageSize);
+  const monitorTotalPages = pageCount(filteredMonitoring.length, monitorPageSize);
+  const identifiedTotalPages = pageCount(filteredIdentified.length, identifiedPageSize);
   const unitReminderProgress = buildUnitReminderProgress(monitoring);
   const completedCount = targets.filter((target) => target.is_completed).length;
   const targetCount = targets.length;
@@ -426,6 +441,8 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                       hiddenFields={{
                         identifiedUnit,
                         identifiedPage,
+                        identifiedPageSize,
+                        monitorPageSize,
                         monitorPage: 1,
                       }}
                     />
@@ -505,6 +522,8 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                         hiddenFields={{
                           monitorUnit,
                           monitorPage,
+                          monitorPageSize,
+                          identifiedPageSize,
                           identifiedPage: 1,
                         }}
                       />
