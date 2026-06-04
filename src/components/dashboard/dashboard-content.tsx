@@ -75,14 +75,6 @@ interface DashboardContentProps {
   operationalSummary?: OperationalSummary | null;
 }
 
-function greeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Selamat pagi";
-  if (hour < 15) return "Selamat siang";
-  if (hour < 18) return "Selamat sore";
-  return "Selamat malam";
-}
-
 export function DashboardContent({
   profile,
   roles,
@@ -105,7 +97,7 @@ export function DashboardContent({
             </Badge>
             <div>
               <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
-                {greeting()}, {firstName}
+                Assalamu&apos;alaikum, {firstName}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                 {profile?.units
