@@ -3,9 +3,11 @@
 import Link from "next/link";
 import type { ElementType } from "react";
 import {
+  AlertCircle,
   ArrowRight,
   Building2,
   Clock,
+  MessageSquareText,
   MessageSquareMore,
   UserRound,
   Users,
@@ -29,6 +31,31 @@ const EMPLOYEE_STATUS_LABELS: Record<string, string> = {
   PENSIUN: "Pensiun",
 };
 
+type OperationalMetric = {
+  key: string;
+  label: string;
+  value: string;
+  helper: string;
+  tone?: "default" | "warning" | "success";
+};
+
+type OperationalAttentionItem = {
+  key: string;
+  title: string;
+  detail: string;
+  percent: number | null;
+};
+
+type OperationalSummary = {
+  role: "HRD" | "KEPALA_UNIT";
+  title: string;
+  description: string;
+  metrics: OperationalMetric[];
+  attentionTitle: string;
+  attentionItems: OperationalAttentionItem[];
+  ctas: { href: string; label: string }[];
+};
+
 interface DashboardContentProps {
   profile: {
     id: string;
@@ -45,6 +72,7 @@ interface DashboardContentProps {
     end_date: string;
   } | null;
   feedbackDoneCount: number;
+  operationalSummary?: OperationalSummary | null;
 }
 
 function greeting() {
@@ -60,6 +88,7 @@ export function DashboardContent({
   roles,
   activeYear,
   feedbackDoneCount,
+  operationalSummary,
 }: DashboardContentProps) {
   const isHrd = roles.includes("HRD");
   const isAdmin = roles.includes("ADMIN");
@@ -93,6 +122,10 @@ export function DashboardContent({
           </div>
         </div>
       </section>
+
+      {operationalSummary && (
+        <OperationalSummarySection summary={operationalSummary} />
+      )}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 
@@ -166,6 +199,142 @@ export function DashboardContent({
         </section>
       )}
     </div>
+  );
+}
+
+function OperationalSummarySection({ summary }: { summary: OperationalSummary }) {
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold tracking-normal">{summary.title}</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {summary.description}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {summary.ctas.map((cta) => (
+            <Link
+              key={cta.href}
+              href={cta.href}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "rounded-[var(--radius-full)]"
+              )}
+            >
+              {cta.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {summary.metrics.map((metric) => (
+          <OperationalMetricCard key={metric.key} metric={metric} />
+        ))}
+      </div>
+
+      <AttentionList title={summary.attentionTitle} items={summary.attentionItems} />
+    </section>
+  );
+}
+
+function OperationalMetricCard({ metric }: { metric: OperationalMetric }) {
+  const toneClass =
+    metric.tone === "warning"
+      ? "bg-warning/12 text-warning"
+      : metric.tone === "success"
+        ? "bg-primary/10 text-primary"
+        : "bg-secondary text-muted-foreground";
+  const Icon =
+    metric.key.includes("feedback") || metric.key === "written"
+      ? MessageSquareText
+      : metric.key.includes("unit")
+        ? Building2
+        : Users;
+
+  return (
+    <Card className="rounded-[var(--radius-lg)] border-border/70 elevation-1">
+      <CardContent className="flex items-start gap-3 p-4">
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
+            toneClass
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-xs font-medium text-muted-foreground">
+            {metric.label}
+          </span>
+          <span className="mt-1 block text-2xl font-semibold tracking-normal">
+            {metric.value}
+          </span>
+          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+            {metric.helper}
+          </span>
+        </span>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AttentionList({
+  title,
+  items,
+}: {
+  title: string;
+  items: OperationalAttentionItem[];
+}) {
+  return (
+    <Card className="rounded-[var(--radius-lg)] border-border/70 elevation-1">
+      <CardHeader className="pb-2">
+        <CardDescription className="flex items-center gap-2 text-xs font-medium">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          {title}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 md:grid-cols-3">
+        {items.length === 0 ? (
+          <p className="rounded-[var(--radius-md)] bg-secondary/60 px-4 py-3 text-sm text-muted-foreground md:col-span-3">
+            Belum ada data monitoring feedback.
+          </p>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.key}
+              className="rounded-[var(--radius-md)] border bg-secondary/40 p-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {item.detail}
+                  </p>
+                </div>
+                {item.percent !== null && (
+                  <Badge
+                    variant="secondary"
+                    className="border-0 bg-warning/12 text-warning"
+                  >
+                    {item.percent}%
+                  </Badge>
+                )}
+              </div>
+              {item.percent !== null && (
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${item.percent}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
