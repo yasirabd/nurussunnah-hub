@@ -14,12 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Nurussunnah Hub",
   title: {
     default: "Nurussunnah Hub",
     template: "%s | Nurussunnah Hub",
   },
   description:
     "Sistem Pengelolaan Pegawai Yayasan Islam Nurus Sunnah - manajemen data pegawai, surat pernyataan kerja, dan feedback rekan kerja.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
