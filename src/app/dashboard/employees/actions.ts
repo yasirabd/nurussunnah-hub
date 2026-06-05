@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
-import type { EmployeeStatus, UserRoleEnum } from '@/types/database';
+import { isActiveStatus, isEmployeeStatus } from '@/lib/employee-status';
+import type { ActiveStatus, EmployeeStatus, UserRoleEnum } from '@/types/database';
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim();
@@ -42,6 +43,16 @@ function nullableDate(formData: FormData, key: string) {
   return value || null;
 }
 
+function employeeStatus(formData: FormData): EmployeeStatus {
+  const value = text(formData, 'employee_status');
+  return isEmployeeStatus(value) ? value : 'CPTY';
+}
+
+function activeStatus(formData: FormData): ActiveStatus {
+  const value = text(formData, 'active_status');
+  return isActiveStatus(value) ? value : 'AKTIF';
+}
+
 function normalizeEmployeeNo(formData: FormData) {
   return text(formData, 'employee_no').replace(/\s/g, '').toUpperCase();
 }
@@ -68,8 +79,8 @@ function profilePayload(formData: FormData) {
     facebook: nullableText(formData, 'facebook'),
     instagram: nullableText(formData, 'instagram'),
     twitter: nullableText(formData, 'twitter'),
-    employee_status: text(formData, 'employee_status') as EmployeeStatus,
-    is_active: formData.get('is_active') === 'on',
+    employee_status: employeeStatus(formData),
+    active_status: activeStatus(formData),
     home_unit_id: nullableText(formData, 'home_unit_id'),
   };
 }
@@ -260,7 +271,7 @@ export async function deactivateEmployeeAction(formData: FormData) {
 
   const { error } = await supabase
     .from('profiles')
-    .update({ is_active: false, employee_status: 'PENSIUN' })
+    .update({ active_status: 'NONAKTIF' })
     .eq('id', id);
   if (error) redirectWith(false, error.message);
 

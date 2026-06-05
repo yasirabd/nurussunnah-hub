@@ -50,7 +50,7 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
   const [{ data: profile }, { data: roles }, { data: position }, { data: units }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, is_active, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
+      .select("id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", id),

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ACTIVE_STATUS_OPTIONS, EMPLOYEE_STATUS_OPTIONS } from "@/lib/employee-status";
 
 export type EmployeeFormValue = {
   full_name?: string | null;
@@ -20,7 +21,7 @@ export type EmployeeFormValue = {
   instagram?: string | null;
   twitter?: string | null;
   employee_status?: string | null;
-  is_active?: boolean | null;
+  active_status?: string | null;
   home_unit_id?: string | null;
 };
 
@@ -62,19 +63,25 @@ export function EmployeeFormFields({
             </option>
           ))}
         </SelectField>
-        <SelectField label="Status Pegawai" name="employee_status" defaultValue={employee?.employee_status ?? "TETAP"}>
-          <option value="TETAP">Tetap</option>
-          <option value="TIDAK_TETAP">Tidak Tetap</option>
-          <option value="KONTRAK">Kontrak</option>
-          <option value="HONORER">Honorer</option>
-          <option value="PENSIUN">Pensiun</option>
+        <SelectField label="Status Pegawai" name="employee_status" defaultValue={employee?.employee_status ?? "CPTY"}>
+          {EMPLOYEE_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </SelectField>
-        <CheckboxField
-          label="Pegawai Aktif"
-          name="is_active"
-          helper="Nonaktifkan hanya jika pegawai tidak boleh mengakses sistem."
-          defaultChecked={employee?.is_active ?? true}
-        />
+        <SelectField
+          label="Status Aktif"
+          name="active_status"
+          defaultValue={employee?.active_status ?? "AKTIF"}
+          helper="Status ini menentukan apakah pegawai dihitung sebagai pegawai aktif sistem."
+        >
+          {ACTIVE_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectField>
         {showDefaultPasswordHelp && (
           <p className="rounded-[var(--radius-md)] bg-primary/10 p-3 text-sm text-primary md:col-span-2">
             Password awal pegawai baru adalah bismillahns dan wajib diganti saat login pertama.
