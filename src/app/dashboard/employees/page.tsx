@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Building2, Search, Users } from "lucide-react";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
+import type { ActiveStatus, EmployeeStatus } from "@/types/database";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
 import { PaginationControls } from "./_components/pagination-controls";
 
@@ -41,8 +42,8 @@ type ProfileRow = {
   facebook: string | null;
   instagram: string | null;
   twitter: string | null;
-  employee_status: string;
-  is_active: boolean;
+  employee_status: EmployeeStatus;
+  active_status: ActiveStatus;
   must_change_password: boolean;
   units: { id: string; name: string; code: string } | null;
 };
@@ -132,7 +133,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, is_active, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)",
+      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)",
       { count: "exact" }
     )
     .order("full_name", { ascending: true })
@@ -143,8 +144,8 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   }
 
   if (normalizedUnitId) query = query.eq("home_unit_id", normalizedUnitId);
-  if (active === "active") query = query.eq("is_active", true);
-  if (active === "inactive") query = query.eq("is_active", false);
+  if (active === "active") query = query.eq("active_status", "AKTIF");
+  if (active === "inactive") query = query.neq("active_status", "AKTIF");
 
   const { data: profiles, error, count } = await query;
   const rows = (profiles ?? []) as ProfileRow[];
@@ -166,7 +167,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
 
   const rolesByUser = groupByUser(userRoles ?? []);
   const positionsByUser = groupByUser(positions ?? []);
-  const activeCount = rows.filter((row) => row.is_active).length;
+  const activeCount = rows.filter((row) => row.active_status === "AKTIF").length;
   const unitCount = new Set(rows.map((row) => row.units?.id).filter(Boolean)).size;
   const flatParams = Object.fromEntries(
     Object.entries(params).map(([key, value]) => [key, Array.isArray(value) ? value[0] ?? "" : value ?? ""])

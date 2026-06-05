@@ -1,10 +1,12 @@
 import { Badge } from "@/components/ui/badge";
+import { ACTIVE_STATUS_LABELS, EMPLOYEE_STATUS_LABELS, activeStatusBadgeVariant } from "@/lib/employee-status";
+import type { ActiveStatus, EmployeeStatus } from "@/types/database";
 
 export type EmployeeSummaryValue = {
   full_name: string;
   employee_no: string;
-  employee_status: string;
-  is_active: boolean;
+  employee_status: EmployeeStatus;
+  active_status: ActiveStatus;
   units: { name: string; code: string } | null;
 };
 
@@ -20,10 +22,10 @@ export function EmployeeSummary({ employee, roles }: { employee: EmployeeSummary
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 sm:justify-end">
-          <Badge variant={employee.is_active ? "default" : "secondary"}>
-            {employee.is_active ? "Aktif" : "Non-aktif"}
+          <Badge variant={activeStatusBadgeVariant(employee.active_status)}>
+            {ACTIVE_STATUS_LABELS[employee.active_status]}
           </Badge>
-          <Badge variant="outline">{statusLabel(employee.employee_status)}</Badge>
+          <Badge variant="outline">{EMPLOYEE_STATUS_LABELS[employee.employee_status]}</Badge>
           {roles.map((role) => (
             <Badge key={role} variant="secondary">{role}</Badge>
           ))}
@@ -33,13 +35,3 @@ export function EmployeeSummary({ employee, roles }: { employee: EmployeeSummary
   );
 }
 
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    TETAP: "Tetap",
-    TIDAK_TETAP: "Tidak Tetap",
-    KONTRAK: "Kontrak",
-    HONORER: "Honorer",
-    PENSIUN: "Pensiun",
-  };
-  return labels[status] ?? status;
-}

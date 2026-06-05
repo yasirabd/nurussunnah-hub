@@ -18,6 +18,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
+  ACTIVE_STATUS_LABELS,
+  EMPLOYEE_STATUS_LABELS,
+  activeStatusBadgeVariant,
+} from "@/lib/employee-status";
+import type { ActiveStatus, EmployeeStatus } from "@/types/database";
+import {
   Table,
   TableBody,
   TableCell,
@@ -43,8 +49,8 @@ type EmployeeRow = {
   facebook: string | null;
   instagram: string | null;
   twitter: string | null;
-  employee_status: string;
-  is_active: boolean;
+  employee_status: EmployeeStatus;
+  active_status: ActiveStatus;
   must_change_password: boolean;
   home_unit_id: string | null;
   units: { id: string; name: string; code: string } | null;
@@ -135,11 +141,11 @@ export function EmployeeDirectoryTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
-                    <Badge variant={row.is_active ? "default" : "secondary"} className="w-fit">
-                      {row.is_active ? "Aktif" : "Non-aktif"}
+                    <Badge variant={activeStatusBadgeVariant(row.active_status)} className="w-fit">
+                      {ACTIVE_STATUS_LABELS[row.active_status]}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {statusLabel(row.employee_status)}
+                      {EMPLOYEE_STATUS_LABELS[row.employee_status]}
                     </span>
                   </div>
                 </TableCell>
@@ -180,7 +186,7 @@ function DeactivateDialog({ employee }: { employee: EmployeeRow }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Nonaktifkan pegawai?</AlertDialogTitle>
             <AlertDialogDescription>
-              {employee.full_name} akan ditandai non-aktif dan Pensiun. Riwayat data tetap disimpan.
+              {employee.full_name} akan ditandai Nonaktif. Riwayat data tetap disimpan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -207,13 +213,3 @@ function PillList({ values, fallback }: { values: string[]; fallback: string }) 
   );
 }
 
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    TETAP: "Tetap",
-    TIDAK_TETAP: "Tidak Tetap",
-    KONTRAK: "Kontrak",
-    HONORER: "Honorer",
-    PENSIUN: "Pensiun",
-  };
-  return labels[status] ?? status;
-}
