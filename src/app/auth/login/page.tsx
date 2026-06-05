@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card";
 
 const loginSchema = z.object({
   identifier: z
@@ -86,110 +91,110 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-primary shadow-sm">
-          <span className="text-base font-bold text-primary-foreground">N</span>
+    <Card>
+      <CardHeader className="pt-8 pb-6 text-center">
+        <div className="mb-5 flex items-center justify-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-primary shadow-sm">
+            <span className="text-base font-bold text-primary-foreground">N</span>
+          </div>
+          <div className="min-w-0 text-left">
+            <p className="text-base font-semibold text-foreground">Nurussunnah Hub</p>
+            <p className="text-xs text-muted-foreground">Portal SDM Internal</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-base font-semibold text-foreground">Nurussunnah Hub</p>
-          <p className="text-xs text-muted-foreground">Portal SDM Internal</p>
-        </div>
-      </div>
-
-      <div className="space-y-2 text-center">
-        <h1 className="text-[28px] font-semibold tracking-normal text-foreground">
-          Assalamu&apos;alaikum warahmatullahi wabarakatuh
+        <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
+          Masuk ke Nurussunnah Hub
         </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Masuk dengan email atau NIY untuk melanjutkan ke Nurussunnah Hub.
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          Gunakan email atau NIY untuk login.
         </p>
-      </div>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField
-            control={form.control}
-            name="identifier"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium">Email atau NIY</FormLabel>
-                <FormControl>
-                  <Input
-                    id="login-identifier"
-                    placeholder="nama@email.com atau SD002"
-                    autoComplete="username"
-                    disabled={isLoading}
-                    className="h-12 rounded-[var(--radius-sm)] px-4 text-sm"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between gap-4">
-                  <FormLabel className="text-sm font-medium">Password</FormLabel>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="shrink-0 text-xs font-medium text-primary hover:underline"
-                  >
-                    Lupa password?
-                  </Link>
-                </div>
-                <FormControl>
-                  <div className="relative">
+      </CardHeader>
+      <CardContent className="px-8 pb-8">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="identifier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Email atau NIY</FormLabel>
+                  <FormControl>
                     <Input
-                      id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Masukkan password"
-                      autoComplete="current-password"
+                      id="login-identifier"
+                      placeholder="nama@email.com atau SD002"
+                      autoComplete="username"
                       disabled={isLoading}
-                      className="h-12 rounded-[var(--radius-sm)] px-4 pr-12 text-sm"
+                      className="h-12 rounded-[var(--radius-sm)] px-4 text-sm"
                       {...field}
                     />
-                    <button
-                      type="button"
-                      aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between gap-4">
+                    <FormLabel className="text-sm font-medium">Password</FormLabel>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="shrink-0 text-xs font-medium text-primary hover:underline"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
+                      Lupa password?
+                    </Link>
                   </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Masukkan password"
+                        autoComplete="current-password"
+                        disabled={isLoading}
+                        className="h-12 rounded-[var(--radius-sm)] px-4 pr-12 text-sm"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Button
-            id="login-submit"
-            type="submit"
-            className="h-12 w-full rounded-[var(--radius-full)] text-sm font-semibold"
-            disabled={isLoading}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? "Memproses..." : "Masuk"}
-          </Button>
-        </form>
-      </Form>
+            <Button
+              id="login-submit"
+              type="submit"
+              className="h-12 w-full rounded-[var(--radius-md)] text-sm font-semibold"
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? "Memproses..." : "Masuk"}
+            </Button>
+          </form>
+        </Form>
 
-      <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        Belum punya akun? Hubungi{" "}
-        <span className="font-semibold text-foreground">Admin / HRD</span> untuk pendaftaran.
-      </p>
-    </div>
+        <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
+          Belum punya akun? Hubungi{" "}
+          <span className="font-semibold text-foreground">Admin / HRD</span> untuk pendaftaran.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
