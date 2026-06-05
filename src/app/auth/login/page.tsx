@@ -102,8 +102,8 @@ export default function LoginPage() {
             <p className="text-xs text-muted-foreground">Portal SDM Internal</p>
           </div>
         </div>
-        <h1 className="text-xl font-arabic font-light tracking-wide text-foreground leading-relaxed" dir="rtl">
-          ?????? ????? ????? ???? ???????
+        <h1 className="text-xl font-light tracking-wide text-foreground leading-relaxed">
+          Assalamu&apos;alaikum Warohmatullahi Wabarokatuh
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Masuk dengan email atau NIY untuk melanjutkan.
