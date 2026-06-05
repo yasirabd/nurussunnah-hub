@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD) Final v1.2
-## **Nurussunnah Hub** — Sistem Pengelolaan Pegawai Yayasan Islam Nurus Sunnah
+## **Nurussunnah Hub** â€” Sistem Pengelolaan Pegawai Yayasan Islam Nurus Sunnah
 
 **Versi:** 1.2 Final  
 **Tanggal:** 6 Mei 2026  
@@ -72,7 +72,7 @@ Nurussunnah Hub adalah aplikasi web internal untuk pengelolaan pegawai di Yayasa
 
 ## 6.1 Tahun Pelajaran
 - Menggunakan tahun pelajaran, bukan tahun kalender.
-- Contoh: `2025/2026` = **1 Juli 2025 – 30 Juni 2026**.
+- Contoh: `2025/2026` = **1 Juli 2025 â€“ 30 Juni 2026**.
 - Tidak ada perpindahan unit selama tahun pelajaran berjalan.
 
 ## 6.2 Status Pegawai
@@ -91,7 +91,7 @@ Aturan kewajiban feedback:
 - Disimpan tanpa spasi.
 - Wajib unik.
 - Contoh normalisasi:  
-  `195808 200207 11 001` → `19580820020711001`.
+  `195808 200207 11 001` â†’ `19580820020711001`.
 
 ## 6.4 Email
 - Email wajib terisi.
@@ -100,14 +100,14 @@ Aturan kewajiban feedback:
 ## 6.5 Feedback Rekan Kerja
 - Wajib isi feedback untuk seluruh rekan **aktif** dalam cakupan unit yang relevan.
 - Termasuk Kepala Unit sebagai target feedback.
-- Maksimal 1 feedback per pasangan pemberi→penerima per tahun pelajaran.
+- Maksimal 1 feedback per pasangan pemberiâ†’penerima per tahun pelajaran.
 - Tidak boleh feedback untuk diri sendiri.
 - Penerima tidak melihat identitas pemberi.
 - HRD dapat melihat identitas pemberi.
 
 ## 6.6 Surat Pernyataan Kerja
 Workflow status:
-`draft → submitted → reviewed → approved/rejected → reopened (opsional) → resubmitted`
+`draft â†’ submitted â†’ reviewed â†’ approved/rejected â†’ reopened (opsional) â†’ resubmitted`
 
 Reviewer:
 - Pegawai unit: Kepala Unit.
@@ -220,7 +220,7 @@ Kolom sumber:
 ## 12.2 Rule Import
 - Normalisasi NIY tanpa spasi.
 - Email wajib valid.
-- Mapping status aktif → `is_active`.
+- Mapping status aktif -> `profiles.active_status`.
 - Mapping unit ke master unit.
 - Error rows masuk laporan validasi untuk perbaikan.
 
@@ -240,39 +240,39 @@ Kolom sumber:
 6. State lengkap: empty/loading/error/success.
 
 ## 14. KPI Keberhasilan
-1. ≥90% pegawai aktif berhasil login.
-2. ≥85% surat submitted sebelum deadline.
-3. ≥95% feedback wajib selesai per tahun pelajaran.
+1. â‰¥90% pegawai aktif berhasil login.
+2. â‰¥85% surat submitted sebelum deadline.
+3. â‰¥95% feedback wajib selesai per tahun pelajaran.
 4. Waktu generate PDF < 10 detik.
 5. Error submit form < 2%.
 
 ## 15. Roadmap Implementasi
 
-## Fase 1 — Foundation
+## Fase 1 â€” Foundation
 - Setup project (Next.js + Tailwind + shadcn/ui + Supabase).
 - Master data organisasi/unit/profile.
 - Import data awal.
 
-## Fase 2 — Surat & Review
+## Fase 2 â€” Surat & Review
 - Form surat + workflow review.
 - Approve/reject/reopen.
 - Digital signature + PDF.
 
-## Fase 3 — Feedback Wajib
+## Fase 3 â€” Feedback Wajib
 - Generator target feedback.
 - Constraint unik feedback.
 - HRD monitoring panel.
 
-## Fase 4 — Hardening
+## Fase 4 â€” Hardening
 - Audit logs.
 - UAT lintas role.
 - Optimasi performa + keamanan.
 
 ## 16. Risiko & Mitigasi
-1. Data awal tidak bersih → staging + validator + correction batch.
-2. Salah akses data sensitif → uji RLS ketat per role.
-3. Keterlambatan isi feedback wajib → progress tracker + reminder.
-4. Kompleksitas multi-role/multi-unit → matrix role final + test scenario QA.
+1. Data awal tidak bersih â†’ staging + validator + correction batch.
+2. Salah akses data sensitif â†’ uji RLS ketat per role.
+3. Keterlambatan isi feedback wajib â†’ progress tracker + reminder.
+4. Kompleksitas multi-role/multi-unit â†’ matrix role final + test scenario QA.
 
 ## 17. Definition of Done (DoD)
 PRD dinyatakan tercapai jika:
@@ -286,16 +286,16 @@ PRD dinyatakan tercapai jika:
 8. UI konsisten menggunakan **shadcn/ui**.
 
 ## 18. Final Coverage Checklist
-✅ Yayasan sebagai induk + pegawai yayasan langsung.  
-✅ Tahun pelajaran (1 Juli–30 Juni).  
-✅ Status pegawai 5 kategori.  
-✅ Multi-jabatan dan multi-unit assignment dengan unit induk.  
-✅ Tidak ada perpindahan unit di tengah tahun pelajaran.  
-✅ Review surat oleh Kepala Unit/HRD sesuai scope.  
-✅ Reopen setelah approved diperbolehkan.  
-✅ Legalitas: tanda tangan digital pegawai.  
-✅ Feedback wajib ke seluruh rekan aktif, satu kali per rekan.  
-✅ Identitas pemberi feedback hanya HRD.  
-✅ Login email/NIY, email wajib, forgot password email.  
-✅ NIY tanpa spasi & unik.  
-✅ UI framework final: **shadcn/ui**.
+âœ… Yayasan sebagai induk + pegawai yayasan langsung.  
+âœ… Tahun pelajaran (1 Juliâ€“30 Juni).  
+âœ… Status pegawai 5 kategori.  
+âœ… Multi-jabatan dan multi-unit assignment dengan unit induk.  
+âœ… Tidak ada perpindahan unit di tengah tahun pelajaran.  
+âœ… Review surat oleh Kepala Unit/HRD sesuai scope.  
+âœ… Reopen setelah approved diperbolehkan.  
+âœ… Legalitas: tanda tangan digital pegawai.  
+âœ… Feedback wajib ke seluruh rekan aktif, satu kali per rekan.  
+âœ… Identitas pemberi feedback hanya HRD.  
+âœ… Login email/NIY, email wajib, forgot password email.  
+âœ… NIY tanpa spasi & unik.  
+âœ… UI framework final: **shadcn/ui**.

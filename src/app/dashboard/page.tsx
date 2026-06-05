@@ -135,11 +135,11 @@ async function buildOperationalSummary({
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", true),
+        .eq("active_status", "AKTIF"),
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", false),
+        .neq("active_status", "AKTIF"),
       supabase
         .from("units")
         .select("id", { count: "exact", head: true })
@@ -147,7 +147,7 @@ async function buildOperationalSummary({
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", true)
+        .eq("active_status", "AKTIF")
         .is("home_unit_id", null),
     ]);
 
@@ -224,7 +224,7 @@ async function buildOperationalSummary({
     ? await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", true)
+        .eq("active_status", "AKTIF")
         .in("home_unit_id", scopedUnitIds)
     : { count: 0 };
 

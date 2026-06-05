@@ -1,5 +1,5 @@
 /**
- * Seed script — Nurussunnah Hub
+ * Seed script Ã¢â‚¬â€ Nurussunnah Hub
  * Buat akun admin + data dummy pegawai
  * Jalankan: node scripts/seed.mjs
  */
@@ -12,7 +12,7 @@ import { createClient } from "@supabase/supabase-js";
 const __dir = dirname(fileURLToPath(import.meta.url));
 const root  = join(__dir, "..");
 
-// ── Load .env.local ───────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Load .env.local Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const env = Object.fromEntries(
   readFileSync(join(root, ".env.local"), "utf-8")
     .split("\n")
@@ -24,7 +24,7 @@ const SUPABASE_URL = env["NEXT_PUBLIC_SUPABASE_URL"];
 const SERVICE_KEY  = env["SUPABASE_SERVICE_ROLE_KEY"];
 
 if (!SERVICE_KEY) {
-  console.error("❌ SUPABASE_SERVICE_ROLE_KEY tidak ada di .env.local");
+  console.error("Ã¢ÂÅ’ SUPABASE_SERVICE_ROLE_KEY tidak ada di .env.local");
   process.exit(1);
 }
 
@@ -33,21 +33,21 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
-console.log("🌱 Nurussunnah Hub — Seed Script");
-console.log(`📡 ${SUPABASE_URL}`);
-console.log("─".repeat(50));
+console.log("Ã°Å¸Å’Â± Nurussunnah Hub Ã¢â‚¬â€ Seed Script");
+console.log(`Ã°Å¸â€œÂ¡ ${SUPABASE_URL}`);
+console.log("Ã¢â€â‚¬".repeat(50));
 
-// ── 1. Ambil unit IDs ─────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ 1. Ambil unit IDs Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const { data: units } = await supabase.from("units").select("id, code");
 const unitMap = Object.fromEntries(units.map(u => [u.code, u.id]));
-console.log("📦 Units:", Object.keys(unitMap).join(", "));
+console.log("Ã°Å¸â€œÂ¦ Units:", Object.keys(unitMap).join(", "));
 
-// ── 2. Ambil academic year ID ─────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ 2. Ambil academic year ID Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const { data: ay } = await supabase
   .from("academic_years").select("id, name").eq("is_active", true).single();
-console.log("📅 Academic Year:", ay?.name);
+console.log("Ã°Å¸â€œâ€¦ Academic Year:", ay?.name);
 
-// ── 3. Daftar pegawai dummy ───────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ 3. Daftar pegawai dummy Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const employees = [
   // ADMIN
   {
@@ -60,7 +60,7 @@ const employees = [
     birth_date: "1985-03-15",
     phone: "081234567890",
     home_unit: "YAYASAN",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Kepala HRD",
     roles: ["ADMIN", "HRD"],
     marital_status: "Menikah",
@@ -77,7 +77,7 @@ const employees = [
     birth_date: "1990-07-22",
     phone: "081298765432",
     home_unit: "YAYASAN",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Staf HRD",
     roles: ["HRD"],
     marital_status: "Menikah",
@@ -94,7 +94,7 @@ const employees = [
     birth_date: "1978-11-10",
     phone: "081311223344",
     home_unit: "SD",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Kepala Sekolah SD",
     roles: ["KEPALA_UNIT", "PEGAWAI"],
     marital_status: "Menikah",
@@ -111,7 +111,7 @@ const employees = [
     birth_date: "1995-04-05",
     phone: "081322334455",
     home_unit: "SD",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Guru Kelas",
     roles: ["PEGAWAI"],
     marital_status: "Menikah",
@@ -128,7 +128,7 @@ const employees = [
     birth_date: "1993-09-18",
     phone: "081333445566",
     home_unit: "SD",
-    employee_status: "TIDAK_TETAP",
+    employee_status: "CPTY",
     position: "Guru Mapel",
     roles: ["PEGAWAI"],
     marital_status: "Belum Menikah",
@@ -145,7 +145,7 @@ const employees = [
     birth_date: "1975-06-25",
     phone: "081344556677",
     home_unit: "SMP",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Kepala Sekolah SMP",
     roles: ["KEPALA_UNIT", "PEGAWAI"],
     marital_status: "Menikah",
@@ -162,7 +162,7 @@ const employees = [
     birth_date: "1991-12-30",
     phone: "081355667788",
     home_unit: "SMP",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Guru Bahasa Arab",
     roles: ["PEGAWAI"],
     marital_status: "Menikah",
@@ -179,7 +179,7 @@ const employees = [
     birth_date: "1972-02-14",
     phone: "081366778899",
     home_unit: "MA",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Kepala Madrasah Aliyah",
     roles: ["KEPALA_UNIT", "PEGAWAI"],
     marital_status: "Menikah",
@@ -196,7 +196,7 @@ const employees = [
     birth_date: "1988-08-17",
     phone: "081377889900",
     home_unit: "MA",
-    employee_status: "TETAP",
+    employee_status: "PTY",
     position: "Guru Tahfidz",
     roles: ["PEGAWAI"],
     marital_status: "Menikah",
@@ -213,7 +213,7 @@ const employees = [
     birth_date: "1997-01-08",
     phone: "081388990011",
     home_unit: "TK",
-    employee_status: "KONTRAK",
+    employee_status: "CPTY",
     position: "Guru TK",
     roles: ["PEGAWAI"],
     marital_status: "Belum Menikah",
@@ -221,11 +221,11 @@ const employees = [
   },
 ];
 
-// ── 4. Buat users & profiles ──────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ 4. Buat users & profiles Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let created = 0, skipped = 0, failed = 0;
 
 for (const emp of employees) {
-  process.stdout.write(`\n👤 ${emp.full_name} (${emp.email}) ... `);
+  process.stdout.write(`\nÃ°Å¸â€˜Â¤ ${emp.full_name} (${emp.email}) ... `);
 
   // Cek apakah user sudah ada
   const { data: existing } = await supabase
@@ -235,7 +235,7 @@ for (const emp of employees) {
     .maybeSingle();
 
   if (existing) {
-    console.log("⏭️  sudah ada");
+    console.log("Ã¢ÂÂ­Ã¯Â¸Â  sudah ada");
     skipped++;
     continue;
   }
@@ -254,21 +254,21 @@ for (const emp of employees) {
 
   if (authErr) {
     if (authErr.message.includes("already been registered")) {
-      // User auth ada tapi profile belum — ambil ID dari auth
+      // User auth ada tapi profile belum Ã¢â‚¬â€ ambil ID dari auth
       const { data: users } = await supabase.auth.admin.listUsers();
       const existingAuth = users?.users?.find(u => u.email === emp.email);
       if (existingAuth) {
         authUser = { user: existingAuth };
       }
     } else {
-      console.log(`❌ Auth error: ${authErr.message}`);
+      console.log(`Ã¢ÂÅ’ Auth error: ${authErr.message}`);
       failed++;
       continue;
     }
   }
 
   const uid = authUser?.user?.id;
-  if (!uid) { console.log("❌ No UID"); failed++; continue; }
+  if (!uid) { console.log("Ã¢ÂÅ’ No UID"); failed++; continue; }
 
   // Insert profile
   const { error: profErr } = await supabase.from("profiles").insert({
@@ -284,10 +284,10 @@ for (const emp of employees) {
     last_education: emp.last_education,
     home_unit_id: unitMap[emp.home_unit],
     employee_status: emp.employee_status,
-    is_active: true,
+    active_status: "AKTIF",
   });
 
-  if (profErr) { console.log(`❌ Profile: ${profErr.message}`); failed++; continue; }
+  if (profErr) { console.log(`Ã¢ÂÅ’ Profile: ${profErr.message}`); failed++; continue; }
 
   // Insert roles
   for (const role of emp.roles) {
@@ -313,15 +313,15 @@ for (const emp of employees) {
     });
   }
 
-  console.log("✅");
+  console.log("Ã¢Å“â€¦");
   created++;
 }
 
-// ── 5. Summary ────────────────────────────────────────────────
-console.log("\n" + "─".repeat(50));
-console.log(`✅ Selesai! Dibuat: ${created} | Dilewati: ${skipped} | Gagal: ${failed}`);
-console.log("\n📋 Akun yang bisa digunakan untuk login:");
-console.log("─".repeat(50));
+// Ã¢â€â‚¬Ã¢â€â‚¬ 5. Summary Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+console.log("\n" + "Ã¢â€â‚¬".repeat(50));
+console.log(`Ã¢Å“â€¦ Selesai! Dibuat: ${created} | Dilewati: ${skipped} | Gagal: ${failed}`);
+console.log("\nÃ°Å¸â€œâ€¹ Akun yang bisa digunakan untuk login:");
+console.log("Ã¢â€â‚¬".repeat(50));
 const accounts = [
   ["Admin/HRD", "admin@nurussunnah.sch.id", "bismillahns"],
   ["HRD", "hrd@nurussunnah.sch.id", "bismillahns"],
