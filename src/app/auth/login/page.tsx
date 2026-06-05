@@ -102,10 +102,15 @@ export default function LoginPage() {
             <p className="text-xs text-muted-foreground">Portal SDM Internal</p>
           </div>
         </div>
-        <h1 className="text-[22px] font-semibold tracking-tight text-foreground leading-snug">
-          Assalamu&apos;alaikum warahmatullahi wabarakatuh
-        </h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        <div className="space-y-1">
+          <h1 className="text-[20px] font-normal tracking-wide text-foreground">
+            Assalamu&apos;alaikum
+          </h1>
+          <p className="text-sm font-light tracking-wide text-muted-foreground/80">
+            warahmatullahi wabarakatuh
+          </p>
+        </div>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Masuk dengan email atau NIY untuk melanjutkan.
         </p>
       </CardHeader>
