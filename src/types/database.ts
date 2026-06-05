@@ -198,13 +198,13 @@ export type Database = {
           email: string
           employee_no: string
           employee_status: Database["public"]["Enums"]["employee_status_enum"]
+          active_status: Database["public"]["Enums"]["active_status_enum"]
           facebook: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_enum"]
           home_unit_id: string | null
           id: string
           instagram: string | null
-          is_active: boolean
           last_education: string | null
           marital_status: string | null
           must_change_password: boolean
@@ -223,13 +223,13 @@ export type Database = {
           email: string
           employee_no: string
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          active_status?: Database["public"]["Enums"]["active_status_enum"]
           facebook?: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_enum"]
           home_unit_id?: string | null
           id: string
           instagram?: string | null
-          is_active?: boolean
           last_education?: string | null
           marital_status?: string | null
           must_change_password?: boolean
@@ -248,13 +248,13 @@ export type Database = {
           email?: string
           employee_no?: string
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          active_status?: Database["public"]["Enums"]["active_status_enum"]
           facebook?: string | null
           full_name?: string
           gender?: Database["public"]["Enums"]["gender_enum"]
           home_unit_id?: string | null
           id?: string
           instagram?: string | null
-          is_active?: boolean
           last_education?: string | null
           marital_status?: string | null
           must_change_password?: boolean
@@ -576,7 +576,8 @@ export type Database = {
     }
     Enums: {
       assignment_type_enum: "HOME" | "TEACHING"
-      employee_status_enum: "TETAP" | "TIDAK_TETAP" | "KONTRAK" | "HONORER" | "PENSIUN"
+      active_status_enum: "AKTIF" | "CUTI" | "NONAKTIF" | "RESIGN" | "DIBERHENTIKAN" | "PENSIUN"
+      employee_status_enum: "MAGANG" | "HONORER" | "CPTY" | "PTY"
       gender_enum: "L" | "P"
       review_action_enum: "REVIEWED" | "APPROVED" | "REJECTED" | "REOPENED"
       user_role_enum: "PEGAWAI" | "KEPALA_UNIT" | "HRD" | "ADMIN"
@@ -629,7 +630,7 @@ export type Enums<
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
-// ── Convenience aliases ──────────────────────────────────────────
+// Convenience aliases
 export type Profile = Tables<"profiles">
 export type Unit = Tables<"units">
 export type Organization = Tables<"organizations">
@@ -644,9 +645,11 @@ export type AuditLog = Tables<"audit_logs">
 
 export type WorkStatementStatus = Database["public"]["Enums"]["work_statement_status_enum"]
 export type UserRoleEnum = Database["public"]["Enums"]["user_role_enum"]
+export type ActiveStatus = Database["public"]["Enums"]["active_status_enum"]
 export type EmployeeStatus = Database["public"]["Enums"]["employee_status_enum"]
 export type GenderEnum = Database["public"]["Enums"]["gender_enum"]
 export type AssignmentType = Database["public"]["Enums"]["assignment_type_enum"]
 export type ReviewAction = Database["public"]["Enums"]["review_action_enum"]
+
 
 
