@@ -12,8 +12,8 @@
         "migrate": "node scripts/migrate.mjs",
         "seed": "node scripts/seed.mjs",
         "build:cloudflare": "opennextjs-cloudflare build",
-        "preview:cloudflare": "wrangler dev",
-        "deploy:cloudflare": "wrangler deploy"
+        "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+        "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
     },
     "dependencies": {
         "@base-ui/react": "^1.4.1",
