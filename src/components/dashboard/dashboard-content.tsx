@@ -21,15 +21,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { ACTIVE_STATUS_LABELS, EMPLOYEE_STATUS_LABELS } from "@/lib/employee-status";
 import { cn } from "@/lib/utils";
+import type { ActiveStatus, EmployeeStatus } from "@/types/database";
 
-const EMPLOYEE_STATUS_LABELS: Record<string, string> = {
-  TETAP: "Pegawai Tetap",
-  TIDAK_TETAP: "Tidak Tetap",
-  KONTRAK: "Kontrak",
-  HONORER: "Honorer",
-  PENSIUN: "Pensiun",
-};
 
 type OperationalMetric = {
   key: string;
@@ -60,8 +55,8 @@ interface DashboardContentProps {
   profile: {
     id: string;
     full_name: string | null;
-    employee_status: string;
-    is_active: boolean;
+    employee_status: EmployeeStatus;
+    active_status: ActiveStatus;
     units?: { id: string; name: string; code: string } | null;
   } | null;
   roles: string[];
@@ -110,7 +105,7 @@ export function DashboardContent({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Metric label="Role" value={roles.length ? roles[0] : "Pegawai"} />
             <Metric label="Feedback" value={feedbackDoneCount.toString()} />
-            <Metric label="Status" value={profile?.is_active ? "Aktif" : "Non-aktif"} />
+            <Metric label="Status" value={profile ? ACTIVE_STATUS_LABELS[profile.active_status] : "-"} />
           </div>
         </div>
       </section>
@@ -144,11 +139,8 @@ export function DashboardContent({
           href="/dashboard/profile"
           actionLabel="Lihat profil"
         >
-          <Badge
-            variant={profile?.is_active ? "default" : "secondary"}
-            className={cn(profile?.is_active && "border-0 bg-primary/10 text-primary")}
-          >
-            {profile?.is_active ? "Aktif" : "Non-aktif"}
+          <Badge variant="secondary">
+            {profile ? ACTIVE_STATUS_LABELS[profile.active_status] : "-"}
           </Badge>
         </ActionCard>
       </section>

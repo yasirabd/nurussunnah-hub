@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   const pathname = (await headers()).get("x-pathname") ?? "/dashboard";
   const isChangePasswordRoute = pathname === "/dashboard/change-password";
 
-  if (context.profile && !context.profile.is_active) redirect("/auth/logout");
+  if (context.profile && context.profile.active_status !== "AKTIF") redirect("/auth/logout");
   if (context.profile?.must_change_password && !isChangePasswordRoute) {
     redirect("/dashboard/change-password");
   }

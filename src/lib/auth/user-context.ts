@@ -4,15 +4,15 @@ import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
-import type { UserRoleEnum } from "@/types/database";
+import type { ActiveStatus, EmployeeStatus, UserRoleEnum } from "@/types/database";
 
 type DashboardProfile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
-  employee_status: string;
+  employee_status: EmployeeStatus;
   home_unit_id: string | null;
-  is_active: boolean;
+  active_status: ActiveStatus;
   must_change_password: boolean;
   units: { id: string; name: string; code: string } | null;
 };
@@ -40,7 +40,7 @@ export const getDashboardUserContext = cache(
       supabase
         .from("profiles")
         .select(
-          "id, full_name, avatar_url, employee_status, home_unit_id, is_active, must_change_password, units!profiles_home_unit_id_fkey(id, name, code)"
+          "id, full_name, avatar_url, employee_status, active_status, home_unit_id, must_change_password, units!profiles_home_unit_id_fkey(id, name, code)"
         )
         .eq("id", user.id)
         .maybeSingle(),

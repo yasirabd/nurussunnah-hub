@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ACTIVE_STATUS_LABELS, EMPLOYEE_STATUS_LABELS, activeStatusBadgeVariant } from "@/lib/employee-status";
 import {
   Briefcase,
   Building2,
@@ -25,13 +26,6 @@ import type {
   UserUnitAssignment,
 } from "@/types/database";
 
-const EMPLOYEE_STATUS_LABELS: Record<string, string> = {
-  TETAP: "Pegawai Tetap",
-  TIDAK_TETAP: "Tidak Tetap",
-  KONTRAK: "Kontrak",
-  HONORER: "Honorer",
-  PENSIUN: "Pensiun",
-};
 
 const ROLE_LABELS: Record<string, string> = {
   PEGAWAI: "Pegawai",
@@ -127,17 +121,11 @@ export function ProfileView({
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               NIY {profile.employee_no}
-              {profile.units ? ` · ${profile.units.name}` : ""}
+              {profile.units ? ` Â· ${profile.units.name}` : ""}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <Badge
-                className={
-                  profile.is_active
-                    ? "border-0 bg-primary/10 text-primary"
-                    : "border-0 bg-slate-100 text-slate-600"
-                }
-              >
-                {profile.is_active ? "Aktif" : "Non-aktif"}
+              <Badge variant={activeStatusBadgeVariant(profile.active_status)}>
+                {ACTIVE_STATUS_LABELS[profile.active_status]}
               </Badge>
               <Badge variant="secondary">
                 {EMPLOYEE_STATUS_LABELS[profile.employee_status] ?? profile.employee_status}
@@ -195,7 +183,7 @@ export function ProfileView({
               value={EMPLOYEE_STATUS_LABELS[profile.employee_status] ?? profile.employee_status}
               icon={<Briefcase className="h-3.5 w-3.5" />}
             />
-            <Row label="Status Akun" value={profile.is_active ? "Aktif" : "Non-aktif"} />
+            <Row label="Status Aktif" value={ACTIVE_STATUS_LABELS[profile.active_status]} />
           </InfoCard>
         </div>
 
@@ -232,7 +220,7 @@ export function ProfileView({
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {history.units?.name ?? "Yayasan"} · {formatDate(history.start_date)} -{" "}
+                      {history.units?.name ?? "Yayasan"} Â· {formatDate(history.start_date)} -{" "}
                       {history.end_date ? formatDate(history.end_date) : "Sekarang"}
                     </p>
                   </div>
