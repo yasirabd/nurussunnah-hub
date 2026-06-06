@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDateId, formatLeavePeriod } from "@/lib/employee-leave.mjs";
 import { ACTIVE_STATUS_LABELS, EMPLOYEE_STATUS_LABELS, activeStatusBadgeVariant } from "@/lib/employee-status";
 import {
   Briefcase,
@@ -47,10 +48,13 @@ type UnitAssignmentWithRelations = UserUnitAssignment & {
   academic_years?: Pick<AcademicYear, "name"> | null;
 };
 
+type EmployeeLeavePeriod = { start_date: string; end_date: string; reason?: string | null };
+
 interface ProfileViewProps {
   profile: ProfileWithUnit | null;
   positionHistories: PositionHistoryWithUnit[];
   unitAssignments: UnitAssignmentWithRelations[];
+  activeLeave?: EmployeeLeavePeriod | null;
   roles: string[];
   userEmail: string;
   successMessage?: string;
@@ -80,6 +84,7 @@ export function ProfileView({
   profile,
   positionHistories,
   unitAssignments,
+  activeLeave,
   roles,
   userEmail,
   successMessage,
@@ -121,12 +126,15 @@ export function ProfileView({
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               NIY {profile.employee_no}
-              {profile.units ? ` Â· ${profile.units.name}` : ""}
+              {profile.units ? ` · ${profile.units.name}` : ""}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <Badge variant={activeStatusBadgeVariant(profile.active_status)}>
                 {ACTIVE_STATUS_LABELS[profile.active_status]}
               </Badge>
+              {profile.active_status === "CUTI" && activeLeave && (
+                <Badge variant="secondary">{formatLeavePeriod(activeLeave)}</Badge>
+              )}
               <Badge variant="secondary">
                 {EMPLOYEE_STATUS_LABELS[profile.employee_status] ?? profile.employee_status}
               </Badge>
@@ -184,6 +192,18 @@ export function ProfileView({
               icon={<Briefcase className="h-3.5 w-3.5" />}
             />
             <Row label="Status Aktif" value={ACTIVE_STATUS_LABELS[profile.active_status]} />
+            {profile.active_status === "CUTI" && activeLeave && (
+              <Row label="Periode Cuti" value={formatLeavePeriod(activeLeave)} />
+            )}
+            {profile.active_status !== "CUTI" && profile.active_status_start_date && (
+              <Row label="Tanggal Status" value={formatDateId(profile.active_status_start_date)} />
+            )}
+            {profile.active_status === "CUTI" && activeLeave?.reason && (
+              <Row label="Keterangan Cuti" value={activeLeave.reason} />
+            )}
+            {profile.active_status !== "CUTI" && profile.active_status_note && (
+              <Row label="Catatan Status" value={profile.active_status_note} />
+            )}
           </InfoCard>
         </div>
 
@@ -220,7 +240,7 @@ export function ProfileView({
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {history.units?.name ?? "Yayasan"} Â· {formatDate(history.start_date)} -{" "}
+                      {history.units?.name ?? "Yayasan"} · {formatDate(history.start_date)} -{" "}
                       {history.end_date ? formatDate(history.end_date) : "Sekarang"}
                     </p>
                   </div>

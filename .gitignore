@@ -42,3 +42,14 @@ next-env.d.ts
 
 # OpenNext build output
 .open-next/
+# build logs
+build-error.log
+build-output.log
+build_out.txt
+build_out2.txt
+tsc_err.txt
+tsc_out.txt
+tmp-css.txt
+
+# generated binaries
+dist/

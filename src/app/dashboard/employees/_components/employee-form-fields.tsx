@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +25,16 @@ export type EmployeeFormValue = {
   twitter?: string | null;
   employee_status?: string | null;
   active_status?: string | null;
+  active_status_start_date?: string | null;
+  active_status_end_date?: string | null;
+  active_status_note?: string | null;
   home_unit_id?: string | null;
+};
+
+export type EmployeeLeaveFormValue = {
+  start_date?: string | null;
+  end_date?: string | null;
+  reason?: string | null;
 };
 
 export type UnitOption = {
@@ -35,13 +47,17 @@ const roleOptions = ["PEGAWAI", "KEPALA_UNIT", "HRD", "ADMIN"] as const;
 
 export function EmployeeFormFields({
   employee,
+  activeLeave,
   units,
   showDefaultPasswordHelp = false,
 }: {
   employee?: EmployeeFormValue | null;
+  activeLeave?: EmployeeLeaveFormValue | null;
   units: UnitOption[];
   showDefaultPasswordHelp?: boolean;
 }) {
+  const [activeStatus, setActiveStatus] = useState(employee?.active_status ?? "AKTIF");
+
   return (
     <>
       <FormSection title="Akun & Kepegawaian">
@@ -75,6 +91,7 @@ export function EmployeeFormFields({
           name="active_status"
           defaultValue={employee?.active_status ?? "AKTIF"}
           helper="Status ini menentukan apakah pegawai dihitung sebagai pegawai aktif sistem."
+          onChange={(event) => setActiveStatus(event.currentTarget.value)}
         >
           {ACTIVE_STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -82,6 +99,7 @@ export function EmployeeFormFields({
             </option>
           ))}
         </SelectField>
+        <StatusDetailFields employee={employee} activeLeave={activeLeave} activeStatus={activeStatus} />
         {showDefaultPasswordHelp && (
           <p className="rounded-[var(--radius-md)] bg-primary/10 p-3 text-sm text-primary md:col-span-2">
             Password awal pegawai baru adalah bismillahns dan wajib diganti saat login pertama.
@@ -123,6 +141,83 @@ export function EmployeeFormFields({
         <TextareaField label="Alamat Domisili" name="address_domicile" defaultValue={employee?.address_domicile} />
       </FormSection>
     </>
+  );
+}
+
+function StatusDetailFields({
+  employee,
+  activeLeave,
+  activeStatus,
+}: {
+  employee?: EmployeeFormValue | null;
+  activeLeave?: EmployeeLeaveFormValue | null;
+  activeStatus: string;
+}) {
+  if (activeStatus === "CUTI") {
+    return (
+      <div className="space-y-4 rounded-[var(--radius-md)] border bg-background p-4 md:col-span-2">
+        <div>
+          <h3 className="text-sm font-semibold tracking-normal">Detail Status</h3>
+          <p className="text-xs leading-5 text-muted-foreground">Cuti memerlukan tanggal mulai dan tanggal selesai.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Tanggal Mulai Cuti" name="leave_start_date" type="date" defaultValue={activeLeave?.start_date ?? employee?.active_status_start_date} required />
+          <Field label="Tanggal Selesai Cuti" name="leave_end_date" type="date" defaultValue={activeLeave?.end_date ?? employee?.active_status_end_date} required />
+          <TextareaField label="Catatan Cuti" name="leave_reason" defaultValue={activeLeave?.reason ?? employee?.active_status_note} />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeStatus === "DIBERHENTIKAN") {
+    return <FinalStatusFields title="Diberhentikan" dateLabel="Tanggal Diberhentikan" helper="Status ini mengeluarkan pegawai dari pegawai aktif sistem." employee={employee} />;
+  }
+
+  if (activeStatus === "RESIGN") {
+    return <FinalStatusFields title="Resign" dateLabel="Tanggal Resign" helper="Status ini mengeluarkan pegawai dari pegawai aktif sistem." employee={employee} />;
+  }
+
+  if (activeStatus === "PENSIUN") {
+    return <FinalStatusFields title="Pensiun" dateLabel="Tanggal Mulai Pensiun" helper="Status ini mengeluarkan pegawai dari pegawai aktif sistem." employee={employee} />;
+  }
+
+  if (activeStatus === "NONAKTIF") {
+    return (
+      <div className="space-y-4 rounded-[var(--radius-md)] border bg-background p-4 md:col-span-2">
+        <div>
+          <h3 className="text-sm font-semibold tracking-normal">Detail Status</h3>
+          <p className="text-xs leading-5 text-muted-foreground">Catatan nonaktif bersifat administratif.</p>
+        </div>
+        <TextareaField label="Catatan" name="status_note" defaultValue={employee?.active_status_note} />
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function FinalStatusFields({
+  title,
+  dateLabel,
+  helper,
+  employee,
+}: {
+  title: string;
+  dateLabel: string;
+  helper: string;
+  employee?: EmployeeFormValue | null;
+}) {
+  return (
+    <div className="space-y-4 rounded-[var(--radius-md)] border bg-background p-4 md:col-span-2">
+      <div>
+        <h3 className="text-sm font-semibold tracking-normal">Detail Status: {title}</h3>
+        <p className="text-xs leading-5 text-muted-foreground">{helper}</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label={dateLabel} name="status_effective_date" type="date" defaultValue={employee?.active_status_start_date} required />
+        <TextareaField label="Catatan" name="status_note" defaultValue={employee?.active_status_note} />
+      </div>
+    </div>
   );
 }
 

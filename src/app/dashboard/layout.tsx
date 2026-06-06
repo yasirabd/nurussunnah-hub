@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
+import { canAccessDashboard } from "@/lib/employee-leave.mjs";
 
 export default async function DashboardLayout({
   children,
@@ -15,7 +16,7 @@ export default async function DashboardLayout({
   const pathname = (await headers()).get("x-pathname") ?? "/dashboard";
   const isChangePasswordRoute = pathname === "/dashboard/change-password";
 
-  if (context.profile && context.profile.active_status !== "AKTIF") redirect("/auth/logout");
+  if (context.profile && !canAccessDashboard(context.profile.active_status)) redirect("/auth/logout");
   if (context.profile?.must_change_password && !isChangePasswordRoute) {
     redirect("/dashboard/change-password");
   }

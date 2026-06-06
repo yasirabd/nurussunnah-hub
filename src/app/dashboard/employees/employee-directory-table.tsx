@@ -22,7 +22,10 @@ import {
   EMPLOYEE_STATUS_LABELS,
   activeStatusBadgeVariant,
 } from "@/lib/employee-status";
+import { formatDateId, formatLeavePeriod } from "@/lib/employee-leave.mjs";
 import type { ActiveStatus, EmployeeStatus } from "@/types/database";
+
+type EmployeeLeavePeriod = { start_date: string; end_date: string; reason?: string | null };
 import {
   Table,
   TableBody,
@@ -51,6 +54,9 @@ type EmployeeRow = {
   twitter: string | null;
   employee_status: EmployeeStatus;
   active_status: ActiveStatus;
+  active_status_start_date: string | null;
+  active_status_end_date: string | null;
+  active_status_note: string | null;
   must_change_password: boolean;
   home_unit_id: string | null;
   units: { id: string; name: string; code: string } | null;
@@ -66,6 +72,7 @@ type EmployeeDirectoryTableProps = {
   rows: EmployeeRow[];
   rolesByUser: Record<string, string[]>;
   positionsByUser: Record<string, string[]>;
+  activeLeavesByUser: Record<string, EmployeeLeavePeriod>;
   units: UnitOption[];
   canManageEmployees: boolean;
   canEditPosition: boolean;
@@ -75,6 +82,7 @@ export function EmployeeDirectoryTable({
   rows,
   rolesByUser,
   positionsByUser,
+  activeLeavesByUser,
   canManageEmployees,
   canEditPosition,
 }: EmployeeDirectoryTableProps) {
@@ -147,6 +155,16 @@ export function EmployeeDirectoryTable({
                     <span className="text-xs text-muted-foreground">
                       {EMPLOYEE_STATUS_LABELS[row.employee_status]}
                     </span>
+                    {row.active_status === "CUTI" && activeLeavesByUser[row.id] && (
+                      <span className="text-xs leading-5 text-muted-foreground">
+                        {formatLeavePeriod(activeLeavesByUser[row.id])}
+                      </span>
+                    )}
+                    {row.active_status !== "CUTI" && row.active_status_start_date && (
+                      <span className="text-xs leading-5 text-muted-foreground">
+                        {formatDateId(row.active_status_start_date)}
+                      </span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>

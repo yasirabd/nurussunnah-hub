@@ -43,6 +43,10 @@ alter type public.employee_status_enum_v2 rename to employee_status_enum;
 create index idx_profiles_active_status on public.profiles(active_status);
 create index idx_profiles_scope_feedback on public.profiles(home_unit_id, active_status, employee_status);
 
+drop function if exists public.get_feedback_targets(uuid);
+drop function if exists public.get_feedback_monitoring(uuid);
+drop function if exists public.get_feedback_monitoring_scoped(uuid);
+
 create or replace function public.get_feedback_targets(p_academic_year_id uuid)
 returns table(
   receiver_user_id uuid,

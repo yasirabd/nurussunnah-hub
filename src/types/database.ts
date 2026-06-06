@@ -78,6 +78,57 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_leaves: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          status: "ACTIVE" | "COMPLETED" | "CANCELLED"
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          status?: "ACTIVE" | "COMPLETED" | "CANCELLED"
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          status?: "ACTIVE" | "COMPLETED" | "CANCELLED"
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_leaves_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_leaves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -199,6 +250,9 @@ export type Database = {
           employee_no: string
           employee_status: Database["public"]["Enums"]["employee_status_enum"]
           active_status: Database["public"]["Enums"]["active_status_enum"]
+          active_status_end_date: string | null
+          active_status_note: string | null
+          active_status_start_date: string | null
           facebook: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_enum"]
@@ -224,6 +278,9 @@ export type Database = {
           employee_no: string
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
           active_status?: Database["public"]["Enums"]["active_status_enum"]
+          active_status_end_date?: string | null
+          active_status_note?: string | null
+          active_status_start_date?: string | null
           facebook?: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_enum"]
@@ -249,6 +306,9 @@ export type Database = {
           employee_no?: string
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
           active_status?: Database["public"]["Enums"]["active_status_enum"]
+          active_status_end_date?: string | null
+          active_status_note?: string | null
+          active_status_start_date?: string | null
           facebook?: string | null
           full_name?: string
           gender?: Database["public"]["Enums"]["gender_enum"]
@@ -642,6 +702,7 @@ export type UserUnitAssignment = Tables<"user_unit_assignments">
 export type PositionHistory = Tables<"position_histories">
 export type PeerFeedback = Tables<"peer_feedbacks">
 export type AuditLog = Tables<"audit_logs">
+export type EmployeeLeave = Tables<"employee_leaves">
 
 export type WorkStatementStatus = Database["public"]["Enums"]["work_statement_status_enum"]
 export type UserRoleEnum = Database["public"]["Enums"]["user_role_enum"]

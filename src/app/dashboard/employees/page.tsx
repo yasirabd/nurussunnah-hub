@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Building2, Search, Users } from "lucide-react";
+import { Building2, Plus, Search, Upload, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -44,6 +44,9 @@ type ProfileRow = {
   twitter: string | null;
   employee_status: EmployeeStatus;
   active_status: ActiveStatus;
+  active_status_start_date: string | null;
+  active_status_end_date: string | null;
+  active_status_note: string | null;
   must_change_password: boolean;
   units: { id: string; name: string; code: string } | null;
 };
@@ -56,6 +59,13 @@ type RoleRow = {
 type PositionRow = {
   user_id: string;
   position_name: string;
+};
+
+type LeaveRow = {
+  user_id: string;
+  start_date: string;
+  end_date: string;
+  reason: string | null;
 };
 
 type UnitRow = { id: string; name: string; code: string };
@@ -133,7 +143,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)",
+      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, active_status_start_date, active_status_end_date, active_status_note, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)",
       { count: "exact" }
     )
     .order("full_name", { ascending: true })
@@ -165,8 +175,19 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         .order("position_name", { ascending: true })
     : { data: [] };
 
+  const { data: activeLeaves } = ids.length
+    ? await supabase
+        .from("employee_leaves")
+        .select("user_id, start_date, end_date, reason")
+        .eq("status", "ACTIVE")
+        .in("user_id", ids)
+    : { data: [] };
+
   const rolesByUser = groupByUser(userRoles ?? []);
   const positionsByUser = groupByUser(positions ?? []);
+  const activeLeavesByUser = Object.fromEntries(
+    ((activeLeaves ?? []) as LeaveRow[]).map((leave) => [leave.user_id, leave])
+  );
   const activeCount = rows.filter((row) => row.active_status === "AKTIF").length;
   const unitCount = new Set(rows.map((row) => row.units?.id).filter(Boolean)).size;
   const flatParams = Object.fromEntries(
@@ -185,6 +206,24 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         <Badge className="h-7 w-fit rounded-[var(--radius-full)] border-0 bg-primary/10 px-3 text-primary">
           {totalRows} pegawai ditemukan
         </Badge>
+        {canManageEmployees && (
+          <div className="flex gap-2">
+            <Link
+              href="/dashboard/employees/import"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <Upload className="h-4 w-4" />
+              Import Massal
+            </Link>
+            <Link
+              href="/dashboard/employees/new"
+              className={buttonVariants({ size: "sm" })}
+            >
+              <Plus className="h-4 w-4" />
+              Tambah Pegawai
+            </Link>
+          </div>
+        )}
       </div>
 
       {success && (
@@ -263,6 +302,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               rows={rows}
               rolesByUser={Object.fromEntries(rolesByUser)}
               positionsByUser={Object.fromEntries(positionsByUser)}
+              activeLeavesByUser={activeLeavesByUser}
               units={units}
               canManageEmployees={canManageEmployees}
               canEditPosition={canManageEmployees || roles.includes("KEPALA_UNIT")}

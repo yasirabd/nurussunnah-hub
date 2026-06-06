@@ -11,6 +11,7 @@ import {
 } from "../../actions";
 import {
   EmployeeFormFields,
+  type EmployeeLeaveFormValue,
   PositionField,
   RoleCheckboxes,
   type EmployeeFormValue,
@@ -47,10 +48,10 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
   const canEditPosition = canManageEmployees || currentRoleNames.includes("KEPALA_UNIT");
   if (!canEditPosition) redirect("/dashboard");
 
-  const [{ data: profile }, { data: roles }, { data: position }, { data: units }] = await Promise.all([
+  const [{ data: profile }, { data: roles }, { data: position }, { data: units }, { data: activeLeave }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
+      .select("id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, active_status_start_date, active_status_end_date, active_status_note, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", id),
@@ -61,6 +62,12 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
       .eq("is_current", true)
       .maybeSingle(),
     supabase.from("units").select("id, name, code").order("code", { ascending: true }),
+    supabase
+      .from("employee_leaves")
+      .select("start_date, end_date, reason")
+      .eq("user_id", id)
+      .eq("status", "ACTIVE")
+      .maybeSingle(),
   ]);
 
   if (!profile) redirect("/dashboard/employees");
@@ -78,7 +85,11 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
         Daftar Pegawai
       </Link>
 
-      <EmployeeSummary employee={employee} roles={roleNames} />
+      <EmployeeSummary
+        employee={employee}
+        roles={roleNames}
+        activeLeave={activeLeave as EmployeeLeaveFormValue | null}
+      />
 
       {success && <Message type="success" text={success} />}
       {error && <Message type="error" text={error} />}
@@ -87,7 +98,11 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
         <form action={updateEmployeeProfileAction} className="space-y-5">
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="return_to" value={returnTo} />
-          <EmployeeFormFields employee={employee} units={(units ?? []) as UnitOption[]} />
+          <EmployeeFormFields
+            employee={employee}
+            activeLeave={activeLeave as EmployeeLeaveFormValue | null}
+            units={(units ?? []) as UnitOption[]}
+          />
           <div className="flex justify-end">
             <Button type="submit">
               <Save className="h-4 w-4" />

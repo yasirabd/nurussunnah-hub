@@ -14,7 +14,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
   const context = await getDashboardUserContext();
   if (!context) redirect("/auth/login");
 
-  const [{ data: profile }, { data: positionHistories }, { data: unitAssignments }] =
+  const [{ data: profile }, { data: positionHistories }, { data: unitAssignments }, { data: activeLeave }] =
     await Promise.all([
       context.supabase
         .from("profiles")
@@ -31,6 +31,12 @@ export default async function ProfilePage({ searchParams }: PageProps) {
         .select("*, units(name, code), academic_years(name)")
         .eq("user_id", context.user.id)
         .order("created_at", { ascending: false }),
+      context.supabase
+        .from("employee_leaves")
+        .select("start_date, end_date, reason")
+        .eq("user_id", context.user.id)
+        .eq("status", "ACTIVE")
+        .maybeSingle(),
     ]);
 
   const roles = context.roles;
@@ -42,6 +48,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
       profile={profile}
       positionHistories={positionHistories ?? []}
       unitAssignments={unitAssignments ?? []}
+      activeLeave={activeLeave}
       roles={roles}
       successMessage={Array.isArray(success) ? success[0] : success}
       errorMessage={Array.isArray(error) ? error[0] : error}
