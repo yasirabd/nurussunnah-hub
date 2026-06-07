@@ -187,6 +187,8 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
     : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const targets = (targetsResult.data ?? []) as FeedbackTarget[];
+  const distinctTargetUnits = new Set(targets.map((t) => t.unit_code).filter(Boolean));
+  const isMultiUnit = distinctTargetUnits.size > 1;
   const received = receivedResult.data ?? [];
   const monitoring = (monitoringResult.data ?? []) as MonitoringRow[];
   const identified = (identifiedResult.data ?? []) as IdentifiedFeedback[];
@@ -333,7 +335,11 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FeedbackTargetCarousel targets={targets} academicYearId={activeYear.id} />
+                <FeedbackTargetCarousel
+                  targets={targets}
+                  academicYearId={activeYear.id}
+                  isMultiUnit={isMultiUnit}
+                />
               </CardContent>
             </Card>
 

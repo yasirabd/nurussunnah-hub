@@ -1,5 +1,4 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
@@ -13,16 +12,7 @@ export default async function DashboardLayout({
   const context = await getDashboardUserContext();
   if (!context) redirect("/auth/login");
 
-  const pathname = (await headers()).get("x-pathname") ?? "/dashboard";
-  const isChangePasswordRoute = pathname === "/dashboard/change-password";
-
   if (context.profile && !canAccessDashboard(context.profile.active_status)) redirect("/auth/logout");
-  if (context.profile?.must_change_password && !isChangePasswordRoute) {
-    redirect("/dashboard/change-password");
-  }
-  if (context.profile && !context.profile.must_change_password && isChangePasswordRoute) {
-    redirect("/dashboard");
-  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

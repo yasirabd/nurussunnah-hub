@@ -30,9 +30,11 @@ export type FeedbackTarget = {
 export function FeedbackTargetCarousel({
   targets,
   academicYearId,
+  isMultiUnit = false,
 }: {
   targets: FeedbackTarget[];
   academicYearId: string;
+  isMultiUnit?: boolean;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeTarget = targets[activeIndex];
@@ -112,6 +114,7 @@ export function FeedbackTargetCarousel({
         key={activeTarget.receiver_user_id}
         target={activeTarget}
         academicYearId={academicYearId}
+        isMultiUnit={isMultiUnit}
       />
     </div>
   );
@@ -120,9 +123,11 @@ export function FeedbackTargetCarousel({
 function FeedbackTargetCard({
   target,
   academicYearId,
+  isMultiUnit = false,
 }: {
   target: FeedbackTarget;
   academicYearId: string;
+  isMultiUnit?: boolean;
 }) {
   return (
     <form action={submitFeedbackAction} className="rounded-[var(--radius-lg)] border bg-card p-4 elevation-1">
@@ -131,7 +136,14 @@ function FeedbackTargetCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold">{target.full_name}</h2>
+            <h2 className="font-semibold">
+            {target.full_name}
+            {isMultiUnit && target.unit_code && (
+              <span className="ml-2 inline-flex items-center rounded-sm border bg-secondary/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {target.unit_code}
+              </span>
+            )}
+          </h2>
             {target.is_completed && (
               <Badge className="border-0 bg-primary/10 text-primary">
                 Selesai

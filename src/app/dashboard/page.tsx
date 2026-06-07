@@ -117,13 +117,10 @@ async function buildOperationalSummary({
       })
     : { data: [] };
   const monitoring = (monitoringData ?? []) as MonitoringRow[];
-  const completedTargets = monitoring.reduce(
-    (sum, row) => sum + row.completed_count,
-    0
-  );
-  const totalTargets = monitoring.reduce((sum, row) => sum + row.target_count, 0);
-  const feedbackPercent = percent(completedTargets, totalTargets);
   const incompleteEmployees = monitoring.filter((row) => !row.is_complete).length;
+  const totalEmployees = monitoring.length;
+  const completedEmployees = totalEmployees - incompleteEmployees;
+  const feedbackPercent = percent(completedEmployees, totalEmployees);
 
   if (isHrd) {
     const [
@@ -179,7 +176,7 @@ async function buildOperationalSummary({
           label: "Progress feedback",
           value: activeYearId ? `${feedbackPercent}%` : "-",
           helper: activeYearId
-            ? `${completedTargets}/${totalTargets} target selesai`
+            ? `${monitoring.length - incompleteEmployees}/${monitoring.length} pegawai selesai`
             : "Tahun pelajaran belum aktif",
           tone: feedbackPercent === 100 ? "success" : "warning",
         },
@@ -270,7 +267,7 @@ async function buildOperationalSummary({
         label: "Progress feedback",
         value: activeYearId ? `${feedbackPercent}%` : "-",
         helper: activeYearId
-          ? `${completedTargets}/${totalTargets} target selesai`
+          ? `${monitoring.length - incompleteEmployees}/${monitoring.length} pegawai selesai`
           : "Tahun pelajaran belum aktif",
         tone: feedbackPercent === 100 ? "success" : "warning",
       },
