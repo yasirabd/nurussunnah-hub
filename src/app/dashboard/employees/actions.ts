@@ -1,6 +1,6 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { redirect, isRedirectError } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
@@ -297,16 +297,7 @@ export async function deactivateEmployeeAction(formData: FormData) {
       app_metadata: { disabled_by_hrd: true },
     });
     revalidatePath('/dashboard/employees');
-    redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
-  } catch (err) {
-    // Let Next.js handle redirect errors
-    if (isRedirectError(err)) {
-      throw err;
-    }
-    console.error('deactivateEmployeeAction failed:', err);
-    const message = err instanceof Error ? err.message : 'Terjadi kesalahan internal.';
-    redirect(`/dashboard/employees?error=${encodeURIComponent(message)}`);
-  }
+}
 }
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
   const supabase = await createClient();
@@ -352,7 +343,7 @@ export async function updateEmployeeCurrentPositionAction(formData: FormData) {
   revalidatePath('/dashboard/employees');
   redirectToPath(returnTo, !error, error ? error.message : 'Jabatan pegawai berhasil diperbarui.');
 }
-// â€”â€”â€” Bulk Import Types â€”â€”â€”
+// ——— Bulk Import Types ———
 export type BulkImportRow = {
   rowNumber: number
   full_name: string
@@ -383,7 +374,7 @@ export type ImportResult = {
   skipped: number
   errors: { row: number; reason: string }[]
 }
-// â€”â€”â€” Bulk Import Helpers â€”â€”â€”
+// ——— Bulk Import Helpers ———
 const GENDER_MAP: Record<string, 'L' | 'P'> = {
   'LAKI-LAKI': 'L',
   'PEREMPUAN': 'P',
@@ -441,7 +432,7 @@ function guessEmail(row: BulkImportRow): string {
   if (row.email && row.email.includes('@')) return row.email.toLowerCase().replace(/\s/g, '')
   return `${row.employee_no}@nurussunnah.sch.id`
 }
-// â€”â€”â€” Bulk Import Action â€”â€”â€”
+// ——— Bulk Import Action ———
 export async function importBulkEmployeesAction(
   rows: BulkImportRow[]
 ): Promise<ImportResult> {
@@ -581,14 +572,5 @@ export async function resetPasswordAction(formData: FormData) {
       .eq('id', userId);
     if (profileError) redirectWith(false, profileError.message);
     revalidatePath('/dashboard/employees');
-    redirectWith(true, 'Password berhasil di-reset ke default.');
-  } catch (err) {
-    // Let Next.js handle redirect errors
-    if (isRedirectError(err)) {
-      throw err;
-    }
-    console.error('resetPasswordAction failed:', err);
-    const message = err instanceof Error ? err.message : 'Terjadi kesalahan internal.';
-    redirect(`/dashboard/employees?error=${encodeURIComponent(message)}`);
   }
 }
