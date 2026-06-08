@@ -1,6 +1,6 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirect, isRedirectError } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
@@ -283,20 +283,30 @@ export async function updateEmployeeRolesAction(formData: FormData) {
   redirectToPath(returnTo, true, 'Role pegawai berhasil diperbarui.');
 }
 export async function deactivateEmployeeAction(formData: FormData) {
-  const supabase = await ensureCanManageEmployees();
-  const admin = createAdminClient();
-  const id = text(formData, 'id');
-  if (!id) redirectWith(false, 'ID pegawai tidak valid.');
-  const { error } = await supabase
-    .from('profiles')
-    .update({ active_status: 'NONAKTIF' })
-    .eq('id', id);
-  if (error) redirectWith(false, error.message);
-  await admin.auth.admin.updateUserById(id, {
-    app_metadata: { disabled_by_hrd: true },
-  });
-  revalidatePath('/dashboard/employees');
-  redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
+  try {
+    const supabase = await ensureCanManageEmployees();
+    const admin = createAdminClient();
+    const id = text(formData, 'id');
+    if (!id) redirectWith(false, 'ID pegawai tidak valid.');
+    const { error } = await supabase
+      .from('profiles')
+      .update({ active_status: 'NONAKTIF' })
+      .eq('id', id);
+    if (error) redirectWith(false, error.message);
+    await admin.auth.admin.updateUserById(id, {
+      app_metadata: { disabled_by_hrd: true },
+    });
+    revalidatePath('/dashboard/employees');
+    redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
+  } catch (err) {
+    // Let Next.js handle redirect errors
+    if (isRedirectError(err)) {
+      throw err;
+    }
+    console.error('deactivateEmployeeAction failed:', err);
+    const message = err instanceof Error ? err.message : 'Terjadi kesalahan internal.';
+    redirect(`/dashboard/employees?error=${encodeURIComponent(message)}`);
+  }
 }
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
   const supabase = await createClient();
@@ -526,7 +536,7 @@ export async function importBulkEmployeesAction(
       active_status: normalizeActiveStatus(row.active_status),
       home_unit_id: unitId,
       must_change_password: true,
-      }, { onConflict: 'id' })
+    }, { onConflict: 'id' })
     if (profileError) {
       result.skipped++
       result.errors.push({ row: row.rowNumber, reason: `Gagal insert profile: ${profileError.message}` })
@@ -538,7 +548,7 @@ export async function importBulkEmployeesAction(
     })
     if (activeYearId) {
       await supabase.from('user_unit_assignments').upsert({
-      user_id: userId!,
+        user_id: userId!,
         unit_id: unitId,
         assignment_type: 'HOME',
         academic_year_id: activeYearId,
@@ -551,24 +561,34 @@ export async function importBulkEmployeesAction(
 }
 
 export async function resetPasswordAction(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login');
-  const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
-  const roles = (roleRows ?? []).map((item) => item.role);
-  if (!roles.includes('ADMIN')) redirect('/dashboard');
-  const userId = text(formData, 'id');
-  if (!userId) redirectWith(false, 'ID pegawai tidak valid.');
-  const admin = createAdminClient();
-  const { error: authError } = await admin.auth.admin.updateUserById(userId, {
-    password: DEFAULT_EMPLOYEE_PASSWORD,
-  });
-  if (authError) redirectWith(false, 'Gagal reset password: ' + authError.message);
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .update({ must_change_password: true })
-    .eq('id', userId);
-  if (profileError) redirectWith(false, profileError.message);
-  revalidatePath('/dashboard/employees');
-  redirectWith(true, 'Password berhasil di-reset ke default.');
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) redirect('/auth/login');
+    const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+    const roles = (roleRows ?? []).map((item) => item.role);
+    if (!roles.includes('ADMIN')) redirect('/dashboard');
+    const userId = text(formData, 'id');
+    if (!userId) redirectWith(false, 'ID pegawai tidak valid.');
+    const admin = createAdminClient();
+    const { error: authError } = await admin.auth.admin.updateUserById(userId, {
+      password: DEFAULT_EMPLOYEE_PASSWORD,
+    });
+    if (authError) redirectWith(false, 'Gagal reset password: ' + authError.message);
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ must_change_password: true })
+      .eq('id', userId);
+    if (profileError) redirectWith(false, profileError.message);
+    revalidatePath('/dashboard/employees');
+    redirectWith(true, 'Password berhasil di-reset ke default.');
+  } catch (err) {
+    // Let Next.js handle redirect errors
+    if (isRedirectError(err)) {
+      throw err;
+    }
+    console.error('resetPasswordAction failed:', err);
+    const message = err instanceof Error ? err.message : 'Terjadi kesalahan internal.';
+    redirect(`/dashboard/employees?error=${encodeURIComponent(message)}`);
+  }
 }
