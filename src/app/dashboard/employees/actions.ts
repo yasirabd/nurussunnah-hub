@@ -1,6 +1,6 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirect, isRedirectError } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
@@ -299,7 +299,11 @@ export async function deactivateEmployeeAction(formData: FormData) {
     revalidatePath('/dashboard/employees');
     redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
   } catch (err) {
-    console.error('deactivateEmployeeAction failed:', err);
+   // Let Next.js handle redirect errors
+   if (isRedirectError(err)) {
+     throw err;
+   }
+   console.error('deactivateEmployeeAction failed:', err);
     const message = err instanceof Error ? err.message : 'Terjadi kesalahan internal.';
     redirect(`/dashboard/employees?error=${encodeURIComponent(message)}`);
   }
@@ -579,7 +583,11 @@ export async function resetPasswordAction(formData: FormData) {
     revalidatePath('/dashboard/employees');
     redirectWith(true, 'Password berhasil di-reset ke default.');
   } catch (err) {
-    console.error('resetPasswordAction failed:', err);
+   // Let Next.js handle redirect errors
+   if (isRedirectError(err)) {
+     throw err;
+   }
+   console.error('resetPasswordAction failed:', err);
     const message = err instanceof Error ? err.message : 'Terjadi kesalahan internal.';
     redirect(`/dashboard/employees?error=${encodeURIComponent(message)}`);
   }
