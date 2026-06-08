@@ -296,6 +296,7 @@ export async function deactivateEmployeeAction(formData: FormData) {
     app_metadata: { disabled_by_hrd: true },
   });
   revalidatePath('/dashboard/employees');
+  redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
 }
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
   const supabase = await createClient();
@@ -569,4 +570,5 @@ export async function resetPasswordAction(formData: FormData) {
     .eq('id', userId);
   if (profileError) redirectWith(false, profileError.message);
   revalidatePath('/dashboard/employees');
+  redirectWith(true, 'Password berhasil di-reset ke default.');
 }
