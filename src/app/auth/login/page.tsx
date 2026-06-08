@@ -68,7 +68,7 @@ export default function LoginPage() {
         email = resolvedEmail;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password: values.password,
       });
@@ -82,8 +82,21 @@ export default function LoginPage() {
         return;
       }
 
+      let nextPath = "/dashboard";
+      if (authData.user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("must_change_password")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+
+        if (profile?.must_change_password) {
+          nextPath = "/dashboard/change-password";
+        }
+      }
+
       toast.success("Login berhasil! Mengalihkan...");
-      router.push("/dashboard");
+      router.replace(nextPath);
       router.refresh();
     } finally {
       setIsLoading(false);
