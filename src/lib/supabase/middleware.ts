@@ -55,21 +55,5 @@ export async function updateSession(request: NextRequest) {
   }
 
   
-  // Must-change-password redirect
-  if (user && url.pathname.startsWith("/dashboard")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("must_change_password, active_status")
-      .eq("id", user.id)
-      .single();
-    if (profile?.must_change_password && url.pathname !== "/dashboard/change-password") {
-      url.pathname = "/dashboard/change-password";
-      return NextResponse.redirect(url);
-    }
-    if (profile && !profile.must_change_password && url.pathname === "/dashboard/change-password") {
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
-  }
   return supabaseResponse
 }
