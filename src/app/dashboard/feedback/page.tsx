@@ -26,6 +26,7 @@ import {
   FeedbackTargetCarousel,
   type FeedbackTarget,
 } from "./feedback-target-carousel";
+import { DownloadFeedbackExcel } from "./download-feedback-excel";
 
 export const metadata: Metadata = { title: "Feedback Rekan Kerja" };
 
@@ -345,10 +346,20 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Feedback Masuk</CardTitle>
-                <CardDescription>
-                  Identitas pemberi tidak ditampilkan di area pegawai.
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Feedback Masuk</CardTitle>
+                    <CardDescription>
+                      Identitas pemberi tidak ditampilkan di area pegawai.
+                    </CardDescription>
+                  </div>
+                  {received.length > 0 && (
+                    <DownloadFeedbackExcel
+                      data={received}
+                      yearName={activeYear?.name ?? "unknown"}
+                    />
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {received.length === 0 ? (
