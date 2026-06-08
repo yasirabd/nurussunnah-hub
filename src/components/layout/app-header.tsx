@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Menu, User } from "lucide-react";
+import { ChevronDown, LogOut, Menu, PanelLeftClose, PanelLeftOpen, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,8 @@ interface AppHeaderProps {
     avatar_url?: string | null;
   } | null;
   roles: string[];
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -48,7 +50,7 @@ function getInitials(name: string | null | undefined): string {
     .toUpperCase();
 }
 
-export function AppHeader({ profile, roles }: AppHeaderProps) {
+export function AppHeader({ profile, roles, onToggleSidebar, sidebarOpen = true }: AppHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const visibleItems = getVisibleNavItems(roles);
@@ -109,10 +111,19 @@ export function AppHeader({ profile, roles }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Desktop: page context */}
-      <div className="hidden md:block">
-        <p className="text-sm font-semibold tracking-normal">Dashboard SDM</p>
-        <p className="text-xs text-muted-foreground">Yayasan Islam Nurus Sunnah</p>
+      {/* Desktop: toggle + page context */}
+      <div className="hidden items-center gap-2 md:flex">
+        <button
+          onClick={onToggleSidebar}
+          aria-label={sidebarOpen ? "Tutup sidebar" : "Buka sidebar"}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-full)] border-0 bg-transparent text-foreground transition-colors hover:bg-muted"
+        >
+          {sidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+        </button>
+        <div>
+          <p className="text-sm font-semibold tracking-normal">Dashboard SDM</p>
+          <p className="text-xs text-muted-foreground">Yayasan Islam Nurus Sunnah</p>
+        </div>
       </div>
 
       {/* Right: role badge + user menu */}

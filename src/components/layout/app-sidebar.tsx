@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -52,6 +52,7 @@ export const navItems: NavItem[] = [
 
 interface AppSidebarProps {
   roles: string[];
+  isOpen?: boolean;
 }
 
 export function getVisibleNavItems(roles: string[]) {
@@ -60,12 +61,12 @@ export function getVisibleNavItems(roles: string[]) {
   );
 }
 
-export function AppSidebar({ roles }: AppSidebarProps) {
+export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
   const pathname = usePathname();
   const visibleItems = getVisibleNavItems(roles);
 
   return (
-    <aside className="hidden h-full w-72 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+    <aside className={cn("hidden h-full flex-col bg-sidebar text-sidebar-foreground md:flex overflow-hidden transition-[width] duration-300 ease-in-out", isOpen ? "w-72 shrink-0" : "w-0")}>
       {/* Brand — MD3 NavigationDrawer header */}
       <div className="flex h-[72px] shrink-0 items-center gap-3 px-6">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-sidebar-primary shadow-sm">
@@ -135,4 +136,5 @@ export function AppSidebar({ roles }: AppSidebarProps) {
     </aside>
   );
 }
+
 
