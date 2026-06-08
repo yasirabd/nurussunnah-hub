@@ -306,6 +306,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               units={units}
               canManageEmployees={canManageEmployees}
               canEditPosition={canManageEmployees || roles.includes("KEPALA_UNIT")}
+              canResetPassword={context.isAdmin}
             />
           )}
           <div className="mt-4">

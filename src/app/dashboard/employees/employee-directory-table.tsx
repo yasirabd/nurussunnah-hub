@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { Pencil, UserPlus, UserX } from "lucide-react";
+import { KeyRound, Pencil, UserPlus, UserX } from "lucide-react";
 
-import { deactivateEmployeeAction } from "./actions";
+import { deactivateEmployeeAction, resetPasswordAction } from "./actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,6 +76,7 @@ type EmployeeDirectoryTableProps = {
   units: UnitOption[];
   canManageEmployees: boolean;
   canEditPosition: boolean;
+  canResetPassword: boolean;
 };
 
 export function EmployeeDirectoryTable({
@@ -85,6 +86,7 @@ export function EmployeeDirectoryTable({
   activeLeavesByUser,
   canManageEmployees,
   canEditPosition,
+  canResetPassword,
 }: EmployeeDirectoryTableProps) {
   return (
     <>
@@ -180,6 +182,7 @@ export function EmployeeDirectoryTable({
                       </Link>
                     )}
                     {canManageEmployees && <DeactivateDialog employee={row} />}
+                    {canResetPassword && <ResetPasswordDialog employee={row} />}
                   </div>
                 </TableCell>
               </TableRow>
@@ -210,6 +213,32 @@ function DeactivateDialog({ employee }: { employee: EmployeeRow }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction type="submit" variant="destructive">Nonaktifkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </form>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function ResetPasswordDialog({ employee }: { employee: EmployeeRow }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger render={<Button variant="ghost" size="sm" aria-label={"Reset password " + employee.full_name} />}>
+        <KeyRound className="h-4 w-4" />
+        <span className="sr-only">Reset Password</span>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <form action={resetPasswordAction}>
+          <input type="hidden" name="id" value={employee.id} />
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset password pegawai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Password {employee.full_name} akan di-reset ke default. Pegawai harus mengganti password saat login berikutnya.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction type="submit" variant="destructive">Reset</AlertDialogAction>
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>
