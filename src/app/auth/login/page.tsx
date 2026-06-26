@@ -134,7 +134,7 @@ export default function LoginPage() {
                   <FormControl>
                     <Input
                       id="login-identifier"
-                      placeholder="nama@email.com atau SD002"
+                      placeholder="Masukkan NIY (terdapat pada kartu pegawai)"
                       autoComplete="username"
                       disabled={isLoading}
                       className="h-12 rounded-[var(--radius-sm)] px-4 text-sm"
