@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { importBulkEmployeesAction } from "../actions";
+import { serialDateToISO } from '@/lib/timezone';
 import type { BulkImportRow, ImportPreviewRow, ImportResult } from "../actions";
 
 type UnitOption = { id: string; name: string };
@@ -41,13 +42,6 @@ export function ImportWizardClient({ serverUnits }: { serverUnits: UnitOption[] 
 
   const unitNamesLower = new Set(serverUnits.map((u) => u.name.toLowerCase()));
 
-  // Convert Excel serial date number (days since 1899-12-30) to YYYY-MM-DD
-  function serialDateToISO(serial: number): string {
-    const utcDays = Math.floor(serial - 25569);
-    const utcValue = utcDays * 86400;
-    const dateInfo = new Date(utcValue * 1000);
-    return dateInfo.toISOString().slice(0, 10);
-  }
 
   function toStr(v: unknown): string {
     if (v === null || v === undefined) return "";

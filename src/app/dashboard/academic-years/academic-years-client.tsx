@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { formatDateWIB } from '@/lib/timezone';
 import { CalendarDays, CheckCircle2, Pencil } from "lucide-react";
 
 import {
@@ -66,11 +67,7 @@ type AcademicYearsClientProps = {
 };
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return formatDateWIB(value);
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {

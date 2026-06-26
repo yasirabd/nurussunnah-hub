@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
 import { isActiveStatus, isEmployeeStatus } from '@/lib/employee-status';
+import { todayWIB, serialDateToISO } from '@/lib/timezone';
 import type { ActiveStatus, EmployeeStatus, UserRoleEnum } from '@/types/database';
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim();
@@ -261,7 +262,7 @@ export async function createEmployeeAction(formData: FormData) {
       user_id: userId,
       unit_id: payload.home_unit_id,
       position_name: positionName,
-      start_date: new Date().toISOString().slice(0, 10),
+      start_date: todayWIB(),
       is_current: true,
     });
     if (positionError) redirectToPath(returnTo, false, positionError.message);
@@ -399,10 +400,6 @@ function normalizeActiveStatus(raw: string): 'AKTIF' | 'NONAKTIF' {
 function normalizeEmployeeStatus(raw: string): EmployeeStatus {
   const key = raw.trim().toUpperCase()
   return EMPLOYEE_STATUS_MAP[key] || 'CPTY'
-}
-function serialDateToISO(serial: number): string {
-  const utcDays = Math.floor(serial - 25569);
-  return new Date(utcDays * 86400 * 1000).toISOString().slice(0, 10);
 }
 function parseDate(raw: string | null): string | null {
   if (!raw || !raw.trim()) return null

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { cn } from "@/lib/utils";
+import { formatDateTimeWIB, isFeedbackSubmissionOpenWIB } from "@/lib/timezone";
 import {
   FeedbackTargetCarousel,
   type FeedbackTarget,
@@ -61,14 +62,16 @@ type IdentifiedFeedback = {
   created_at: string;
 };
 
+type AcademicYear = {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+};
+
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return formatDateTimeWIB(value);
 }
 
 function messageValue(
@@ -160,32 +163,55 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
   const canViewIdentified = context.isHrd || context.isAdmin;
   const canMonitor = canViewIdentified || context.isKepalaUnit;
 
-  const { data: activeYear } = await supabase
+  const { data: yearsData } = await supabase
     .from("academic_years")
-    .select("id, name, start_date, end_date")
-    .eq("is_active", true)
-    .single();
+    .select("id, name, start_date, end_date, is_active")
+    .order("start_date", { ascending: false });
 
-  const [targetsResult, receivedResult, monitoringResult, identifiedResult] = activeYear
+  const academicYears = (yearsData ?? []) as AcademicYear[];
+  const activeYear = academicYears.find((year) => year.is_active) ?? null;
+  const requestedYearId = paramValue(params, "year");
+  const selectedYear =
+    academicYears.find((year) => year.id === requestedYearId) ?? activeYear;
+
+  const [targetsResult, receivedResult, monitoringResult, identifiedResult] = selectedYear
     ? await Promise.all([
         supabase.rpc("get_feedback_targets", {
-          p_academic_year_id: activeYear.id,
+          p_academic_year_id: selectedYear.id,
         }),
         supabase.rpc("get_received_feedback_anonymous", {
-          p_academic_year_id: activeYear.id,
+          p_academic_year_id: selectedYear.id,
         }),
         canMonitor
           ? supabase.rpc("get_feedback_monitoring_scoped", {
-              p_academic_year_id: activeYear.id,
+              p_academic_year_id: selectedYear.id,
             })
           : Promise.resolve({ data: [] }),
         canViewIdentified
           ? supabase.rpc("get_feedback_identified", {
-              p_academic_year_id: activeYear.id,
+              p_academic_year_id: selectedYear.id,
             })
           : Promise.resolve({ data: [] }),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+
+  const isSelectedActiveYear = Boolean(
+    selectedYear && activeYear && selectedYear.id === activeYear.id
+  );
+  const isJuneWindowOpen = isFeedbackSubmissionOpenWIB();
+  const canSubmitFeedback = isSelectedActiveYear && isJuneWindowOpen;
+  const feedbackLockMessage = !selectedYear
+    ? "Tahun pelajaran belum tersedia."
+    : !isSelectedActiveYear
+      ? "Tahun pelajaran ini adalah arsip. Anda hanya dapat melihat feedback yang diterima."
+      : !isJuneWindowOpen
+        ? "Pengisian feedback hanya dibuka pada bulan Juni."
+        : "";
+  const periodStatus = canSubmitFeedback
+    ? "Periode pengisian dibuka"
+    : isSelectedActiveYear
+      ? "Periode pengisian ditutup"
+      : "Arsip tahun pelajaran";
 
   const targets = (targetsResult.data ?? []) as FeedbackTarget[];
   const distinctTargetUnits = new Set(targets.map((t) => t.unit_code).filter(Boolean));
@@ -245,11 +271,44 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
             Isi feedback untuk seluruh rekan aktif dalam cakupan unit Anda.
           </p>
         </div>
-        {activeYear && (
-          <Badge className="h-7 w-fit rounded-[var(--radius-full)] border-0 bg-primary/10 px-3 text-primary">
-            Tahun Pelajaran {activeYear.name}
-          </Badge>
-        )}
+        <div className="flex flex-col gap-2 sm:items-end">
+          {selectedYear && (
+            <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
+              <Badge className="h-7 w-fit rounded-[var(--radius-full)] border-0 bg-primary/10 px-3 text-primary">
+                Tahun Pelajaran {selectedYear.name}
+              </Badge>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "h-7 w-fit border-0 px-3",
+                  canSubmitFeedback
+                    ? "bg-primary/10 text-primary"
+                    : "bg-warning/12 text-warning"
+                )}
+              >
+                {periodStatus}
+              </Badge>
+            </div>
+          )}
+          {academicYears.length > 0 && (
+            <form action="/dashboard/feedback" className="flex items-center gap-2">
+              <select
+                name="year"
+                defaultValue={selectedYear?.id ?? ""}
+                className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {academicYears.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    {year.name}
+                  </option>
+                ))}
+              </select>
+              <button className="h-10 rounded-[var(--radius-full)] bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
+                Pilih
+              </button>
+            </form>
+          )}
+        </div>
       </div>
 
       {messageValue(params, "success") && (
@@ -262,8 +321,13 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
           {messageValue(params, "error")}
         </div>
       )}
+      {selectedYear && !canSubmitFeedback && (
+        <div className="rounded-[var(--radius-md)] border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
+          {feedbackLockMessage}
+        </div>
+      )}
 
-      {!activeYear ? (
+      {!selectedYear ? (
         <Card>
           <CardHeader>
             <CardTitle>Tahun pelajaran belum aktif</CardTitle>
@@ -274,19 +338,23 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
         </Card>
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-3">
-            <MetricCard
-              icon={Users}
-              label="Target feedback"
-              value={targetCount.toString()}
-              helper="Rekan aktif dalam cakupan unit"
-            />
-            <MetricCard
-              icon={CheckCircle2}
-              label="Selesai"
-              value={`${completedCount}/${targetCount}`}
-              helper={`${completionPercent}% kewajiban selesai`}
-            />
+          <section className={cn("grid gap-4", canSubmitFeedback ? "md:grid-cols-3" : "md:grid-cols-1")}>
+            {canSubmitFeedback && (
+              <>
+                <MetricCard
+                  icon={Users}
+                  label="Target feedback"
+                  value={targetCount.toString()}
+                  helper="Rekan aktif dalam cakupan unit"
+                />
+                <MetricCard
+                  icon={CheckCircle2}
+                  label="Selesai"
+                  value={`${completedCount}/${targetCount}`}
+                  helper={`${completionPercent}% kewajiban selesai`}
+                />
+              </>
+            )}
             <MetricCard
               icon={Eye}
               label="Feedback masuk"
@@ -295,54 +363,60 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
             />
           </section>
 
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle>Progress Kewajiban</CardTitle>
-                  <CardDescription>
-                    Maksimal satu feedback per rekan untuk periode aktif.
-                  </CardDescription>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "w-fit border-0",
-                    completionPercent === 100
-                  ? "bg-primary/10 text-primary"
-                      : "bg-warning/12 text-warning"
-                  )}
-                >
-                  {completionPercent}% selesai
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-3 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${completionPercent}%` }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <section className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          {canSubmitFeedback && (
             <Card>
               <CardHeader>
-                <CardTitle>Daftar Rekan</CardTitle>
-                <CardDescription>
-                  Feedback dapat diperbarui, tetapi tetap satu baris per pasangan pemberi dan penerima.
-                </CardDescription>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle>Progress Kewajiban</CardTitle>
+                    <CardDescription>
+                      Maksimal satu feedback per rekan untuk periode aktif.
+                    </CardDescription>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "w-fit border-0",
+                      completionPercent === 100
+                    ? "bg-primary/10 text-primary"
+                        : "bg-warning/12 text-warning"
+                    )}
+                  >
+                    {completionPercent}% selesai
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <FeedbackTargetCarousel
-                  targets={targets}
-                  academicYearId={activeYear.id}
-                  isMultiUnit={isMultiUnit}
-                />
+              <CardContent>
+                <div className="h-3 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${completionPercent}%` }}
+                  />
+                </div>
               </CardContent>
             </Card>
+          )}
+
+          <section className={cn("grid gap-6", canSubmitFeedback && "lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]")}>
+            {canSubmitFeedback && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Daftar Rekan</CardTitle>
+                  <CardDescription>
+                    Feedback dapat diperbarui, tetapi tetap satu baris per pasangan pemberi dan penerima.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FeedbackTargetCarousel
+                    targets={targets}
+                    academicYearId={selectedYear.id}
+                    isMultiUnit={isMultiUnit}
+                    canSubmitFeedback={canSubmitFeedback}
+                    lockedMessage={feedbackLockMessage}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
@@ -356,7 +430,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                   {received.length > 0 && (
                     <DownloadFeedbackExcel
                       data={received}
-                      yearName={activeYear?.name ?? "unknown"}
+                      yearName={selectedYear?.name ?? "unknown"}
                     />
                   )}
                 </div>
@@ -448,6 +522,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                       value={monitorUnit}
                       options={monitorOptions}
                       hiddenFields={{
+                        year: selectedYear.id,
                         identifiedUnit,
                         identifiedPage,
                         identifiedPageSize,
@@ -537,6 +612,7 @@ export default async function FeedbackPage({ searchParams }: PageProps) {
                         value={identifiedUnit}
                         options={identifiedOptions}
                         hiddenFields={{
+                          year: selectedYear.id,
                           monitorUnit,
                           monitorPage,
                           monitorPageSize,

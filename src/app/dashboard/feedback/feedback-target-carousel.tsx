@@ -31,10 +31,14 @@ export function FeedbackTargetCarousel({
   targets,
   academicYearId,
   isMultiUnit = false,
+  canSubmitFeedback = true,
+  lockedMessage = "Pengisian feedback sedang ditutup.",
 }: {
   targets: FeedbackTarget[];
   academicYearId: string;
   isMultiUnit?: boolean;
+  canSubmitFeedback?: boolean;
+  lockedMessage?: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeTarget = targets[activeIndex];
@@ -110,12 +114,18 @@ export function FeedbackTargetCarousel({
         </div>
       </div>
 
-      <FeedbackTargetCard
-        key={activeTarget.receiver_user_id}
-        target={activeTarget}
-        academicYearId={academicYearId}
-        isMultiUnit={isMultiUnit}
-      />
+      {canSubmitFeedback ? (
+        <FeedbackTargetCard
+          key={activeTarget.receiver_user_id}
+          target={activeTarget}
+          academicYearId={academicYearId}
+          isMultiUnit={isMultiUnit}
+        />
+      ) : (
+        <div className="rounded-[var(--radius-md)] border bg-secondary/50 px-4 py-6 text-sm text-muted-foreground">
+          {lockedMessage}
+        </div>
+      )}
     </div>
   );
 }

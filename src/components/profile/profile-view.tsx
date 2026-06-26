@@ -74,6 +74,7 @@ function getInitials(name: string | null | undefined) {
 function formatDate(date: string | null | undefined) {
   if (!date) return "-";
   return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
     day: "numeric",
     month: "long",
     year: "numeric",
