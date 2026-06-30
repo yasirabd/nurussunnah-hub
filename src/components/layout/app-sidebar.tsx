@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarDays,
+  FileText,
   LayoutDashboard,
   MessageSquareMore,
   Settings,
@@ -29,6 +30,12 @@ export const navItems: NavItem[] = [
     href: "/dashboard/employees",
     icon: Users,
     roles: ["HRD", "ADMIN", "KEPALA_UNIT"],
+  },
+  {
+    label: "Dokumen Kepegawaian",
+    href: "/dashboard/employment-documents",
+    icon: FileText,
+    roles: ["HRD", "ADMIN"],
   },
   {
     label: "Tahun Pelajaran",
