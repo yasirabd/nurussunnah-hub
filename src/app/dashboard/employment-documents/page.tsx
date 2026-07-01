@@ -12,6 +12,13 @@ export default async function EmploymentDocumentsPage() {
   const roleNames = (roles ?? []).map((item) => item.role);
   if (!roleNames.includes("HRD") && !roleNames.includes("ADMIN")) redirect("/dashboard");
 
+  const { data: units } = await supabase
+    .from("units")
+    .select("name")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+  const unitNames = (units ?? []).map((unit) => unit.name);
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
@@ -22,7 +29,7 @@ export default async function EmploymentDocumentsPage() {
         </p>
       </div>
 
-      <OfferLetterForm />
+      <OfferLetterForm unitNames={unitNames} />
     </div>
   );
 }

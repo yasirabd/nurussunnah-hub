@@ -4,7 +4,7 @@ export const OFFER_LETTER_FIELDS = [
   { name: "honorific", label: "Sapaan", required: true, type: "select", options: ["ustadz", "ustadzah"], section: "candidate", help: "Pilih sapaan sesuai jenis kelamin kandidat." },
   { name: "candidate_name", label: "Nama Kandidat", required: true, type: "text", section: "candidate", placeholder: "Contoh: Ahmad Fauzi" },
   { name: "position_name", label: "Posisi", required: true, type: "text", section: "candidate", placeholder: "Contoh: Guru Tahfizh" },
-  { name: "unit_name", label: "Unit Penempatan", required: true, type: "text", section: "candidate", placeholder: "Contoh: SMP Nurussunnah" },
+  { name: "unit_name", label: "Unit Penempatan", required: true, type: "select", options: [], section: "candidate", help: "Daftar unit mengikuti menu Unit & Organisasi." },
   { name: "start_date", label: "Tanggal Mulai", required: true, type: "date", section: "employment" },
   { name: "employment_status", label: "Status Kerja", required: true, type: "text", section: "employment", placeholder: "Contoh: Kontrak / Tetap" },
   { name: "contract_period", label: "Masa Kontrak Kerja", required: true, type: "text", section: "employment", placeholder: "Contoh: 12 bulan" },

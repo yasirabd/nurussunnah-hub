@@ -38,7 +38,7 @@ const initialValues = Object.fromEntries(
   OFFER_LETTER_FIELDS.map((field) => [field.name, ""]),
 ) as Record<string, string>;
 
-export function OfferLetterForm() {
+export function OfferLetterForm({ unitNames }: { unitNames: string[] }) {
   const [values, setValues] = useState<Record<string, string>>(initialValues);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [thpTouched, setThpTouched] = useState(false);
@@ -190,6 +190,7 @@ export function OfferLetterForm() {
                   field={field}
                   value={values[field.name]}
                   invalid={Boolean(errors[field.name])}
+                  dynamicOptions={field.name === "unit_name" ? unitNames : undefined}
                   onChange={(next) => {
                     if (field.name === "take_home_pay") setThpTouched(true);
                     setField(field.name, next);
@@ -224,11 +225,13 @@ function FieldControl({
   value,
   invalid,
   onChange,
+  dynamicOptions,
 }: {
   field: Field;
   value: string;
   invalid: boolean;
   onChange: (value: string) => void;
+  dynamicOptions?: string[];
 }) {
   const id = `offer-letter-${field.name}`;
   const help = (field as { help?: string }).help;
@@ -260,7 +263,7 @@ function FieldControl({
           className="h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
         >
           <option value="">Pilih {field.label.toLowerCase()}</option>
-          {field.options?.map((option) => (
+          {(dynamicOptions ?? field.options)?.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
