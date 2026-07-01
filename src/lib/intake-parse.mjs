@@ -39,8 +39,8 @@ export const INTAKE_COLUMN_INDEX = {
   timestamp: 0,
   email_address: 1,
   offer_name: 2,
-  offer_position: 3,
-  offer_unit: 4,
+  offer_unit: 3,
+  offer_position: 4,
   willing: 5,
   reject_reason: 6,
   full_name: 7,
@@ -52,19 +52,18 @@ export const INTAKE_COLUMN_INDEX = {
   last_education: 13,
   study_program: 14,
   address_ktp: 15,
-  domicile_same: 16,
-  address_domicile: 17,
-  phone: 18,
-  email: 19,
-  emergency_name: 20,
-  emergency_relation: 21,
-  emergency_phone: 22,
-  start_matches: 23,
-  proposed_start_date: 24,
-  start_date_note: 25,
-  uniform_size: 26,
-  ktp_url: 27,
-  photo_url: 28,
+  address_domicile: 16,
+  phone: 17,
+  email: 18,
+  emergency_name: 19,
+  emergency_relation: 20,
+  emergency_phone: 21,
+  start_matches: 22,
+  proposed_start_date: 23,
+  start_date_note: 24,
+  uniform_size: 25,
+  ktp_url: 26,
+  photo_url: 27,
 };
 
 const GENDER_MAP = {
@@ -74,6 +73,25 @@ const GENDER_MAP = {
   'L': 'L',
   'P': 'P',
 };
+
+const MARITAL_MAP = {
+  'MENIKAH': 'Sudah Kawin',
+  'SUDAH MENIKAH': 'Sudah Kawin',
+  'KAWIN': 'Sudah Kawin',
+  'SUDAH KAWIN': 'Sudah Kawin',
+  'BELUM MENIKAH': 'Belum Kawin',
+  'BELUM KAWIN': 'Belum Kawin',
+  'CERAI': 'Cerai',
+  'CERAI HIDUP': 'Cerai',
+  'DUDA': 'Duda',
+  'JANDA': 'Janda',
+  'DUDA/JANDA': 'Duda',
+};
+
+export function normalizeMarital(raw) {
+  const key = (raw || '').trim().toUpperCase();
+  return MARITAL_MAP[key] ?? (raw || '').trim();
+}
 
 const UNIFORM_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
@@ -147,11 +165,8 @@ export function parseIntakeRow(rawLine) {
     warnings.push('Kandidat menolak penawaran. Periksa kembali sebelum membuat pegawai.');
   }
 
-  const domicileSame = isYes(cell(cols, idx.domicile_same));
   const addressKtp = cell(cols, idx.address_ktp);
-  const addressDomicile = domicileSame
-    ? addressKtp
-    : (cell(cols, idx.address_domicile) || addressKtp);
+  const addressDomicile = cell(cols, idx.address_domicile) || addressKtp;
 
   const gender = normalizeGender(cell(cols, idx.gender));
   if (cell(cols, idx.gender) && !gender) {
@@ -176,7 +191,7 @@ export function parseIntakeRow(rawLine) {
     email,
     phone: cell(cols, idx.phone),
     gender,
-    marital_status: cell(cols, idx.marital_status),
+    marital_status: normalizeMarital(cell(cols, idx.marital_status)),
     birth_place: cell(cols, idx.birth_place),
     birth_date: birthDate,
     last_education: cell(cols, idx.last_education),
@@ -191,8 +206,6 @@ export function parseIntakeRow(rawLine) {
     emergency_relation: cell(cols, idx.emergency_relation),
     emergency_phone: cell(cols, idx.emergency_phone),
     uniform_size: uniformSize,
-    proposed_start_date: parseFormDate(cell(cols, idx.proposed_start_date)),
-    start_date_note: cell(cols, idx.start_date_note),
     ktp_url: cell(cols, idx.ktp_url),
     photo_url: cell(cols, idx.photo_url),
   };

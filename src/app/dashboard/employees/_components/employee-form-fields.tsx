@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -117,6 +117,8 @@ export function EmployeeFormFields({
           <option value="Sudah Kawin">Sudah Kawin</option>
           <option value="Belum Kawin">Belum Kawin</option>
           <option value="Cerai">Cerai</option>
+          <option value="Duda">Duda</option>
+          <option value="Janda">Janda</option>
         </SelectField>
         <Field label="Tempat Lahir" name="birth_place" defaultValue={employee?.birth_place} />
         <Field label="Tanggal Lahir" name="birth_date" type="date" defaultValue={employee?.birth_date} />

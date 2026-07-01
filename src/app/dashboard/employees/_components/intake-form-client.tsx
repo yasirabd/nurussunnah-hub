@@ -34,6 +34,11 @@ export function IntakeFormClient({ units }: { units: UnitOption[] }) {
 
   const employee: EmployeeFormValue | null = useMemo(() => {
     if (!parsed) return null;
+    const matchedUnit = units.find(
+      (u) =>
+        u.name.toLowerCase() === parsed.offer_unit.toLowerCase() ||
+        u.code.toLowerCase() === parsed.offer_unit.toLowerCase(),
+    );
     return {
       full_name: parsed.full_name,
       email: parsed.email,
@@ -48,13 +53,14 @@ export function IntakeFormClient({ units }: { units: UnitOption[] }) {
       address_domicile: parsed.address_domicile || null,
       employee_status: "CPTY",
       active_status: "AKTIF",
+      home_unit_id: matchedUnit?.id ?? null,
     };
-  }, [parsed]);
+  }, [parsed, units]);
 
   const unitHint = useMemo(() => {
     if (!parsed?.offer_unit) return null;
     const match = units.find(
-      (u) => u.name.toLowerCase() === parsed.offer_unit.toLowerCase(),
+      (u) => u.name.toLowerCase() === parsed.offer_unit.toLowerCase() || u.code.toLowerCase() === parsed.offer_unit.toLowerCase(),
     );
     return { raw: parsed.offer_unit, match };
   }, [parsed, units]);
@@ -128,8 +134,6 @@ export function IntakeFormClient({ units }: { units: UnitOption[] }) {
               <IntakeField label="Nama Kontak Darurat" name="emergency_name" defaultValue={parsed.emergency_name} />
               <IntakeField label="Hubungan Kontak Darurat" name="emergency_relation" defaultValue={parsed.emergency_relation} />
               <IntakeField label="No. HP Kontak Darurat" name="emergency_phone" defaultValue={parsed.emergency_phone} />
-              <IntakeField label="Usulan Tanggal Mulai" name="proposed_start_date" type="date" defaultValue={parsed.proposed_start_date} />
-              <IntakeField label="Keterangan Tanggal" name="start_date_note" defaultValue={parsed.start_date_note} />
               <IntakeLink label="Scan/Foto KTP" url={parsed.ktp_url} />
               <IntakeLink label="Pas Foto Formal" url={parsed.photo_url} />
             </div>

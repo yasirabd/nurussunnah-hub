@@ -21,6 +21,15 @@ Urutan kolom di Sheet respons:
 
 > Field branching (alamat domisili, alasan menolak) tetap memiliki kolom di Sheet; **kosong** bila tidak diisi. Parser harus toleran sel kosong.
 
+> **Urutan kolom aktual (implementasi parser `src/lib/intake-parse.mjs`):**
+> `0 Timestamp, 1 Email Address, 2 Nama Lengkap, 3 Unit Penempatan, 4 Posisi yang Ditawarkan,`
+> `5 Bersedia?, 6 Alasan menolak, 7 Nama sesuai KTP, 8 NIK, 9 Tempat Lahir, 10 Tanggal Lahir,`
+> `11 Jenis Kelamin, 12 Status Pernikahan, 13 Pendidikan Terakhir, 14 Program studi, 15 Alamat KTP,`
+> `16 Alamat domisili, 17 Nomor WhatsApp, 18 Email aktif, 19 Nama kontak darurat,`
+> `20 Hubungan kontak darurat, 21 No HP kontak darurat, 22 Tgl sesuai surat?, 23 Usulan tgl mulai,`
+> `24 Keterangan tgl, 25 Ukuran seragam, 26 URL KTP, 27 URL pas foto, 28 Pernyataan.`
+> Catatan: **Unit Penempatan mendahului Posisi**; tidak ada pertanyaan "domisili sama?"; kolom 23–24 (usulan tanggal & keterangan) **tidak disimpan** ke database (hanya konfirmasi kesiapan).
+
 ---
 
 ## Deskripsi Form (header)
