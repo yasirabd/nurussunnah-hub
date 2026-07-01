@@ -166,15 +166,6 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
     ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
     : { data: [] };
 
-  const { data: positions } = ids.length
-    ? await supabase
-        .from("position_histories")
-        .select("user_id, position_name")
-        .eq("is_current", true)
-        .in("user_id", ids)
-        .order("position_name", { ascending: true })
-    : { data: [] };
-
   const { data: activeLeaves } = ids.length
     ? await supabase
         .from("employee_leaves")
@@ -184,7 +175,6 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
     : { data: [] };
 
   const rolesByUser = groupByUser(userRoles ?? []);
-  const positionsByUser = groupByUser(positions ?? []);
   const activeLeavesByUser = Object.fromEntries(
     ((activeLeaves ?? []) as LeaveRow[]).map((leave) => [leave.user_id, leave])
   );
@@ -308,7 +298,6 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
             <EmployeeDirectoryTable
               rows={rows}
               rolesByUser={Object.fromEntries(rolesByUser)}
-              positionsByUser={Object.fromEntries(positionsByUser)}
               activeLeavesByUser={activeLeavesByUser}
               units={units}
               canManageEmployees={canManageEmployees}

@@ -71,7 +71,6 @@ type UnitOption = {
 type EmployeeDirectoryTableProps = {
   rows: EmployeeRow[];
   rolesByUser: Record<string, string[]>;
-  positionsByUser: Record<string, string[]>;
   activeLeavesByUser: Record<string, EmployeeLeavePeriod>;
   units: UnitOption[];
   canManageEmployees: boolean;
@@ -82,7 +81,6 @@ type EmployeeDirectoryTableProps = {
 export function EmployeeDirectoryTable({
   rows,
   rolesByUser,
-  positionsByUser,
   activeLeavesByUser,
   canManageEmployees,
   canEditPosition,
@@ -104,26 +102,25 @@ export function EmployeeDirectoryTable({
           <TableRow>
             <TableHead>Pegawai</TableHead>
             <TableHead>Unit</TableHead>
-            <TableHead>Jabatan</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Kontak</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Aksi</TableHead>
+            <TableHead className="w-[132px] text-right">Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground">
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
                 Tidak ada data pegawai pada filter ini.
               </TableCell>
             </TableRow>
           ) : (
             rows.map((row) => (
               <TableRow key={row.id}>
-                <TableCell>
+                <TableCell className="max-w-[220px] whitespace-normal">
                   <div>
-                    <p className="font-medium">{row.full_name}</p>
+                    <p className="break-words font-medium">{row.full_name}</p>
                     <p className="text-xs text-muted-foreground">{row.employee_no}</p>
                   </div>
                 </TableCell>
@@ -136,9 +133,6 @@ export function EmployeeDirectoryTable({
                   ) : (
                     <span className="text-sm text-muted-foreground">-</span>
                   )}
-                </TableCell>
-                <TableCell>
-                  <PillList values={positionsByUser[row.id] ?? []} fallback="-" />
                 </TableCell>
                 <TableCell>
                   <PillList values={rolesByUser[row.id] ?? []} fallback="PEGAWAI" />
@@ -169,8 +163,8 @@ export function EmployeeDirectoryTable({
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
+                <TableCell className="w-[132px]">
+                  <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                     {(canManageEmployees || canEditPosition) && (
                       <Link
                         href={`/dashboard/employees/${row.id}/edit`}
