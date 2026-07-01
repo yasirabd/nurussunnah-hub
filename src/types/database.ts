@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -77,6 +77,69 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      employee_intake: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          emergency_name: string | null
+          emergency_phone: string | null
+          emergency_relation: string | null
+          id: string
+          ktp_url: string | null
+          photo_url: string | null
+          proposed_start_date: string | null
+          start_date_note: string | null
+          uniform_size: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relation?: string | null
+          id?: string
+          ktp_url?: string | null
+          photo_url?: string | null
+          proposed_start_date?: string | null
+          start_date_note?: string | null
+          uniform_size?: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relation?: string | null
+          id?: string
+          ktp_url?: string | null
+          photo_url?: string | null
+          proposed_start_date?: string | null
+          start_date_note?: string | null
+          uniform_size?: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_intake_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_intake_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employee_leaves: {
         Row: {
@@ -261,6 +324,7 @@ export type Database = {
           instagram: string | null
           last_education: string | null
           marital_status: string | null
+          nik: string | null
           must_change_password: boolean
           phone: string | null
           study_program: string | null
@@ -289,6 +353,7 @@ export type Database = {
           instagram?: string | null
           last_education?: string | null
           marital_status?: string | null
+          nik?: string | null
           must_change_password?: boolean
           phone?: string | null
           study_program?: string | null
@@ -317,6 +382,7 @@ export type Database = {
           instagram?: string | null
           last_education?: string | null
           marital_status?: string | null
+          nik?: string | null
           must_change_password?: boolean
           phone?: string | null
           study_program?: string | null
