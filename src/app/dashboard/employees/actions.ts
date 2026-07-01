@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -269,6 +269,89 @@ export async function createEmployeeAction(formData: FormData) {
   }
   revalidatePath('/dashboard/employees');
   redirectWith(true, 'Pegawai baru berhasil ditambahkan. Password awal: bismillahns.');
+}
+
+function intakePayload(formData: FormData) {
+  const uniform = text(formData, 'uniform_size').toUpperCase();
+  const UNIFORM_SIZES: readonly string[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+  return {
+    emergency_name: nullableText(formData, 'emergency_name'),
+    emergency_relation: nullableText(formData, 'emergency_relation'),
+    emergency_phone: nullableText(formData, 'emergency_phone'),
+    uniform_size: (UNIFORM_SIZES.includes(uniform) ? uniform : null) as ('XS'|'S'|'M'|'L'|'XL'|'XXL'|'XXXL'|null),
+    proposed_start_date: nullableDate(formData, 'proposed_start_date'),
+    start_date_note: nullableText(formData, 'start_date_note'),
+    ktp_url: nullableText(formData, 'ktp_url'),
+    photo_url: nullableText(formData, 'photo_url'),
+  };
+}
+
+export async function createIntakeEmployeeAction(formData: FormData) {
+  const supabase = await ensureCanManageEmployees();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login');
+  const admin = createAdminClient();
+  const returnTo = '/dashboard/employees/intake';
+  const payload = profilePayload(formData);
+  const nik = nullableText(formData, 'nik');
+  const intake = intakePayload(formData);
+  const leavePayload = normalizeLeavePayload(formData);
+  const statusDetailPayload = normalizeStatusDetailPayload(formData);
+  if (!payload.full_name) redirectToPath(returnTo, false, 'Nama lengkap wajib diisi.');
+  if (!payload.employee_no) redirectToPath(returnTo, false, 'NIY wajib diisi.');
+  if (!payload.email) redirectToPath(returnTo, false, 'Email wajib diisi.');
+  if (nik && !/^\d{16}$/.test(nik)) redirectToPath(returnTo, false, 'NIK harus 16 digit angka.');
+  if (leavePayload.error) redirectToPath(returnTo, false, leavePayload.error);
+  if (statusDetailPayload.error) redirectToPath(returnTo, false, statusDetailPayload.error);
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email: payload.email,
+    password: DEFAULT_EMPLOYEE_PASSWORD,
+    email_confirm: true,
+    user_metadata: {
+      full_name: payload.full_name,
+      employee_no: payload.employee_no,
+      gender: payload.gender,
+    },
+  });
+  if (authError || !authData.user?.id) {
+    redirectToPath(returnTo, false, authError?.message ?? 'Gagal membuat akun login pegawai.');
+  }
+  const userId = authData.user.id;
+  const { error: profileError } = await supabase.from('profiles').upsert({
+    id: userId,
+    ...payload,
+    ...statusDetailPayload.data,
+    nik,
+    avatar_url: intake.photo_url,
+    must_change_password: true,
+  });
+  if (profileError) redirectToPath(returnTo, false, profileError.message);
+  try {
+    await replaceRoles(supabase, userId, selectedRoles(formData));
+    await syncHomeAssignment(supabase, userId, payload.home_unit_id);
+    await syncActiveLeave(supabase, userId, user.id, leavePayload.data);
+  } catch (relationError) {
+    redirectToPath(returnTo, false, relationError instanceof Error ? relationError.message : 'Gagal menyimpan relasi pegawai.');
+  }
+  const positionName = text(formData, 'position_name');
+  if (positionName) {
+    const { error: positionError } = await supabase.from('position_histories').insert({
+      user_id: userId,
+      unit_id: payload.home_unit_id,
+      position_name: positionName,
+      start_date: todayWIB(),
+      is_current: true,
+    });
+    if (positionError) redirectToPath(returnTo, false, positionError.message);
+  }
+  const { error: intakeError } = await supabase.from('employee_intake').upsert({
+    user_id: userId,
+    ...intake,
+    created_by: user.id,
+  }, { onConflict: 'user_id' });
+  if (intakeError) redirectToPath(returnTo, false, 'Profil dibuat, tetapi data intake gagal disimpan: ' + intakeError.message);
+  revalidatePath('/dashboard/employees');
+  redirectWith(true, 'Pegawai baru dari intake berhasil ditambahkan. Password awal: bismillahns.');
 }
 export async function updateEmployeeRolesAction(formData: FormData) {
   const supabase = await ensureCanManageEmployees();

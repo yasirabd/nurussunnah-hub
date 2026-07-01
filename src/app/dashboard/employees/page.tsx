@@ -1,7 +1,7 @@
 ﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Building2, Plus, Search, Upload, Users } from "lucide-react";
+import { Building2, ClipboardPaste, Plus, Search, Upload, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -208,6 +208,13 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         </Badge>
         {canManageEmployees && (
           <div className="flex gap-2">
+            <Link
+              href="/dashboard/employees/intake"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ClipboardPaste className="h-4 w-4" />
+              Intake Form
+            </Link>
             <Link
               href="/dashboard/employees/import"
               className={buttonVariants({ variant: "outline", size: "sm" })}
