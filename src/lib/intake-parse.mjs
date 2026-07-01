@@ -59,8 +59,6 @@ export const INTAKE_COLUMN_INDEX = {
   emergency_relation: 20,
   emergency_phone: 21,
   start_matches: 22,
-  proposed_start_date: 23,
-  start_date_note: 24,
   uniform_size: 25,
   ktp_url: 26,
   photo_url: 27,

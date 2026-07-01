@@ -88,8 +88,6 @@ export type Database = {
           id: string
           ktp_url: string | null
           photo_url: string | null
-          proposed_start_date: string | null
-          start_date_note: string | null
           uniform_size: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null
           updated_at: string
           user_id: string
@@ -103,8 +101,6 @@ export type Database = {
           id?: string
           ktp_url?: string | null
           photo_url?: string | null
-          proposed_start_date?: string | null
-          start_date_note?: string | null
           uniform_size?: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null
           updated_at?: string
           user_id: string
@@ -118,8 +114,6 @@ export type Database = {
           id?: string
           ktp_url?: string | null
           photo_url?: string | null
-          proposed_start_date?: string | null
-          start_date_note?: string | null
           uniform_size?: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null
           updated_at?: string
           user_id?: string
