@@ -34,6 +34,11 @@ export default async function IntakePage({ searchParams }: PageProps) {
     .select("id, name, code")
     .order("code", { ascending: true });
 
+  const { data: niyRows } = await supabase
+    .from("profiles")
+    .select("employee_no");
+  const existingNiys = (niyRows ?? []).map((r) => r.employee_no).filter(Boolean) as string[];
+
   const success = paramValue(params, "success");
   const error = paramValue(params, "error");
 
@@ -61,7 +66,7 @@ export default async function IntakePage({ searchParams }: PageProps) {
         <div className="rounded-[var(--radius-md)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
       )}
 
-      <IntakeFormClient units={(units ?? []) as UnitOption[]} />
+      <IntakeFormClient units={(units ?? []) as UnitOption[]} existingNiys={existingNiys} />
     </div>
   );
 }

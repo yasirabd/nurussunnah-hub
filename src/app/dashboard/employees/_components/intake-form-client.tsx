@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { ClipboardPaste, Save, AlertTriangle } from "lucide-react";
+import { ClipboardPaste, Save, AlertTriangle, Wand2 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,14 +15,29 @@ import {
   type UnitOption,
 } from "../_components/employee-form-fields";
 import { parseIntakeRow } from "@/lib/intake-parse.mjs";
+import { buildNiy, nextSequence } from "@/lib/niy.mjs";
 
 type ParsedIntake = ReturnType<typeof parseIntakeRow>["data"];
 
-export function IntakeFormClient({ units }: { units: UnitOption[] }) {
+export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[]; existingNiys: string[] }) {
   const [raw, setRaw] = useState("");
   const [parsed, setParsed] = useState<ParsedIntake | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [version, setVersion] = useState(0);
+  const [joinDate, setJoinDate] = useState("");
+
+  const nextSeq = useMemo(() => nextSequence(existingNiys), [existingNiys]);
+
+  const niyResult = useMemo(
+    () =>
+      buildNiy({
+        birthDateISO: parsed?.birth_date ?? "",
+        joinDateISO: joinDate,
+        gender: parsed?.gender ?? "",
+        sequence: nextSeq,
+      }),
+    [parsed, joinDate, nextSeq],
+  );
 
   function handleParse() {
     const firstLine = raw.split(/\n/).map((l) => l.trim()).find((l) => l.length > 0) ?? "";
@@ -54,8 +69,9 @@ export function IntakeFormClient({ units }: { units: UnitOption[] }) {
       employee_status: "CPTY",
       active_status: "AKTIF",
       home_unit_id: matchedUnit?.id ?? null,
+      employee_no: niyResult.niy || null,
     };
-  }, [parsed, units]);
+  }, [parsed, units, niyResult]);
 
   const unitHint = useMemo(() => {
     if (!parsed?.offer_unit) return null;
@@ -100,7 +116,38 @@ export function IntakeFormClient({ units }: { units: UnitOption[] }) {
       )}
 
       {parsed && (
-        <form action={createIntakeEmployeeAction} className="space-y-5" key={version}>
+        <form action={createIntakeEmployeeAction} className="space-y-5" key={`${version}-${joinDate}`}>
+          <section className="space-y-3 rounded-[var(--radius-md)] border border-primary/30 bg-primary/5 p-4">
+            <h2 className="flex items-center gap-2 text-base font-semibold tracking-normal">
+              <Wand2 className="h-4 w-4" /> Generator NIY
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="niy-join-date">Tanggal Masuk Nurus Sunnah</label>
+                <input
+                  id="niy-join-date"
+                  type="date"
+                  value={joinDate}
+                  onChange={(e) => setJoinDate(e.target.value)}
+                  className="h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+                <p className="text-xs leading-5 text-muted-foreground">Menentukan bagian tahun+bulan masuk (YYYYMM) pada NIY.</p>
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-sm font-medium">NIY Terbentuk</span>
+                {niyResult.niy ? (
+                  <p className="font-mono text-lg font-semibold text-primary">{niyResult.niy}</p>
+                ) : (
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    Lengkapi: {niyResult.missing.join(", ")}.
+                  </p>
+                )}
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Nomor urut otomatis: {nextSeq}. NIY dapat diubah manual pada kolom NIY di bawah.
+                </p>
+              </div>
+            </div>
+          </section>
           {unitHint && (
             <div className="rounded-[var(--radius-md)] border bg-background px-4 py-3 text-sm">
               <span className="text-muted-foreground">Unit penempatan dari form: </span>
