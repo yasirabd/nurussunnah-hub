@@ -73,17 +73,17 @@ const GENDER_MAP = {
 };
 
 const MARITAL_MAP = {
-  'MENIKAH': 'Sudah Kawin',
-  'SUDAH MENIKAH': 'Sudah Kawin',
-  'KAWIN': 'Sudah Kawin',
-  'SUDAH KAWIN': 'Sudah Kawin',
-  'BELUM MENIKAH': 'Belum Kawin',
   'BELUM KAWIN': 'Belum Kawin',
-  'CERAI': 'Cerai',
-  'CERAI HIDUP': 'Cerai',
-  'DUDA': 'Duda',
-  'JANDA': 'Janda',
-  'DUDA/JANDA': 'Duda',
+  'BELUM MENIKAH': 'Belum Kawin',
+  'KAWIN': 'Kawin',
+  'MENIKAH': 'Kawin',
+  'SUDAH MENIKAH': 'Kawin',
+  'SUDAH KAWIN': 'Kawin',
+  'CERAI MATI': 'Cerai Mati',
+  'CERAI HIDUP': 'Cerai Hidup',
+  'CERAI': 'Cerai Hidup',
+  'DUDA': 'Cerai Mati',
+  'JANDA': 'Cerai Mati',
 };
 
 export function normalizeMarital(raw) {

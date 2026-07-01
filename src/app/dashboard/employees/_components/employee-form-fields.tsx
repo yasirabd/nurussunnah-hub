@@ -114,11 +114,10 @@ export function EmployeeFormFields({
         </SelectField>
         <SelectField label="Status Perkawinan" name="marital_status" defaultValue={employee?.marital_status ?? ""}>
           <option value="">Pilih status</option>
-          <option value="Sudah Kawin">Sudah Kawin</option>
           <option value="Belum Kawin">Belum Kawin</option>
-          <option value="Cerai">Cerai</option>
-          <option value="Duda">Duda</option>
-          <option value="Janda">Janda</option>
+          <option value="Kawin">Kawin</option>
+          <option value="Cerai Mati">Cerai Mati</option>
+          <option value="Cerai Hidup">Cerai Hidup</option>
         </SelectField>
         <Field label="Tempat Lahir" name="birth_place" defaultValue={employee?.birth_place} />
         <Field label="Tanggal Lahir" name="birth_date" type="date" defaultValue={employee?.birth_date} />
