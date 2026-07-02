@@ -579,11 +579,264 @@ export type Database = {
           },
         ]
       }
+      leave_requests: {
+        Row: {
+          id: string
+          user_id: string
+          academic_year_id: string | null
+          unit_id: string | null
+          start_date: string
+          end_date: string
+          leave_category: string
+          leave_time_type: Database["public"]["Enums"]["leave_time_type_enum"]
+          reason: string
+          unit_head_approved: boolean
+          no_evidence_ack: boolean
+          status: Database["public"]["Enums"]["leave_request_status_enum"]
+          admin_note: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          academic_year_id?: string | null
+          unit_id?: string | null
+          start_date: string
+          end_date: string
+          leave_category: string
+          leave_time_type: Database["public"]["Enums"]["leave_time_type_enum"]
+          reason: string
+          unit_head_approved?: boolean
+          no_evidence_ack?: boolean
+          status?: Database["public"]["Enums"]["leave_request_status_enum"]
+          admin_note?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["leave_requests"]["Insert"]>
+        Relationships: []
+      }
+      leave_request_attachments: {
+        Row: {
+          id: string
+          leave_request_id: string
+          kind: Database["public"]["Enums"]["leave_attachment_kind_enum"]
+          drive_file_id: string
+          drive_view_link: string
+          file_name: string
+          mime_type: string
+          uploaded_at: string
+        }
+        Insert: {
+          id?: string
+          leave_request_id: string
+          kind: Database["public"]["Enums"]["leave_attachment_kind_enum"]
+          drive_file_id: string
+          drive_view_link: string
+          file_name: string
+          mime_type: string
+          uploaded_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["leave_request_attachments"]["Insert"]>
+        Relationships: []
+      }
+      attendance_records: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          check_in: string | null
+          check_out: string | null
+          source: string
+          academic_year_id: string | null
+          note: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          check_in?: string | null
+          check_out?: string | null
+          source?: string
+          academic_year_id?: string | null
+          note?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["attendance_records"]["Insert"]>
+        Relationships: []
+      }
+      attendance_corrections: {
+        Row: {
+          id: string
+          user_id: string
+          academic_year_id: string | null
+          unit_id: string | null
+          event_date: string
+          correction_kind: Database["public"]["Enums"]["attendance_correction_kind_enum"]
+          time_scope: Database["public"]["Enums"]["attendance_time_scope_enum"]
+          reason: string
+          requested_check_in: string | null
+          requested_check_out: string | null
+          status: Database["public"]["Enums"]["attendance_correction_status_enum"]
+          admin_note: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          academic_year_id?: string | null
+          unit_id?: string | null
+          event_date: string
+          correction_kind: Database["public"]["Enums"]["attendance_correction_kind_enum"]
+          time_scope: Database["public"]["Enums"]["attendance_time_scope_enum"]
+          reason: string
+          requested_check_in?: string | null
+          requested_check_out?: string | null
+          status?: Database["public"]["Enums"]["attendance_correction_status_enum"]
+          admin_note?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["attendance_corrections"]["Insert"]>
+        Relationships: []
+      }
+      attendance_correction_attachments: {
+        Row: {
+          id: string
+          attendance_correction_id: string
+          drive_file_id: string
+          drive_view_link: string
+          file_name: string
+          mime_type: string
+          uploaded_at: string
+        }
+        Insert: {
+          id?: string
+          attendance_correction_id: string
+          drive_file_id: string
+          drive_view_link: string
+          file_name: string
+          mime_type: string
+          uploaded_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["attendance_correction_attachments"]["Insert"]>
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      leave_recap_by_category_active_year: {
+        Args: never
+        Returns: { leave_category: string; total: number }[]
+      }
+      leave_recap_by_unit_active_year: {
+        Args: never
+        Returns: { unit_name: string; total: number }[]
+      }
+      leave_recap_stats_active_year: {
+        Args: never
+        Returns: { total_requests: number; avg_duration_days: number | null }[]
+      }
+      submit_leave_request: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_leave_category: string
+          p_leave_time_type: Database["public"]["Enums"]["leave_time_type_enum"]
+          p_reason: string
+          p_unit_head_approved: boolean
+          p_no_evidence_ack: boolean
+        }
+        Returns: string
+      }
+      review_leave_request: {
+        Args: {
+          p_id: string
+          p_status: Database["public"]["Enums"]["leave_request_status_enum"]
+          p_note: string
+        }
+        Returns: undefined
+      }
+      my_leave_summary_active_year: {
+        Args: never
+        Returns: { leave_category: string; total: number }[]
+      }
+      unit_leave_counts_active_year: {
+        Args: never
+        Returns: {
+          user_id: string
+          full_name: string
+          employee_no: string
+          unit_name: string | null
+          total_leaves: number
+        }[]
+      }
+      correction_recap_by_kind_active_year: {
+        Args: never
+        Returns: {
+          correction_kind: Database["public"]["Enums"]["attendance_correction_kind_enum"]
+          total: number
+        }[]
+      }
+      correction_recap_by_unit_active_year: {
+        Args: never
+        Returns: { unit_name: string; total: number }[]
+      }
+      correction_recap_stats_active_year: {
+        Args: never
+        Returns: { total_requests: number; distinct_employees: number }[]
+      }
+      submit_attendance_correction: {
+        Args: {
+          p_event_date: string
+          p_correction_kind: Database["public"]["Enums"]["attendance_correction_kind_enum"]
+          p_time_scope: Database["public"]["Enums"]["attendance_time_scope_enum"]
+          p_reason: string
+          p_requested_check_in?: string | null
+          p_requested_check_out?: string | null
+        }
+        Returns: string
+      }
+      review_attendance_correction: {
+        Args: {
+          p_id: string
+          p_status: Database["public"]["Enums"]["attendance_correction_status_enum"]
+          p_note: string
+        }
+        Returns: undefined
+      }
+      my_correction_summary_active_year: {
+        Args: never
+        Returns: {
+          correction_kind: Database["public"]["Enums"]["attendance_correction_kind_enum"]
+          total: number
+        }[]
+      }
+      unit_correction_counts_active_year: {
+        Args: never
+        Returns: {
+          user_id: string
+          full_name: string
+          employee_no: string
+          unit_name: string | null
+          total_corrections: number
+        }[]
+      }
       can_review_work_statement: {
         Args: { statement_id: string }
         Returns: boolean
@@ -695,6 +948,12 @@ export type Database = {
       }
     }
     Enums: {
+      leave_request_status_enum: "MENUNGGU" | "DISETUJUI" | "DITOLAK" | "PERLU_REVISI"
+      leave_time_type_enum: "SEHARIAN_PENUH" | "DATANG_TERLAMBAT" | "PULANG_LEBIH_AWAL" | "SEBAGIAN_JAM_KERJA"
+      leave_attachment_kind_enum: "BUKTI_IZIN" | "SS_KEPALA_UNIT"
+      attendance_correction_status_enum: "MENUNGGU" | "DISETUJUI" | "DITOLAK"
+      attendance_correction_kind_enum: "LUPA_TAP" | "KARTU_TERTINGGAL" | "KARTU_HILANG_RUSAK" | "KENDALA_SISTEM"
+      attendance_time_scope_enum: "MASUK" | "PULANG" | "KEDUANYA"
       assignment_type_enum: "HOME" | "TEACHING"
       active_status_enum: "AKTIF" | "CUTI" | "NONAKTIF" | "RESIGN" | "DIBERHENTIKAN" | "PENSIUN"
       employee_status_enum: "MAGANG" | "HONORER" | "CPTY" | "PTY"
@@ -771,6 +1030,12 @@ export type EmployeeStatus = Database["public"]["Enums"]["employee_status_enum"]
 export type GenderEnum = Database["public"]["Enums"]["gender_enum"]
 export type AssignmentType = Database["public"]["Enums"]["assignment_type_enum"]
 export type ReviewAction = Database["public"]["Enums"]["review_action_enum"]
+
+
+
+
+
+
 
 
 

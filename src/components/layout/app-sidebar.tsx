@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  CalendarClock,
   CalendarDays,
+  ClipboardClock,
   FileText,
   LayoutDashboard,
   MessageSquareMore,
@@ -25,6 +27,8 @@ export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Profil Saya", href: "/dashboard/profile", icon: Users },
   { label: "Feedback Rekan", href: "/dashboard/feedback", icon: MessageSquareMore },
+  { label: "Izin Pegawai", href: "/dashboard/leave-requests", icon: CalendarClock },
+  { label: "Koreksi Presensi", href: "/dashboard/attendance-corrections", icon: ClipboardClock },
   {
     label: "Direktori Pegawai",
     href: "/dashboard/employees",
@@ -143,5 +147,6 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
     </aside>
   );
 }
+
 
 

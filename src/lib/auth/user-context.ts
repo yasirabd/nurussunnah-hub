@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -9,6 +9,7 @@ import type { ActiveStatus, EmployeeStatus, UserRoleEnum } from "@/types/databas
 type DashboardProfile = {
   id: string;
   full_name: string | null;
+  phone: string | null;
   avatar_url: string | null;
   employee_status: EmployeeStatus;
   home_unit_id: string | null;
@@ -40,7 +41,7 @@ export const getDashboardUserContext = cache(
       supabase
         .from("profiles")
         .select(
-          "id, full_name, avatar_url, employee_status, active_status, home_unit_id, must_change_password, units!profiles_home_unit_id_fkey(id, name, code)"
+          "id, full_name, phone, avatar_url, employee_status, active_status, home_unit_id, must_change_password, units!profiles_home_unit_id_fkey(id, name, code)"
         )
         .eq("id", user.id)
         .maybeSingle(),
@@ -60,3 +61,4 @@ export const getDashboardUserContext = cache(
     };
   }
 );
+

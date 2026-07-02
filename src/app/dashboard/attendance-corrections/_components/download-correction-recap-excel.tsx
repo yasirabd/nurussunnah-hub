@@ -1,0 +1,101 @@
+﻿"use client";
+
+import { Download } from "lucide-react";
+import * as XLSX from "xlsx";
+
+export type CorrectionRecapRow = {
+  full_name: string;
+  employee_no: string;
+  unit_name: string | null;
+  total_corrections: number;
+};
+
+type CorrectionKindRow = {
+  correction_kind: string;
+  total: number;
+};
+
+type CorrectionUnitRow = {
+  unit_name: string;
+  total: number;
+};
+
+type CorrectionStats = {
+  total_requests: number;
+  distinct_employees: number;
+};
+
+const KIND_LABEL: Record<string, string> = {
+  LUPA_TAP: "Lupa Tap Kartu",
+  KARTU_TERTINGGAL: "Kartu Tertinggal",
+  KARTU_HILANG_RUSAK: "Kartu Hilang/Rusak",
+  KENDALA_SISTEM: "Kendala Sistem",
+};
+
+export function DownloadCorrectionRecapExcel({
+  perEmployee,
+  byKind,
+  byUnit,
+  stats,
+  yearName,
+}: {
+  perEmployee: CorrectionRecapRow[];
+  byKind: CorrectionKindRow[];
+  byUnit: CorrectionUnitRow[];
+  stats: CorrectionStats;
+  yearName: string;
+}) {
+  function handleDownload() {
+    const employeeRows = perEmployee.map((r) => ({
+      Nama: r.full_name,
+      "No. Pegawai": r.employee_no,
+      Unit: r.unit_name ?? "-",
+      "Jumlah Koreksi": Number(r.total_corrections),
+    }));
+
+    const summarySheet = XLSX.utils.json_to_sheet([
+      {
+        "Tahun Pelajaran": yearName,
+        "Total Pengajuan": Number(stats.total_requests ?? 0),
+        "Pegawai Mengajukan": Number(stats.distinct_employees ?? 0),
+      },
+    ]);
+    const kindSheet = XLSX.utils.json_to_sheet(
+      byKind.map((r) => ({
+        "Jenis Koreksi": KIND_LABEL[r.correction_kind] ?? r.correction_kind,
+        Jumlah: Number(r.total),
+      }))
+    );
+    const unitSheet = XLSX.utils.json_to_sheet(
+      byUnit.map((r) => ({
+        Unit: r.unit_name ?? "-",
+        Jumlah: Number(r.total),
+      }))
+    );
+    const employeeSheet = XLSX.utils.json_to_sheet(employeeRows);
+
+    summarySheet["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 20 }];
+    kindSheet["!cols"] = [{ wch: 30 }, { wch: 12 }];
+    unitSheet["!cols"] = [{ wch: 24 }, { wch: 12 }];
+    employeeSheet["!cols"] = [{ wch: 30 }, { wch: 16 }, { wch: 20 }, { wch: 14 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, summarySheet, "Ringkasan");
+    XLSX.utils.book_append_sheet(wb, kindSheet, "Per Jenis");
+    XLSX.utils.book_append_sheet(wb, unitSheet, "Per Unit");
+    XLSX.utils.book_append_sheet(wb, employeeSheet, "Per Pegawai");
+    XLSX.writeFile(wb, `rekap-koreksi-presensi-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={perEmployee.length === 0 && byKind.length === 0 && byUnit.length === 0}
+      className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+    >
+      <Download className="h-3.5 w-3.5" />
+      Export Excel
+    </button>
+  );
+}
