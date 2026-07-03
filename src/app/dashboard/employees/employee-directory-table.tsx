@@ -103,6 +103,7 @@ export function EmployeeDirectoryTable({
             <TableHead>Pegawai</TableHead>
             <TableHead>Unit</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Jenis Kelamin</TableHead>
             <TableHead>Kontak</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[132px] text-right">Aksi</TableHead>
@@ -111,7 +112,7 @@ export function EmployeeDirectoryTable({
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={7} className="text-center text-muted-foreground">
                 Tidak ada data pegawai pada filter ini.
               </TableCell>
             </TableRow>
@@ -136,6 +137,9 @@ export function EmployeeDirectoryTable({
                 </TableCell>
                 <TableCell>
                   <PillList values={rolesByUser[row.id] ?? []} fallback="PEGAWAI" />
+                </TableCell>
+                <TableCell className="text-sm">
+                  {row.gender === "L" ? "Laki-laki" : "Perempuan"}
                 </TableCell>
                 <TableCell>
                   <div className="space-y-0.5 text-sm">

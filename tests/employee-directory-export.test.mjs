@@ -41,6 +41,7 @@ test("employee excel component exports expected columns and disables empty downl
     "NIY",
     "Email",
     "HP",
+    "Jenis Kelamin",
     "Unit",
     "Kode Unit",
     "Status Aktif",

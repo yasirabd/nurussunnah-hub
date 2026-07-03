@@ -15,6 +15,7 @@ export type EmployeeExportRow = {
   employee_no: string;
   email: string;
   phone: string | null;
+  gender: "L" | "P";
   employee_status: EmployeeStatus;
   active_status: ActiveStatus;
   units: { name: string; code: string } | null;
@@ -33,6 +34,7 @@ export function DownloadEmployeesExcel({
       "NIY": row.employee_no,
       "Email": row.email,
       "HP": row.phone || "-",
+      "Jenis Kelamin": row.gender === "L" ? "Laki-laki" : "Perempuan",
       "Unit": row.units?.name ?? "-",
       "Kode Unit": row.units?.code ?? "-",
       "Status Aktif": ACTIVE_STATUS_LABELS[row.active_status] ?? row.active_status,
@@ -46,6 +48,7 @@ export function DownloadEmployeesExcel({
       { wch: 16 },
       { wch: 30 },
       { wch: 18 },
+      { wch: 16 }, // Jenis Kelamin
       { wch: 24 },
       { wch: 12 },
       { wch: 16 },
