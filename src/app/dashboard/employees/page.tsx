@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import type { ActiveStatus, EmployeeStatus } from "@/types/database";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
+import { DownloadEmployeesExcel } from "./_components/download-employees-excel";
 import { PaginationControls } from "./_components/pagination-controls";
 
 export const metadata: Metadata = { title: "Direktori Pegawai" };
@@ -157,13 +158,35 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   if (active === "active") query = query.eq("active_status", "AKTIF");
   if (active === "inactive") query = query.neq("active_status", "AKTIF");
 
+  let exportQuery = supabase
+    .from("profiles")
+    .select(
+      "id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, active_status_start_date, active_status_end_date, active_status_note, must_change_password, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)"
+    )
+    .order("full_name", { ascending: true });
+
+  if (q) {
+    exportQuery = exportQuery.or(`full_name.ilike.%${q}%,employee_no.ilike.%${q}%,email.ilike.%${q}%`);
+  }
+
+  if (normalizedUnitId) exportQuery = exportQuery.eq("home_unit_id", normalizedUnitId);
+  if (active === "active") exportQuery = exportQuery.eq("active_status", "AKTIF");
+  if (active === "inactive") exportQuery = exportQuery.neq("active_status", "AKTIF");
+
   const { data: profiles, error, count } = await query;
+  const { data: exportProfiles } = await exportQuery;
   const rows = (profiles ?? []) as ProfileRow[];
+  const exportRows = (exportProfiles ?? []) as ProfileRow[];
   const ids = rows.map((row) => row.id);
+  const exportIds = exportRows.map((row) => row.id);
   const totalRows = count ?? 0;
 
   const { data: userRoles } = ids.length
     ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+    : { data: [] };
+
+  const { data: exportUserRoles } = exportIds.length
+    ? await supabase.from("user_roles").select("user_id, role").in("user_id", exportIds)
     : { data: [] };
 
   const { data: activeLeaves } = ids.length
@@ -175,6 +198,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
     : { data: [] };
 
   const rolesByUser = groupByUser(userRoles ?? []);
+  const exportRolesByUser = groupByUser(exportUserRoles ?? []);
   const activeLeavesByUser = Object.fromEntries(
     ((activeLeaves ?? []) as LeaveRow[]).map((leave) => [leave.user_id, leave])
   );
@@ -281,15 +305,23 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
 
             <Card>
         <CardHeader>
-          <CardTitle>Daftar Pegawai</CardTitle>
-          <CardDescription>
-            {totalRows} pegawai ditemukan
-            {(q || unitId || active !== "active") && (
-              <Link href="/dashboard/employees" className="ml-2 text-sm font-medium text-primary">
-                Reset filter
-              </Link>
-            )}
-          </CardDescription>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle>Daftar Pegawai</CardTitle>
+                <CardDescription>
+                  {totalRows} pegawai ditemukan
+                  {(q || unitId || active !== "active") && (
+                    <Link href="/dashboard/employees" className="ml-2 text-sm font-medium text-primary">
+                      Reset filter
+                    </Link>
+                  )}
+                </CardDescription>
+              </div>
+              <DownloadEmployeesExcel
+                rows={exportRows}
+                rolesByUser={Object.fromEntries(exportRolesByUser)}
+              />
+            </div>
         </CardHeader>
         <CardContent>
           {error ? (
