@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   MessageSquareMore,
   Settings,
-  UserPlus,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,12 +35,7 @@ export const navItems: NavItem[] = [
     icon: Users,
     roles: ["HRD", "ADMIN", "KEPALA_UNIT"],
   },
-  {
-    label: "Validasi Pendaftaran",
-    href: "/dashboard/registrations",
-    icon: UserPlus,
-    roles: ["HRD", "ADMIN"],
-  },
+
   {
     label: "Dokumen Kepegawaian",
     href: "/dashboard/employment-documents",
@@ -85,7 +79,7 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
 
   return (
     <aside className={cn("hidden h-full flex-col bg-sidebar text-sidebar-foreground md:flex overflow-hidden transition-[width] duration-300 ease-in-out", isOpen ? "w-72 shrink-0" : "w-0")}>
-      {/* Brand — MD3 NavigationDrawer header */}
+      {/* Brand â€” MD3 NavigationDrawer header */}
       <div className="flex h-[72px] shrink-0 items-center gap-3 px-6">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-sidebar-primary shadow-sm">
           <span className="text-base font-bold text-sidebar-primary-foreground">N</span>
@@ -108,7 +102,7 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
         Menu
       </p>
 
-      {/* Nav items — MD3 NavigationDrawer list */}
+      {/* Nav items â€” MD3 NavigationDrawer list */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
         {visibleItems.map((item) => {
           const Icon = item.icon;

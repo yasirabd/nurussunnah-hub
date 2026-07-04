@@ -5,11 +5,15 @@ import { redirect } from "next/navigation";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { buildNiy, nextSequence } from "@/lib/niy.mjs";
+import { isEmployeeStatus } from "@/lib/employee-status";
+import { moveAndRenameFolder, employeeDocumentRootFolderId } from "@/lib/google-drive";
 
 const DEFAULT_EMPLOYEE_PASSWORD = "bismillahns";
+const BASE = "/dashboard/employees/registrations";
 
 function redirectWith(ok: boolean, message: string): never {
-  redirect(`/dashboard/registrations?${ok ? "success" : "error"}=${encodeURIComponent(message)}`);
+  redirect(`${BASE}?${ok ? "success" : "error"}=${encodeURIComponent(message)}`);
 }
 
 async function ensureHrdAdmin() {
@@ -30,7 +34,11 @@ async function ensureHrdAdmin() {
 export async function approveRegistrationAction(formData: FormData) {
   const { supabase, reviewerId } = await ensureHrdAdmin();
   const id = String(formData.get("id") ?? "").trim();
+  const joinDate = String(formData.get("join_date") ?? "").trim();
+  const employeeStatus = String(formData.get("employee_status") ?? "").trim();
   if (!id) redirectWith(false, "ID pendaftaran tidak valid.");
+  if (!joinDate) redirectWith(false, "Tanggal masuk wajib diisi sebagai dasar NIY.");
+  if (!isEmployeeStatus(employeeStatus)) redirectWith(false, "Status pegawai wajib dipilih.");
 
   const { data: reg, error: fetchError } = await supabase
     .from("employee_registrations")
@@ -41,13 +49,29 @@ export async function approveRegistrationAction(formData: FormData) {
   if (fetchError) redirectWith(false, fetchError.message);
   if (!reg) redirectWith(false, "Pendaftaran tidak ditemukan atau sudah diproses.");
 
-  // Guard against races: reject if employee already exists.
-  const { data: existing } = await supabase
+  if (!reg.birth_date) redirectWith(false, "Tanggal lahir pendaftar kosong; tidak bisa membuat NIY.");
+
+  // Generate NIY (mengikuti generator intake): urut berikutnya dari NIY existing.
+  const { data: niyRows } = await supabase.from("profiles").select("employee_no");
+  const existing = (niyRows ?? []).map((r) => r.employee_no).filter(Boolean) as string[];
+  const niyResult = buildNiy({
+    birthDateISO: reg.birth_date,
+    joinDateISO: joinDate,
+    gender: reg.gender,
+    sequence: nextSequence(existing),
+  });
+  if (!niyResult.niy) {
+    redirectWith(false, `NIY gagal dibuat. Lengkapi: ${niyResult.missing.join(", ")}.`);
+  }
+  const employeeNo = niyResult.niy;
+
+  // Guard against duplicate email/NIK/NIY.
+  const { data: dupEmail } = await supabase
     .from("profiles")
     .select("id")
-    .or(`employee_no.eq.${reg.employee_no},email.eq.${reg.email}`)
+    .or(`email.eq.${reg.email},employee_no.eq.${employeeNo}`)
     .maybeSingle();
-  if (existing) redirectWith(false, "NIY atau email sudah terdaftar sebagai pegawai.");
+  if (dupEmail) redirectWith(false, "Email atau NIY sudah terdaftar sebagai pegawai.");
 
   const admin = createAdminClient();
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -56,7 +80,7 @@ export async function approveRegistrationAction(formData: FormData) {
     email_confirm: true,
     user_metadata: {
       full_name: reg.full_name,
-      employee_no: reg.employee_no,
+      employee_no: employeeNo,
       gender: reg.gender,
     },
   });
@@ -68,8 +92,9 @@ export async function approveRegistrationAction(formData: FormData) {
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: userId,
     full_name: reg.full_name,
-    employee_no: reg.employee_no,
+    employee_no: employeeNo,
     email: reg.email,
+    nik: reg.nik,
     phone: reg.phone,
     gender: reg.gender,
     marital_status: reg.marital_status,
@@ -79,9 +104,13 @@ export async function approveRegistrationAction(formData: FormData) {
     study_program: reg.study_program,
     address_ktp: reg.address_ktp,
     address_domicile: reg.address_domicile,
+    facebook: reg.facebook,
+    instagram: reg.instagram,
+    twitter: reg.twitter,
     home_unit_id: reg.home_unit_id,
-    employee_status: reg.employee_status,
+    employee_status: employeeStatus,
     active_status: "AKTIF",
+    avatar_url: reg.photo_url,
     must_change_password: true,
   });
   if (profileError) redirectWith(false, profileError.message);
@@ -107,14 +136,61 @@ export async function approveRegistrationAction(formData: FormData) {
     }
   }
 
+  if (reg.position_name) {
+    await supabase.from("position_histories").insert({
+      user_id: userId,
+      unit_id: reg.home_unit_id,
+      position_name: reg.position_name,
+      start_date: joinDate,
+      is_current: true,
+    });
+  }
+
+  const uniform = (reg.uniform_size ?? "").toUpperCase();
+  const validUniform = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"].includes(uniform);
+  await supabase.from("employee_intake").upsert(
+    {
+      user_id: userId,
+      emergency_name: reg.emergency_name,
+      emergency_relation: reg.emergency_relation,
+      emergency_phone: reg.emergency_phone,
+      uniform_size: validUniform ? (uniform as "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL") : null,
+      ktp_url: reg.ktp_url,
+      photo_url: reg.photo_url,
+      created_by: reviewerId,
+    },
+    { onConflict: "user_id" }
+  );
+
+  // Pindahkan folder dokumen dari TEMP ke folder dokumen pegawai: [3 digit NIY]-NAMA.
+  if (reg.drive_folder_id) {
+    const last3 = employeeNo.replace(/\D/g, "").slice(-3);
+    const folderName = `${last3}-${reg.full_name.toUpperCase()}`;
+    try {
+      await moveAndRenameFolder(reg.drive_folder_id, employeeDocumentRootFolderId(), folderName);
+    } catch (e) {
+      redirectWith(
+        false,
+        `Pegawai ${reg.full_name} dibuat (NIY ${employeeNo}), tetapi folder dokumen gagal dipindahkan: ${
+          e instanceof Error ? e.message : "kesalahan Drive"
+        }. Pindahkan manual bila perlu.`
+      );
+    }
+  }
+
   await supabase
     .from("employee_registrations")
-    .update({ status: "DISETUJUI", reviewed_by: reviewerId, reviewed_at: new Date().toISOString() })
+    .update({
+      status: "DISETUJUI",
+      employee_no: employeeNo,
+      reviewed_by: reviewerId,
+      reviewed_at: new Date().toISOString(),
+    })
     .eq("id", id);
 
-  revalidatePath("/dashboard/registrations");
+  revalidatePath(BASE);
   revalidatePath("/dashboard/employees");
-  redirectWith(true, `Pendaftaran ${reg.full_name} divalidasi. Akun dibuat (password: bismillahns).`);
+  redirectWith(true, `${reg.full_name} divalidasi. NIY ${employeeNo}, akun dibuat (password: bismillahns).`);
 }
 
 export async function rejectRegistrationAction(formData: FormData) {
@@ -126,7 +202,7 @@ export async function rejectRegistrationAction(formData: FormData) {
   const { error } = await supabase.from("employee_registrations").delete().eq("id", id);
   if (error) redirectWith(false, error.message);
 
-  revalidatePath("/dashboard/registrations");
+  revalidatePath(BASE);
   redirectWith(true, "Pendaftaran ditolak dan datanya dihapus.");
 }
 
@@ -134,6 +210,6 @@ export async function generateInviteAction() {
   const { supabase } = await ensureHrdAdmin();
   const { error } = await supabase.rpc("generate_employee_invite");
   if (error) redirectWith(false, error.message);
-  revalidatePath("/dashboard/registrations");
+  revalidatePath(BASE);
   redirectWith(true, "Kode undangan baru dibuat. Bagikan tautannya ke calon pegawai.");
 }

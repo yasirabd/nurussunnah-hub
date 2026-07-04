@@ -85,22 +85,34 @@ export type Database = {
           birth_date: string | null
           birth_place: string | null
           created_at: string
+          drive_folder_id: string | null
           email: string
-          employee_no: string
+          emergency_name: string | null
+          emergency_phone: string | null
+          emergency_relation: string | null
+          employee_no: string | null
           employee_status: Database["public"]["Enums"]["employee_status_enum"]
+          facebook: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_enum"]
           home_unit_id: string | null
           id: string
+          instagram: string | null
+          ktp_url: string | null
           last_education: string | null
           marital_status: string | null
+          nik: string | null
           note: string | null
           phone: string | null
+          photo_url: string | null
+          position_name: string | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["employee_registration_status_enum"]
           study_program: string | null
+          twitter: string | null
+          uniform_size: string | null
           updated_at: string
         }
         Insert: {
@@ -109,22 +121,34 @@ export type Database = {
           birth_date?: string | null
           birth_place?: string | null
           created_at?: string
+          drive_folder_id?: string | null
           email: string
-          employee_no: string
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relation?: string | null
+          employee_no?: string | null
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          facebook?: string | null
           full_name: string
           gender?: Database["public"]["Enums"]["gender_enum"]
           home_unit_id?: string | null
           id?: string
+          instagram?: string | null
+          ktp_url?: string | null
           last_education?: string | null
           marital_status?: string | null
+          nik?: string | null
           note?: string | null
           phone?: string | null
+          photo_url?: string | null
+          position_name?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["employee_registration_status_enum"]
           study_program?: string | null
+          twitter?: string | null
+          uniform_size?: string | null
           updated_at?: string
         }
         Update: {
@@ -133,22 +157,34 @@ export type Database = {
           birth_date?: string | null
           birth_place?: string | null
           created_at?: string
+          drive_folder_id?: string | null
           email?: string
-          employee_no?: string
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relation?: string | null
+          employee_no?: string | null
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          facebook?: string | null
           full_name?: string
           gender?: Database["public"]["Enums"]["gender_enum"]
           home_unit_id?: string | null
           id?: string
+          instagram?: string | null
+          ktp_url?: string | null
           last_education?: string | null
           marital_status?: string | null
+          nik?: string | null
           note?: string | null
           phone?: string | null
+          photo_url?: string | null
+          position_name?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["employee_registration_status_enum"]
           study_program?: string | null
+          twitter?: string | null
+          uniform_size?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -860,8 +896,8 @@ export type Database = {
         Args: {
           p_invite_code: string
           p_full_name: string
-          p_employee_no: string
           p_email: string
+          p_nik?: string | null
           p_phone?: string | null
           p_gender?: string
           p_marital_status?: string | null
@@ -871,8 +907,19 @@ export type Database = {
           p_study_program?: string | null
           p_address_ktp?: string | null
           p_address_domicile?: string | null
+          p_facebook?: string | null
+          p_instagram?: string | null
+          p_twitter?: string | null
           p_home_unit_id?: string | null
           p_employee_status?: string
+          p_position_name?: string | null
+          p_emergency_name?: string | null
+          p_emergency_relation?: string | null
+          p_emergency_phone?: string | null
+          p_uniform_size?: string | null
+          p_ktp_url?: string | null
+          p_photo_url?: string | null
+          p_drive_folder_id?: string | null
           p_note?: string | null
         }
         Returns: undefined

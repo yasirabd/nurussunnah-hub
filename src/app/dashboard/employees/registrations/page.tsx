@@ -19,8 +19,10 @@ import {
 } from "@/components/ui/table";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { EMPLOYEE_STATUS_LABELS } from "@/lib/employee-status";
-import { approveRegistrationAction, generateInviteAction, rejectRegistrationAction } from "./actions";
+import { EmployeesTabs } from "../_components/employees-tabs";
+import { generateInviteAction } from "./actions";
 import { InviteList, type Invite } from "./_components/invite-list";
+import { RegistrationReview, type RegistrationDetail } from "./_components/registration-review";
 
 export const metadata: Metadata = { title: "Validasi Pendaftaran" };
 
@@ -46,7 +48,9 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
 
   const { data: pending } = await supabase
     .from("employee_registrations")
-    .select("id, full_name, employee_no, email, phone, employee_status, home_unit_id, note, created_at, units:home_unit_id (code, name)")
+    .select(
+      "id, full_name, email, nik, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, position_name, uniform_size, emergency_name, emergency_relation, emergency_phone, ktp_url, photo_url, note, home_unit_id, created_at, units:home_unit_id (code, name)"
+    )
     .eq("status", "MENUNGGU")
     .order("created_at", { ascending: true });
 
@@ -67,13 +71,15 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
   }));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Validasi Pendaftaran Pegawai</h1>
+        <h1 className="text-2xl font-semibold tracking-normal">Direktori Pegawai</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Data dari halaman pendaftaran mandiri. Validasi untuk menyimpan sebagai pegawai, atau tolak untuk menghapus.
+          Kelola data pegawai dan validasi pendaftaran calon pegawai baru.
         </p>
       </div>
+
+      <EmployeesTabs pendingCount={rows.length} />
 
       {success && (
         <div className="rounded-[var(--radius-md)] border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
@@ -116,7 +122,6 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama</TableHead>
-                  <TableHead>NIY</TableHead>
                   <TableHead>Kontak</TableHead>
                   <TableHead>Unit</TableHead>
                   <TableHead>Status</TableHead>
@@ -126,36 +131,55 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
               <TableBody>
                 {rows.map((r) => {
                   const unit = Array.isArray(r.units) ? r.units[0] : r.units;
+                  const unitLabel = unit ? `${unit.code} - ${unit.name}` : null;
+                  const detail: RegistrationDetail = {
+                    id: r.id,
+                    full_name: r.full_name,
+                    email: r.email,
+                    nik: r.nik,
+                    phone: r.phone,
+                    gender: r.gender,
+                    marital_status: r.marital_status,
+                    birth_place: r.birth_place,
+                    birth_date: r.birth_date,
+                    last_education: r.last_education,
+                    study_program: r.study_program,
+                    address_ktp: r.address_ktp,
+                    address_domicile: r.address_domicile,
+                    facebook: r.facebook,
+                    instagram: r.instagram,
+                    twitter: r.twitter,
+                    employee_status: EMPLOYEE_STATUS_LABELS[r.employee_status] ?? r.employee_status,
+                    position_name: r.position_name,
+                    uniform_size: r.uniform_size,
+                    emergency_name: r.emergency_name,
+                    emergency_relation: r.emergency_relation,
+                    emergency_phone: r.emergency_phone,
+                    ktp_url: r.ktp_url,
+                    photo_url: r.photo_url,
+                    note: r.note,
+                    unit_label: unitLabel,
+                  };
                   return (
                     <TableRow key={r.id}>
                       <TableCell>
                         <div className="font-medium">{r.full_name}</div>
-                        {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
+                        {r.position_name && (
+                          <div className="text-xs text-muted-foreground">{r.position_name}</div>
+                        )}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{r.employee_no}</TableCell>
                       <TableCell className="text-sm">
                         <div>{r.email}</div>
                         {r.phone && <div className="text-xs text-muted-foreground">{r.phone}</div>}
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {unit ? `${unit.code} - ${unit.name}` : "-"}
-                      </TableCell>
+                      <TableCell className="text-sm">{unitLabel ?? "-"}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">
                           {EMPLOYEE_STATUS_LABELS[r.employee_status] ?? r.employee_status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <form action={approveRegistrationAction}>
-                            <input type="hidden" name="id" value={r.id} />
-                            <Button type="submit" size="sm">Validasi</Button>
-                          </form>
-                          <form action={rejectRegistrationAction}>
-                            <input type="hidden" name="id" value={r.id} />
-                            <Button type="submit" size="sm" variant="destructive">Tolak</Button>
-                          </form>
-                        </div>
+                        <RegistrationReview reg={detail} />
                       </TableCell>
                     </TableRow>
                   );

@@ -220,6 +220,76 @@ export function correctionRootFolderId(): string {
   return id;
 }
 
+// Registration document helpers
+// Buat folder di bawah root, upload beberapa file, kembalikan folderId + hasil.
+export async function uploadFilesToNewFolder(
+  rootFolderId: string,
+  folderName: string,
+  files: { field: string; file: File }[]
+): Promise<{ folderId: string; uploaded: (DriveUploadResult & { field: string })[] }> {
+  const token = await getAccessToken();
+  const folderId = await ensureFolder(token, folderName, rootFolderId);
+  const uploaded: (DriveUploadResult & { field: string })[] = [];
+  for (const { field, file } of files) {
+    let res: DriveUploadResult;
+    try {
+      res = await uploadOnce(token, folderId, file);
+    } catch {
+      res = await uploadOnce(token, folderId, file);
+    }
+    uploaded.push({ ...res, field });
+  }
+  return { folderId, uploaded };
+}
+
+// Pindahkan folder ke parent baru sekaligus ganti nama.
+export async function moveAndRenameFolder(
+  folderId: string,
+  newParentId: string,
+  newName: string
+): Promise<void> {
+  const token = await getAccessToken();
+
+  // Ambil parent lama untuk removeParents.
+  const metaRes = await fetch(
+    `${DRIVE_FILES_URL}/${folderId}?fields=parents&supportsAllDrives=true`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!metaRes.ok) {
+    throw new Error(`Gagal membaca folder Drive: ${metaRes.status} ${await metaRes.text()}`);
+  }
+  const meta = (await metaRes.json()) as { parents?: string[] };
+  const removeParents = (meta.parents ?? []).join(",");
+
+  const params = new URLSearchParams({
+    addParents: newParentId,
+    supportsAllDrives: "true",
+    fields: "id",
+  });
+  if (removeParents) params.set("removeParents", removeParents);
+
+  const res = await fetch(`${DRIVE_FILES_URL}/${folderId}?${params.toString()}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (!res.ok) {
+    throw new Error(`Gagal memindahkan folder Drive: ${res.status} ${await res.text()}`);
+  }
+}
+
+export function tempRootFolderId(): string {
+  const id = process.env.GOOGLE_DRIVE_TEMP;
+  if (!id) throw new Error("GOOGLE_DRIVE_TEMP belum dikonfigurasi.");
+  return id;
+}
+
+export function employeeDocumentRootFolderId(): string {
+  const id = process.env.GOOGLE_DRIVE_EMPLOYEE_DOCUMENT_FOLDER_ID;
+  if (!id) throw new Error("GOOGLE_DRIVE_EMPLOYEE_DOCUMENT_FOLDER_ID belum dikonfigurasi.");
+  return id;
+}
+
 /** Segmen bulan: 2026-07 */
 export function monthSegment(date: Date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;

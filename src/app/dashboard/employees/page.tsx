@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Building2, ClipboardPaste, Plus, Search, Upload, Users } from "lucide-react";
@@ -18,6 +18,7 @@ import type { ActiveStatus, EmployeeStatus } from "@/types/database";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
 import { DownloadEmployeesExcel } from "./_components/download-employees-excel";
 import { PaginationControls } from "./_components/pagination-controls";
+import { EmployeesTabs } from "./_components/employees-tabs";
 
 export const metadata: Metadata = { title: "Direktori Pegawai" };
 
@@ -207,6 +208,12 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   const flatParams = Object.fromEntries(
     Object.entries(params).map(([key, value]) => [key, Array.isArray(value) ? value[0] ?? "" : value ?? ""])
   );
+  const { count: pendingRegCount } = canManageEmployees
+    ? await supabase
+        .from("employee_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "MENUNGGU")
+    : { count: 0 };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -247,6 +254,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         )}
       </div>
 
+      <EmployeesTabs pendingCount={pendingRegCount ?? 0} />
       {success && (
         <div className="rounded-[var(--radius-md)] border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
           {success}
