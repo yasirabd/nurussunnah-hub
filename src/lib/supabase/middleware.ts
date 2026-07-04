@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute = [
     '/auth/login',
     '/auth/forgot-password',
+    '/register',
     ...authPassThroughRoutes,
   ].includes(url.pathname)
 

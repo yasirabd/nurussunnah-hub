@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   MessageSquareMore,
   Settings,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,12 @@ export const navItems: NavItem[] = [
     href: "/dashboard/employees",
     icon: Users,
     roles: ["HRD", "ADMIN", "KEPALA_UNIT"],
+  },
+  {
+    label: "Validasi Pendaftaran",
+    href: "/dashboard/registrations",
+    icon: UserPlus,
+    roles: ["HRD", "ADMIN"],
   },
   {
     label: "Dokumen Kepegawaian",

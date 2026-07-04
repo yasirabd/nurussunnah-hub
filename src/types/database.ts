@@ -78,6 +78,114 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_registrations: {
+        Row: {
+          address_domicile: string | null
+          address_ktp: string | null
+          birth_date: string | null
+          birth_place: string | null
+          created_at: string
+          email: string
+          employee_no: string
+          employee_status: Database["public"]["Enums"]["employee_status_enum"]
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_enum"]
+          home_unit_id: string | null
+          id: string
+          last_education: string | null
+          marital_status: string | null
+          note: string | null
+          phone: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["employee_registration_status_enum"]
+          study_program: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_domicile?: string | null
+          address_ktp?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          created_at?: string
+          email: string
+          employee_no: string
+          employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          full_name: string
+          gender?: Database["public"]["Enums"]["gender_enum"]
+          home_unit_id?: string | null
+          id?: string
+          last_education?: string | null
+          marital_status?: string | null
+          note?: string | null
+          phone?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["employee_registration_status_enum"]
+          study_program?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_domicile?: string | null
+          address_ktp?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          created_at?: string
+          email?: string
+          employee_no?: string
+          employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_enum"]
+          home_unit_id?: string | null
+          id?: string
+          last_education?: string | null
+          marital_status?: string | null
+          note?: string | null
+          phone?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["employee_registration_status_enum"]
+          study_program?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          status: Database["public"]["Enums"]["employee_invite_status_enum"]
+          used_at: string | null
+          used_registration_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["employee_invite_status_enum"]
+          used_at?: string | null
+          used_registration_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["employee_invite_status_enum"]
+          used_at?: string | null
+          used_registration_id?: string | null
+        }
+        Relationships: []
+      }
       employee_intake: {
         Row: {
           created_at: string
@@ -740,6 +848,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_employee_invite: {
+        Args: never
+        Returns: string
+      }
+      check_employee_invite: {
+        Args: { p_code: string }
+        Returns: boolean
+      }
+      submit_employee_registration: {
+        Args: {
+          p_invite_code: string
+          p_full_name: string
+          p_employee_no: string
+          p_email: string
+          p_phone?: string | null
+          p_gender?: string
+          p_marital_status?: string | null
+          p_birth_place?: string | null
+          p_birth_date?: string | null
+          p_last_education?: string | null
+          p_study_program?: string | null
+          p_address_ktp?: string | null
+          p_address_domicile?: string | null
+          p_home_unit_id?: string | null
+          p_employee_status?: string
+          p_note?: string | null
+        }
+        Returns: undefined
+      }
       leave_recap_by_category_active_year: {
         Args: never
         Returns: { leave_category: string; total: number }[]
@@ -956,6 +1093,8 @@ export type Database = {
       attendance_time_scope_enum: "MASUK" | "PULANG" | "KEDUANYA"
       assignment_type_enum: "HOME" | "TEACHING"
       active_status_enum: "AKTIF" | "CUTI" | "NONAKTIF" | "RESIGN" | "DIBERHENTIKAN" | "PENSIUN"
+      employee_registration_status_enum: "MENUNGGU" | "DISETUJUI" | "DITOLAK"
+      employee_invite_status_enum: "AKTIF" | "TERPAKAI" | "KEDALUWARSA"
       employee_status_enum: "MAGANG" | "HONORER" | "CPTY" | "PTY"
       gender_enum: "L" | "P"
       review_action_enum: "REVIEWED" | "APPROVED" | "REJECTED" | "REOPENED"
