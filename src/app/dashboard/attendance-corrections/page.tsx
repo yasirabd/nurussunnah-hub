@@ -220,7 +220,7 @@ async function MyHistory({ supabase, userId, yearName }: { supabase: any; userId
                 <TableRow key={r.id}>
                   <TableCell>{r.event_date}</TableCell>
                   <TableCell>{KIND_LABEL[r.correction_kind] ?? r.correction_kind}</TableCell>
-                  <TableCell>{SCOPE_LABEL[r.time_scope]}</TableCell>
+                  <TableCell>{correctionTimeLabel(r)}</TableCell>
                   <TableCell><Badge variant={statusVariant(r.status)}>{STATUS_LABEL[r.status]}</Badge></TableCell>
                 </TableRow>
               ))}

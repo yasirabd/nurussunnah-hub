@@ -34,10 +34,16 @@ export function CorrectionForm({
   phone: string;
 }) {
   const [kind, setKind] = useState("");
-  const [timeScope, setTimeScope] = useState("");
+  const [timeParts, setTimeParts] = useState<string[]>([]);
   const today = localDateString();
-  const needsCheckIn = timeScope === "MASUK" || timeScope === "KEDUANYA";
-  const needsCheckOut = timeScope === "PULANG" || timeScope === "KEDUANYA";
+  const needsCheckIn = timeParts.includes("MASUK");
+  const needsCheckOut = timeParts.includes("PULANG");
+
+  function toggleTimePart(value: "MASUK" | "PULANG", checked: boolean) {
+    setTimeParts((current) =>
+      checked ? Array.from(new Set([...current, value])) : current.filter((v) => v !== value)
+    );
+  }
 
   return (
     <form action={submitCorrectionAction} className="space-y-5">
@@ -75,21 +81,32 @@ export function CorrectionForm({
               Koreksi presensi hanya dapat diajukan untuk kejadian hari ini.
             </p>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="time_scope">Waktu yang Perlu Dikoreksi</Label>
-            <select
-              id="time_scope"
-              name="time_scope"
-              required
-              className={selectCls}
-              defaultValue=""
-              onChange={(e) => setTimeScope(e.target.value)}
-            >
-              <option value="" disabled>Pilih</option>
-              <option value="MASUK">Masuk</option>
-              <option value="PULANG">Pulang</option>
-              <option value="KEDUANYA">Keduanya</option>
-            </select>
+          <div className="space-y-2">
+            <Label>Presensi yang tidak tercatat</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                { value: "MASUK", label: "Masuk" },
+                { value: "PULANG", label: "Pulang" },
+              ].map((option) => (
+                <label
+                  key={option.value}
+                  className="flex min-h-10 items-center gap-3 rounded-md border px-3 py-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name="time_parts"
+                    value={option.value}
+                    checked={timeParts.includes(option.value)}
+                    onChange={(e) => toggleTimePart(option.value as "MASUK" | "PULANG", e.target.checked)}
+                    className="size-4"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Jika tidak membawa kartu/lupa tap seharian, centang Masuk dan Pulang.
+            </p>
           </div>
         </div>
 
@@ -111,7 +128,7 @@ export function CorrectionForm({
         )}
 
         <div className="space-y-1.5">
-          <Label htmlFor="correction_kind">Jenis Koreksi Presensi</Label>
+          <Label htmlFor="correction_kind">Penyebab presensi tidak tercatat</Label>
           <select
             id="correction_kind"
             name="correction_kind"

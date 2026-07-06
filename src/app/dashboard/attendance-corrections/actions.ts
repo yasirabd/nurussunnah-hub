@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { deriveAttendanceTimeScope } from "@/lib/attendance-correction.mjs";
 import type { Database } from "@/types/database";
 import {
   uploadToDrive,
@@ -33,13 +34,16 @@ export async function submitCorrectionAction(formData: FormData) {
   if (!user) redirectWith(false, "Sesi berakhir, silakan login ulang.");
 
   const eventDate = text(formData, "event_date");
+  const timeScope = deriveAttendanceTimeScope(formData.getAll("time_parts"));
   const requestedCheckIn = text(formData, "requested_check_in") || null;
   const requestedCheckOut = text(formData, "requested_check_out") || null;
+
+  if (!timeScope) redirectWith(false, "Pilih presensi yang perlu dikoreksi.", "ajukan");
 
   const { data: newId, error } = await supabase.rpc("submit_attendance_correction", {
     p_event_date: eventDate,
     p_correction_kind: text(formData, "correction_kind") as Database["public"]["Enums"]["attendance_correction_kind_enum"],
-    p_time_scope: text(formData, "time_scope") as Database["public"]["Enums"]["attendance_time_scope_enum"],
+    p_time_scope: timeScope,
     p_reason: text(formData, "reason"),
     p_requested_check_in: requestedCheckIn,
     p_requested_check_out: requestedCheckOut,
