@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return new NextResponse(`Field wajib belum diisi: ${payload.missing.join(", ")}`, { status: 400 });
   }
 
-  const templatePath = path.join(process.cwd(), "dist", "template_surat_penawaran_kerja.docx");
+  const templatePath = path.join(process.cwd(), "public", "templates", "template_surat_penawaran_kerja.docx");
   const templateBytes = await readFile(templatePath);
   const docxBytes = await generateOfferLetterDocx(templateBytes, payload.values);
   const fileName = `surat-penawaran-kerja-${slugify(payload.values.candidate_name)}.docx`;

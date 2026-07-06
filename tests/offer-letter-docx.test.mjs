@@ -21,8 +21,8 @@ const expectedFieldNames = [
   "fixed_allowance",
   "take_home_pay",
   "benefits",
-  "offer_expiry_date",
   "letter_date",
+  "offer_expiry_date",
 ];
 
 test("exposes the approved offer letter form fields", () => {
@@ -78,7 +78,7 @@ test("requires every visible offer letter field", () => {
 });
 
 test("generates a docx by replacing template placeholders", async () => {
-  const templateBytes = await readFile("dist/template_surat_penawaran_kerja.docx");
+  const templateBytes = await readFile("public/templates/template_surat_penawaran_kerja.docx");
   const formData = new FormData();
   for (const field of OFFER_LETTER_FIELDS) {
     formData.set(field.name, `${field.label} Test`);
