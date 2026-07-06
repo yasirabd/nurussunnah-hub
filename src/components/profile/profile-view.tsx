@@ -13,10 +13,14 @@ import {
   Building2,
   CalendarDays,
   Edit3,
+  FileText,
+  Fingerprint,
   GraduationCap,
   Mail,
   MapPin,
   Phone,
+  ShieldAlert,
+  Shirt,
   UserRound,
 } from "lucide-react";
 import type {
@@ -50,11 +54,21 @@ type UnitAssignmentWithRelations = UserUnitAssignment & {
 
 type EmployeeLeavePeriod = { start_date: string; end_date: string; reason?: string | null };
 
+type EmployeeIntake = {
+  emergency_name?: string | null;
+  emergency_relation?: string | null;
+  emergency_phone?: string | null;
+  uniform_size?: string | null;
+  ktp_url?: string | null;
+  photo_url?: string | null;
+};
+
 interface ProfileViewProps {
   profile: ProfileWithUnit | null;
   positionHistories: PositionHistoryWithUnit[];
   unitAssignments: UnitAssignmentWithRelations[];
   activeLeave?: EmployeeLeavePeriod | null;
+  intake?: EmployeeIntake | null;
   roles: string[];
   userEmail: string;
   successMessage?: string;
@@ -86,6 +100,7 @@ export function ProfileView({
   positionHistories,
   unitAssignments,
   activeLeave,
+  intake,
   roles,
   userEmail,
   successMessage,
@@ -186,6 +201,7 @@ export function ProfileView({
 
           <InfoCard title="Kepegawaian">
             <Row label="NIY" value={profile.employee_no} icon={<UserRound className="h-3.5 w-3.5" />} />
+            <Row label="NIK (KTP)" value={profile.nik} icon={<Fingerprint className="h-3.5 w-3.5" />} />
             <Row label="Unit Induk" value={profile.units?.name} icon={<Building2 className="h-3.5 w-3.5" />} />
             <Row
               label="Status Pegawai"
@@ -215,8 +231,42 @@ export function ProfileView({
           <Row label="Alamat Domisili" value={profile.address_domicile} span="full" />
           {profile.facebook && <Row label="Facebook" value={profile.facebook} />}
           {profile.instagram && <Row label="Instagram" value={`@${profile.instagram}`} />}
+          {profile.twitter && <Row label="Twitter / X" value={profile.twitter} />}
         </InfoCard>
       </div>
+
+      {(intake?.emergency_name ||
+        intake?.emergency_phone ||
+        intake?.uniform_size ||
+        intake?.ktp_url ||
+        intake?.photo_url) && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.45fr)]">
+          <InfoCard title="Kontak Darurat & Seragam">
+            <Row
+              label="Nama Kontak Darurat"
+              value={intake?.emergency_name}
+              icon={<ShieldAlert className="h-3.5 w-3.5" />}
+            />
+            <Row label="Hubungan" value={intake?.emergency_relation} />
+            <Row
+              label="No. HP Darurat"
+              value={intake?.emergency_phone}
+              icon={<Phone className="h-3.5 w-3.5" />}
+            />
+            <Row
+              label="Ukuran Seragam"
+              value={intake?.uniform_size}
+              icon={<Shirt className="h-3.5 w-3.5" />}
+            />
+          </InfoCard>
+
+          <InfoCard title="Dokumen">
+            <DocLink label="Scan / Foto KTP" href={intake?.ktp_url} />
+            <DocLink label="Pas Foto" href={intake?.photo_url} />
+          </InfoCard>
+        </div>
+      )}
+
 
       <Card>
         <CardHeader>
@@ -336,6 +386,28 @@ function Row({
   );
 }
 
+function DocLink({ label, href }: { label: string; href?: string | null }) {
+  return (
+    <div className="rounded-[var(--radius-md)] bg-secondary/60 p-3 sm:col-span-2">
+      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+        <FileText className="h-3.5 w-3.5" />
+        {label}
+      </span>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-block break-all text-primary underline underline-offset-2 hover:text-primary/80"
+        >
+          Lihat dokumen
+        </a>
+      ) : (
+        <span className="mt-1 block italic text-muted-foreground/60">Belum diunggah</span>
+      )}
+    </div>
+  );
+}
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="rounded-[var(--radius-md)] border border-dashed bg-secondary/30 p-4 text-sm text-muted-foreground">

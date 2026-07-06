@@ -14,15 +14,18 @@ export default async function EditProfilePage() {
 
   if (!user) redirect("/auth/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: intake }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase
+      .from("employee_intake")
+      .select("emergency_name, emergency_relation, emergency_phone, uniform_size")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
   if (!profile) {
     redirect("/dashboard/profile?error=Data%20profil%20belum%20tersedia.");
   }
 
-  return <ProfileEditForm profile={profile} />;
+  return <ProfileEditForm profile={profile} intake={intake} />;
 }

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { ACTIVE_STATUS_OPTIONS, EMPLOYEE_STATUS_OPTIONS } from "@/lib/employee-s
 export type EmployeeFormValue = {
   full_name?: string | null;
   employee_no?: string | null;
+  nik?: string | null;
   email?: string | null;
   phone?: string | null;
   gender?: "L" | "P" | null;
@@ -29,6 +30,12 @@ export type EmployeeFormValue = {
   active_status_end_date?: string | null;
   active_status_note?: string | null;
   home_unit_id?: string | null;
+  emergency_name?: string | null;
+  emergency_relation?: string | null;
+  emergency_phone?: string | null;
+  uniform_size?: string | null;
+  ktp_url?: string | null;
+  photo_url?: string | null;
 };
 
 export type EmployeeLeaveFormValue = {
@@ -69,6 +76,7 @@ export function EmployeeFormFields({
           helper="Spasi akan dihapus dan huruf dibuat kapital."
           required
         />
+        <Field label="NIK (KTP)" name="nik" defaultValue={employee?.nik} inputMode="numeric" maxLength={16} helper="16 digit sesuai KTP." />
         <Field label="Email" name="email" type="email" defaultValue={employee?.email} required />
         <Field label="No. HP" name="phone" defaultValue={employee?.phone} />
         <SelectField label="Unit Home" name="home_unit_id" defaultValue={employee?.home_unit_id ?? ""}>
@@ -125,9 +133,9 @@ export function EmployeeFormFields({
           <option value="">Pilih pendidikan</option>
           <option value="SD/Sederajat">SD/Sederajat</option>
           <option value="SMP/Sederajat">SMP/Sederajat</option>
-          <option value="SMA/SMK/Sederajat">SMA/SMK/Sederajat</option>
-          <option value="D1/D2/D3">D1/D2/D3</option>
-          <option value="D4/S1">D4/S1</option>
+          <option value="SMA/Sederajat">SMA/Sederajat</option>
+          <option value="D3">D3</option>
+          <option value="S1">S1</option>
           <option value="S2">S2</option>
           <option value="S3">S3</option>
         </SelectField>
@@ -140,6 +148,20 @@ export function EmployeeFormFields({
         <Field label="Twitter" name="twitter" defaultValue={employee?.twitter} />
         <TextareaField label="Alamat KTP" name="address_ktp" defaultValue={employee?.address_ktp} />
         <TextareaField label="Alamat Domisili" name="address_domicile" defaultValue={employee?.address_domicile} />
+      </FormSection>
+
+      <FormSection title="Kontak Darurat & Seragam">
+        <Field label="Nama Kontak Darurat" name="emergency_name" defaultValue={employee?.emergency_name} />
+        <Field label="Hubungan" name="emergency_relation" placeholder="Contoh: Orang tua, Pasangan" defaultValue={employee?.emergency_relation} />
+        <Field label="No. HP Kontak Darurat" name="emergency_phone" type="tel" inputMode="tel" placeholder="08xxxxxxxxxx" defaultValue={employee?.emergency_phone} />
+        <SelectField label="Ukuran Seragam" name="uniform_size" defaultValue={employee?.uniform_size ?? ""}>
+          <option value="">Pilih ukuran</option>
+          {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((size) => (
+            <option key={size} value={size}>{size}</option>
+          ))}
+        </SelectField>
+        <DocRow label="Scan / Foto KTP" href={employee?.ktp_url} />
+        <DocRow label="Pas Foto" href={employee?.photo_url} />
       </FormSection>
     </>
   );
@@ -269,6 +291,27 @@ type NullableTextareaProps = Omit<React.TextareaHTMLAttributes<HTMLTextAreaEleme
   defaultValue?: string | number | readonly string[] | null;
 };
 
+function DocRow({ label, href }: { label: string; href?: string | null }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium">{label}</label>
+      <div className="flex h-10 items-center rounded-[var(--radius-sm)] border border-input bg-secondary/40 px-3 text-sm">
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            Lihat dokumen
+          </a>
+        ) : (
+          <span className="text-muted-foreground">Belum diunggah</span>
+        )}
+      </div>
+    </div>
+  );
+}
 function Field({ label, helper, defaultValue, ...props }: NullableInputProps) {
   return (
     <div className="space-y-1.5">

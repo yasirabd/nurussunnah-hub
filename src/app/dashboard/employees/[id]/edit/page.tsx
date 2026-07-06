@@ -48,10 +48,10 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
   const canEditPosition = canManageEmployees || currentRoleNames.includes("KEPALA_UNIT");
   if (!canEditPosition) redirect("/dashboard");
 
-  const [{ data: profile }, { data: roles }, { data: position }, { data: units }, { data: activeLeave }] = await Promise.all([
+  const [{ data: profile }, { data: roles }, { data: position }, { data: units }, { data: activeLeave }, { data: intake }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, employee_no, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, active_status_start_date, active_status_end_date, active_status_note, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
+      .select("id, full_name, employee_no, nik, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, active_status_start_date, active_status_end_date, active_status_note, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", id),
@@ -68,11 +68,16 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
       .eq("user_id", id)
       .eq("status", "ACTIVE")
       .maybeSingle(),
+    supabase
+      .from("employee_intake")
+      .select("emergency_name, emergency_relation, emergency_phone, uniform_size, ktp_url, photo_url")
+      .eq("user_id", id)
+      .maybeSingle(),
   ]);
 
   if (!profile) redirect("/dashboard/employees");
 
-  const employee = profile as ProfileRow;
+  const employee = { ...(profile as ProfileRow), ...(intake ?? {}) };
   const roleNames = (roles ?? []).map((item) => item.role);
   const returnTo = `/dashboard/employees/${id}/edit`;
   const success = paramValue(queryParams, "success");

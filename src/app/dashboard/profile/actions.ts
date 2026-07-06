@@ -4,17 +4,18 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
-const MARITAL_STATUS_OPTIONS = ['Sudah Kawin', 'Belum Kawin', 'Cerai'] as const;
+const MARITAL_STATUS_OPTIONS = ['Belum Kawin', 'Kawin', 'Cerai Mati', 'Cerai Hidup'] as const;
 const EDUCATION_OPTIONS = [
   'SD/Sederajat',
   'SMP/Sederajat',
-  'SMA/SMK/Sederajat',
-  'D1/D2/D3',
-  'D4/S1',
+  'SMA/Sederajat',
+  'D3',
+  'S1',
   'S2',
   'S3',
 ] as const;
-const EDUCATION_WITH_STUDY_PROGRAM = new Set<string>(['D1/D2/D3', 'D4/S1', 'S2', 'S3']);
+const EDUCATION_WITH_STUDY_PROGRAM = new Set<string>(['D3', 'S1', 'S2', 'S3']);
+const UNIFORM_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim();
@@ -54,6 +55,23 @@ export async function updateMyProfileAction(formData: FormData) {
     twitter: text(formData, 'twitter') || null,
     instagram: text(formData, 'instagram') || null,
   }).eq('id', user.id);
+
+  const uniformSize = optionOrNull(text(formData, 'uniform_size'), UNIFORM_SIZES);
+  const emergencyName = text(formData, 'emergency_name') || null;
+  const emergencyRelation = text(formData, 'emergency_relation') || null;
+  const emergencyPhone = text(formData, 'emergency_phone') || null;
+  if (!error && (uniformSize || emergencyName || emergencyRelation || emergencyPhone)) {
+    await supabase.from('employee_intake').upsert(
+      {
+        user_id: user.id,
+        emergency_name: emergencyName,
+        emergency_relation: emergencyRelation,
+        emergency_phone: emergencyPhone,
+        uniform_size: uniformSize as ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | null),
+      },
+      { onConflict: 'user_id' }
+    );
+  }
 
   revalidatePath('/dashboard/profile');
   const key = error ? 'error' : 'success';

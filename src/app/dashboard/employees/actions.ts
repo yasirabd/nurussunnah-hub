@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -53,6 +53,7 @@ function profilePayload(formData: FormData) {
   return {
     full_name: text(formData, 'full_name'),
     employee_no: normalizeEmployeeNo(formData),
+    nik: nullableText(formData, 'nik'),
     email: text(formData, 'email').toLowerCase(),
     phone: nullableText(formData, 'phone'),
     gender: text(formData, 'gender') === 'P' ? ('P' as const) : ('L' as const),
@@ -204,6 +205,13 @@ export async function updateEmployeeProfileAction(formData: FormData) {
     revalidatePath('/dashboard/employees');
     redirectToPath(returnTo, false, error.message);
   }
+  const { error: intakeError } = await supabase
+    .from('employee_intake')
+    .upsert({ user_id: id, ...intakePayload(formData) }, { onConflict: 'user_id' });
+  if (intakeError) {
+    revalidatePath('/dashboard/employees');
+    redirectToPath(returnTo, false, intakeError.message);
+  }
   try {
     await syncHomeAssignment(supabase, id, payload.home_unit_id);
     await syncActiveLeave(supabase, id, user.id, leavePayload.data);
@@ -267,6 +275,9 @@ export async function createEmployeeAction(formData: FormData) {
     });
     if (positionError) redirectToPath(returnTo, false, positionError.message);
   }
+  await supabase
+    .from('employee_intake')
+    .upsert({ user_id: userId, ...intakePayload(formData), created_by: user.id }, { onConflict: 'user_id' });
   revalidatePath('/dashboard/employees');
   redirectWith(true, 'Pegawai baru berhasil ditambahkan. Password awal: bismillahns.');
 }
@@ -319,7 +330,6 @@ export async function createIntakeEmployeeAction(formData: FormData) {
     id: userId,
     ...payload,
     ...statusDetailPayload.data,
-    nik,
     avatar_url: intake.photo_url,
     must_change_password: true,
   });

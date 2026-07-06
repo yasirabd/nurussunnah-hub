@@ -14,7 +14,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
   const context = await getDashboardUserContext();
   if (!context) redirect("/auth/login");
 
-  const [{ data: profile }, { data: positionHistories }, { data: unitAssignments }, { data: activeLeave }] =
+  const [{ data: profile }, { data: positionHistories }, { data: unitAssignments }, { data: activeLeave }, { data: intake }] =
     await Promise.all([
       context.supabase
         .from("profiles")
@@ -37,6 +37,11 @@ export default async function ProfilePage({ searchParams }: PageProps) {
         .eq("user_id", context.user.id)
         .eq("status", "ACTIVE")
         .maybeSingle(),
+      context.supabase
+        .from("employee_intake")
+        .select("emergency_name, emergency_relation, emergency_phone, uniform_size, ktp_url, photo_url")
+        .eq("user_id", context.user.id)
+        .maybeSingle(),
     ]);
 
   const roles = context.roles;
@@ -49,6 +54,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
       positionHistories={positionHistories ?? []}
       unitAssignments={unitAssignments ?? []}
       activeLeave={activeLeave}
+      intake={intake}
       roles={roles}
       successMessage={Array.isArray(success) ? success[0] : success}
       errorMessage={Array.isArray(error) ? error[0] : error}
