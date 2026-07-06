@@ -7,7 +7,11 @@ export type CorrectionRecapRow = {
   full_name: string;
   employee_no: string;
   unit_name: string | null;
-  total_corrections: number;
+  total_correction_days: number;
+  lupa_tap_days: number;
+  kartu_tertinggal_days: number;
+  kartu_hilang_rusak_days: number;
+  kendala_sistem_days: number;
 };
 
 type CorrectionKindRow = {
@@ -38,24 +42,32 @@ export function DownloadCorrectionRecapExcel({
   byUnit,
   stats,
   yearName,
+  dateRange,
 }: {
   perEmployee: CorrectionRecapRow[];
   byKind: CorrectionKindRow[];
   byUnit: CorrectionUnitRow[];
   stats: CorrectionStats;
   yearName: string;
+  dateRange?: { startDate?: string; endDate?: string };
 }) {
   function handleDownload() {
     const employeeRows = perEmployee.map((r) => ({
       Nama: r.full_name,
       "No. Pegawai": r.employee_no,
       Unit: r.unit_name ?? "-",
-      "Jumlah Koreksi": Number(r.total_corrections),
+      "Hari Dikoreksi": Number(r.total_correction_days),
+      "Lupa Tap": Number(r.lupa_tap_days),
+      "Kartu Tertinggal": Number(r.kartu_tertinggal_days),
+      "Kartu Hilang/Rusak": Number(r.kartu_hilang_rusak_days),
+      "Kendala Sistem": Number(r.kendala_sistem_days),
     }));
 
     const summarySheet = XLSX.utils.json_to_sheet([
       {
         "Tahun Pelajaran": yearName,
+        "Tanggal Mulai": dateRange?.startDate || "-",
+        "Tanggal Selesai": dateRange?.endDate || "-",
         "Total Pengajuan": Number(stats.total_requests ?? 0),
         "Pegawai Mengajukan": Number(stats.distinct_employees ?? 0),
       },
@@ -74,10 +86,19 @@ export function DownloadCorrectionRecapExcel({
     );
     const employeeSheet = XLSX.utils.json_to_sheet(employeeRows);
 
-    summarySheet["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 20 }];
+    summarySheet["!cols"] = [{ wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 20 }];
     kindSheet["!cols"] = [{ wch: 30 }, { wch: 12 }];
     unitSheet["!cols"] = [{ wch: 24 }, { wch: 12 }];
-    employeeSheet["!cols"] = [{ wch: 30 }, { wch: 16 }, { wch: 20 }, { wch: 14 }];
+    employeeSheet["!cols"] = [
+      { wch: 30 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 16 },
+    ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, summarySheet, "Ringkasan");

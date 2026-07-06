@@ -1021,6 +1021,20 @@ export type Database = {
           total_corrections: number
         }[]
       }
+      unit_correction_day_recap_active_year: {
+        Args: { p_start_date?: string | null; p_end_date?: string | null }
+        Returns: {
+          user_id: string
+          full_name: string
+          employee_no: string
+          unit_name: string | null
+          total_correction_days: number
+          lupa_tap_days: number
+          kartu_tertinggal_days: number
+          kartu_hilang_rusak_days: number
+          kendala_sistem_days: number
+        }[]
+      }
       can_review_work_statement: {
         Args: { statement_id: string }
         Returns: boolean

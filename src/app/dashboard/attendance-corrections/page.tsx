@@ -19,6 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -89,6 +91,13 @@ function simpleParams(sp: Record<string, string | string[] | undefined>) {
 function positiveInt(value: string | undefined, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function dateFilterArgs(searchParams: Record<string, string>) {
+  return {
+    p_start_date: searchParams.correctionStartDate || null,
+    p_end_date: searchParams.correctionEndDate || null,
+  };
 }
 
 export default async function CorrectionsPage({ searchParams }: PageProps) {
@@ -166,7 +175,7 @@ export default async function CorrectionsPage({ searchParams }: PageProps) {
       {activeTab === "riwayat" && (await MyHistory({ supabase, userId: user.id, yearName }))}
       {activeTab === "unit" && isKepalaUnit && (await UnitCounts({ supabase, yearName, searchParams: simpleSp }))}
       {activeTab === "validasi" && canValidate && (await ValidationList({ supabase }))}
-      {activeTab === "rekap" && canValidate && (await Recap({ supabase, yearName }))}
+      {activeTab === "rekap" && canValidate && (await Recap({ supabase, yearName, searchParams: simpleSp }))}
     </div>
   );
 }
@@ -246,26 +255,49 @@ async function UnitCounts({
   yearName: string;
   searchParams: Record<string, string>;
 }) {
-  const { data: rows } = await supabase.rpc("unit_correction_counts_active_year");
+  const filters = dateFilterArgs(searchParams);
+  const { data: rows } = await supabase.rpc("unit_correction_day_recap_active_year", filters);
   const allRows = rows ?? [];
   const page = positiveInt(searchParams.correctionUnitPage, 1);
   const pageSize = positiveInt(searchParams.correctionUnitPageSize, 10);
   const pagedRows = allRows.slice((page - 1) * pageSize, page * pageSize);
+  const totalDays = allRows.reduce((sum: number, row: any) => sum + Number(row.total_correction_days ?? 0), 0);
+  const activeEmployees = allRows.filter((row: any) => Number(row.total_correction_days ?? 0) > 0).length;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Rekap Koreksi Pegawai Unit</CardTitle>
-        <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai aktif.</CardDescription>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <CardTitle>Rekap Koreksi Pegawai Unit</CardTitle>
+            <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai aktif.</CardDescription>
+          </div>
+          <DownloadCorrectionRecapExcel
+            perEmployee={allRows as any}
+            byKind={[]}
+            byUnit={[]}
+            stats={{ total_requests: totalDays, distinct_employees: activeEmployees }}
+            yearName={yearName}
+            dateRange={{
+              startDate: searchParams.correctionStartDate,
+              endDate: searchParams.correctionEndDate,
+            }}
+          />
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <CorrectionDateFilterForm tab="unit" searchParams={searchParams} />
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nama</TableHead>
               <TableHead>No. Pegawai</TableHead>
               <TableHead>Unit</TableHead>
-              <TableHead className="text-right">Jumlah Koreksi</TableHead>
+              <TableHead className="text-right">Hari Dikoreksi</TableHead>
+              <TableHead className="text-right">Lupa Tap</TableHead>
+              <TableHead className="text-right">Kartu Tertinggal</TableHead>
+              <TableHead className="text-right">Kartu Hilang/Rusak</TableHead>
+              <TableHead className="text-right">Kendala Sistem</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -274,12 +306,16 @@ async function UnitCounts({
                 <TableCell>{r.full_name}</TableCell>
                 <TableCell>{r.employee_no}</TableCell>
                 <TableCell>{r.unit_name ?? "-"}</TableCell>
-                <TableCell className="text-right">{r.total_corrections}</TableCell>
+                <TableCell className="text-right">{r.total_correction_days}</TableCell>
+                <TableCell className="text-right">{r.lupa_tap_days}</TableCell>
+                <TableCell className="text-right">{r.kartu_tertinggal_days}</TableCell>
+                <TableCell className="text-right">{r.kartu_hilang_rusak_days}</TableCell>
+                <TableCell className="text-right">{r.kendala_sistem_days}</TableCell>
               </TableRow>
             ))}
             {pagedRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Belum ada data.
                 </TableCell>
               </TableRow>
@@ -298,6 +334,47 @@ async function UnitCounts({
         />
       </CardContent>
     </Card>
+  );
+}
+
+function CorrectionDateFilterForm({
+  tab,
+  searchParams,
+}: {
+  tab: "unit" | "rekap";
+  searchParams: Record<string, string>;
+}) {
+  return (
+    <form action="/dashboard/attendance-corrections" className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end">
+      <input type="hidden" name="tab" value={tab} />
+      <div className="space-y-1.5">
+        <Label htmlFor={`${tab}-correction-start-date`}>Tanggal Mulai</Label>
+        <Input
+          id={`${tab}-correction-start-date`}
+          name="correctionStartDate"
+          type="date"
+          defaultValue={searchParams.correctionStartDate ?? ""}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`${tab}-correction-end-date`}>Tanggal Selesai</Label>
+        <Input
+          id={`${tab}-correction-end-date`}
+          name="correctionEndDate"
+          type="date"
+          defaultValue={searchParams.correctionEndDate ?? ""}
+        />
+      </div>
+      <Button type="submit" variant="outline">Terapkan Filter</Button>
+      {(searchParams.correctionStartDate || searchParams.correctionEndDate) && (
+        <Link
+          href={`/dashboard/attendance-corrections?tab=${tab}`}
+          className="inline-flex h-10 items-center justify-center rounded-[var(--radius-full)] px-5 text-sm font-medium hover:bg-primary/6 hover:text-primary"
+        >
+          Reset
+        </Link>
+      )}
+    </form>
   );
 }
 
@@ -421,10 +498,19 @@ function ValidationSummaryCard({ label, value }: { label: string; value: number 
 }
 
 
-async function Recap({ supabase, yearName }: { supabase: any; yearName: string }) {
+async function Recap({
+  supabase,
+  yearName,
+  searchParams,
+}: {
+  supabase: any;
+  yearName: string;
+  searchParams: Record<string, string>;
+}) {
+  const filters = dateFilterArgs(searchParams);
   const [{ data: perEmployee }, { data: byKind }, { data: byUnit }, { data: statsRows }] =
     await Promise.all([
-      supabase.rpc("unit_correction_counts_active_year"),
+      supabase.rpc("unit_correction_day_recap_active_year", filters),
       supabase.rpc("correction_recap_by_kind_active_year"),
       supabase.rpc("correction_recap_by_unit_active_year"),
       supabase.rpc("correction_recap_stats_active_year"),
@@ -510,7 +596,7 @@ async function Recap({ supabase, yearName }: { supabase: any; yearName: string }
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <CardTitle>Koreksi per Pegawai (Aktif)</CardTitle>
               <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai berstatus aktif.</CardDescription>
@@ -521,16 +607,25 @@ async function Recap({ supabase, yearName }: { supabase: any; yearName: string }
               byUnit={(byUnit ?? []) as any}
               stats={stats}
               yearName={yearName}
+              dateRange={{
+                startDate: searchParams.correctionStartDate,
+                endDate: searchParams.correctionEndDate,
+              }}
             />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <CorrectionDateFilterForm tab="rekap" searchParams={searchParams} />
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nama</TableHead>
                 <TableHead>Unit</TableHead>
-                <TableHead className="text-right">Jumlah Koreksi</TableHead>
+                <TableHead className="text-right">Hari Dikoreksi</TableHead>
+                <TableHead className="text-right">Lupa Tap</TableHead>
+                <TableHead className="text-right">Kartu Tertinggal</TableHead>
+                <TableHead className="text-right">Kartu Hilang/Rusak</TableHead>
+                <TableHead className="text-right">Kendala Sistem</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -538,11 +633,15 @@ async function Recap({ supabase, yearName }: { supabase: any; yearName: string }
                 <TableRow key={r.user_id}>
                   <TableCell>{r.full_name}</TableCell>
                   <TableCell>{r.unit_name ?? "-"}</TableCell>
-                  <TableCell className="text-right">{r.total_corrections}</TableCell>
+                  <TableCell className="text-right">{r.total_correction_days}</TableCell>
+                  <TableCell className="text-right">{r.lupa_tap_days}</TableCell>
+                  <TableCell className="text-right">{r.kartu_tertinggal_days}</TableCell>
+                  <TableCell className="text-right">{r.kartu_hilang_rusak_days}</TableCell>
+                  <TableCell className="text-right">{r.kendala_sistem_days}</TableCell>
                 </TableRow>
               ))}
               {(perEmployee ?? []).length === 0 && (
-                <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">Belum ada data.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Belum ada data.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
