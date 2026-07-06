@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { summarizeCorrectionDays } from "../src/lib/attendance-correction-recap.mjs";
+import { correctionRecapSheetNames, summarizeCorrectionDays } from "../src/lib/attendance-correction-recap.mjs";
 
 test("summarizeCorrectionDays counts duplicate same-kind submissions once per day", () => {
   assert.deepEqual(
@@ -36,3 +36,10 @@ test("summarizeCorrectionDays counts one total day when two kinds occur on one d
   );
 });
 
+test("correctionRecapSheetNames omits empty summary sheets for unit export", () => {
+  assert.deepEqual(correctionRecapSheetNames(false), ["Ringkasan", "Per Pegawai"]);
+});
+
+test("correctionRecapSheetNames keeps all sheets for full recap export", () => {
+  assert.deepEqual(correctionRecapSheetNames(true), ["Ringkasan", "Per Jenis", "Per Unit", "Per Pegawai"]);
+});

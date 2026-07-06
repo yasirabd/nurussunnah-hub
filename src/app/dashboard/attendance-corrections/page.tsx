@@ -278,6 +278,7 @@ async function UnitCounts({
             byUnit={[]}
             stats={{ total_requests: totalDays, distinct_employees: activeEmployees }}
             yearName={yearName}
+            includeKindAndUnitSheets={false}
             dateRange={{
               startDate: searchParams.correctionStartDate,
               endDate: searchParams.correctionEndDate,

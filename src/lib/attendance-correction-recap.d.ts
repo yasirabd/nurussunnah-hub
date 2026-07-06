@@ -12,4 +12,4 @@ export type CorrectionDaySummary = {
 };
 
 export function summarizeCorrectionDays(rows: CorrectionRecapInput[]): CorrectionDaySummary;
-
+export function correctionRecapSheetNames(includeKindAndUnit: boolean): string[];

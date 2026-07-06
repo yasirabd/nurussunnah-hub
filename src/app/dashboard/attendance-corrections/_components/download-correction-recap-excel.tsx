@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import * as XLSX from "xlsx";
+import { correctionRecapSheetNames } from "@/lib/attendance-correction-recap.mjs";
 
 export type CorrectionRecapRow = {
   full_name: string;
@@ -43,6 +44,7 @@ export function DownloadCorrectionRecapExcel({
   stats,
   yearName,
   dateRange,
+  includeKindAndUnitSheets = true,
 }: {
   perEmployee: CorrectionRecapRow[];
   byKind: CorrectionKindRow[];
@@ -50,6 +52,7 @@ export function DownloadCorrectionRecapExcel({
   stats: CorrectionStats;
   yearName: string;
   dateRange?: { startDate?: string; endDate?: string };
+  includeKindAndUnitSheets?: boolean;
 }) {
   function handleDownload() {
     const employeeRows = perEmployee.map((r) => ({
@@ -101,10 +104,12 @@ export function DownloadCorrectionRecapExcel({
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, summarySheet, "Ringkasan");
-    XLSX.utils.book_append_sheet(wb, kindSheet, "Per Jenis");
-    XLSX.utils.book_append_sheet(wb, unitSheet, "Per Unit");
-    XLSX.utils.book_append_sheet(wb, employeeSheet, "Per Pegawai");
+    for (const sheetName of correctionRecapSheetNames(includeKindAndUnitSheets)) {
+      if (sheetName === "Ringkasan") XLSX.utils.book_append_sheet(wb, summarySheet, sheetName);
+      if (sheetName === "Per Jenis") XLSX.utils.book_append_sheet(wb, kindSheet, sheetName);
+      if (sheetName === "Per Unit") XLSX.utils.book_append_sheet(wb, unitSheet, sheetName);
+      if (sheetName === "Per Pegawai") XLSX.utils.book_append_sheet(wb, employeeSheet, sheetName);
+    }
     XLSX.writeFile(wb, `rekap-koreksi-presensi-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 

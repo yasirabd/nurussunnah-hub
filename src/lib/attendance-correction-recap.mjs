@@ -25,3 +25,9 @@ export function summarizeCorrectionDays(rows) {
   };
 }
 
+export function correctionRecapSheetNames(includeKindAndUnit) {
+  return includeKindAndUnit
+    ? ["Ringkasan", "Per Jenis", "Per Unit", "Per Pegawai"]
+    : ["Ringkasan", "Per Pegawai"];
+}
+
