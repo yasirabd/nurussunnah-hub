@@ -82,7 +82,8 @@ test("offer letter route loads the template without node fs", () => {
   const routeSource = readFileSync("src/app/dashboard/employment-documents/offer-letter/route.ts", "utf8");
 
   assert.doesNotMatch(routeSource, /node:fs|readFile\(/);
-  assert.match(routeSource, /fetch\(new URL\("\/templates\/template_surat_penawaran_kerja\.docx", request\.url\)\)/);
+  assert.match(routeSource, /getCloudflareContext\(\)\.env\.ASSETS/);
+  assert.match(routeSource, /assets\.fetch\(assetUrl\)/);
 });
 
 test("generates a docx by replacing template placeholders", async () => {

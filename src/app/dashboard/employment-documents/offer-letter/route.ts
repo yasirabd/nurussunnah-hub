@@ -1,3 +1,4 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     return new NextResponse(`Field wajib belum diisi: ${payload.missing.join(", ")}`, { status: 400 });
   }
 
-  const templateResponse = await fetch(new URL("/templates/template_surat_penawaran_kerja.docx", request.url));
+  const templateResponse = await fetchTemplate(request);
   if (!templateResponse.ok) return new NextResponse("Template surat tidak ditemukan.", { status: 500 });
 
   const templateBytes = await templateResponse.arrayBuffer();
@@ -39,6 +40,18 @@ export async function POST(request: Request) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+async function fetchTemplate(request: Request) {
+  const assetUrl = "https://assets.local/templates/template_surat_penawaran_kerja.docx";
+  try {
+    const assets = getCloudflareContext().env.ASSETS;
+    if (assets) return assets.fetch(assetUrl);
+  } catch {
+    // Local Next dev has no Cloudflare context.
+  }
+
+  return fetch(new URL("/templates/template_surat_penawaran_kerja.docx", request.url));
 }
 
 function slugify(value: string) {
