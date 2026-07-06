@@ -1,11 +1,7 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { generateOfferLetterDocx, normalizeOfferLetterPayload } from "@/lib/offer-letter-docx.mjs";
-
-export const runtime = "nodejs";
 
 type OfferLetterValues = Record<string, string> & { candidate_name: string };
 type OfferLetterPayload =
@@ -29,8 +25,10 @@ export async function POST(request: Request) {
     return new NextResponse(`Field wajib belum diisi: ${payload.missing.join(", ")}`, { status: 400 });
   }
 
-  const templatePath = path.join(process.cwd(), "public", "templates", "template_surat_penawaran_kerja.docx");
-  const templateBytes = await readFile(templatePath);
+  const templateResponse = await fetch(new URL("/templates/template_surat_penawaran_kerja.docx", request.url));
+  if (!templateResponse.ok) return new NextResponse("Template surat tidak ditemukan.", { status: 500 });
+
+  const templateBytes = await templateResponse.arrayBuffer();
   const docxBytes = await generateOfferLetterDocx(templateBytes, payload.values);
   const fileName = `surat-penawaran-kerja-${slugify(payload.values.candidate_name)}.docx`;
 

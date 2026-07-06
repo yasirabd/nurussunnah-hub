@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import JSZip from "jszip";
 
@@ -75,6 +76,13 @@ test("requires every visible offer letter field", () => {
 
   assert.equal(payload.ok, false);
   assert.deepEqual(payload.missing, expectedFieldNames);
+});
+
+test("offer letter route loads the template without node fs", () => {
+  const routeSource = readFileSync("src/app/dashboard/employment-documents/offer-letter/route.ts", "utf8");
+
+  assert.doesNotMatch(routeSource, /node:fs|readFile\(/);
+  assert.match(routeSource, /fetch\(new URL\("\/templates\/template_surat_penawaran_kerja\.docx", request\.url\)\)/);
 });
 
 test("generates a docx by replacing template placeholders", async () => {
