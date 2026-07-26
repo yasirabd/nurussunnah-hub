@@ -50,3 +50,18 @@ test("attendance correction and leave request share browser image preparation", 
   );
   assert.match(leaveForm, /blocked \|\| isPreparingEvidence/);
 });
+
+test("attendance correction note is optional", () => {
+  const correctionForm = readFileSync(
+    "src/app/dashboard/attendance-corrections/_components/correction-form.tsx",
+    "utf8"
+  );
+  const reasonTextarea = correctionForm
+    .match(/<Textarea[\s\S]*?\/>/g)
+    ?.find((field) => field.includes('name="reason"'));
+
+  assert.match(correctionForm, /Keterangan \(Opsional\)/);
+  assert.ok(reasonTextarea, "reason textarea must exist");
+  assert.match(reasonTextarea, /rows=\{4\}/);
+  assert.doesNotMatch(reasonTextarea, /\brequired\b/);
+});

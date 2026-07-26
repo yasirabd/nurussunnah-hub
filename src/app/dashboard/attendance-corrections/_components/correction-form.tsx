@@ -190,8 +190,16 @@ export function CorrectionForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="reason">Keterangan</Label>
-          <Textarea id="reason" name="reason" required rows={4} placeholder="Jelaskan kenapa presensi tidak tercatat." />
+          <Label htmlFor="reason">Keterangan (Opsional)</Label>
+          <Textarea
+            id="reason"
+            name="reason"
+            rows={4}
+            placeholder="Tambahkan keterangan jika ada informasi lain yang perlu disampaikan."
+          />
+          <p className="text-xs text-muted-foreground">
+            Isi jika ada konteks tambahan yang perlu diketahui admin.
+          </p>
         </div>
       </FormSection>
 
