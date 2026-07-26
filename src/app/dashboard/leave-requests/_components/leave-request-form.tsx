@@ -1,10 +1,16 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { EVIDENCE_MAX_TOTAL_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import {
+  prepareEvidenceFiles,
+  replaceInputFiles,
+  totalFileBytes,
+} from "@/lib/evidence-upload-client";
 import { submitLeaveRequestAction } from "../actions";
 
 const LEAVE_CATEGORIES = [
@@ -56,6 +62,10 @@ export function LeaveRequestForm({
   const [unitHead, setUnitHead] = useState<"SUDAH" | "BELUM" | "">("");
   const [startDate, setStartDate] = useState("");
   const [category, setCategory] = useState("");
+  const unitHeadEvidenceRef = useRef<HTMLInputElement>(null);
+  const leaveEvidenceRef = useRef<HTMLInputElement>(null);
+  const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
+  const [evidenceMessage, setEvidenceMessage] = useState("");
   const today = localDateString();
   const maxStartDate = localDateString(addDays(new Date(), 7));
 
@@ -68,6 +78,50 @@ export function LeaveRequestForm({
   const evidenceHelper = evidenceRequired
     ? "Bukti wajib untuk jenis izin ini. Upload foto atau PDF pendukung."
     : "Bukti opsional. Jika tidak ada bukti fisik, centang pernyataan di bawah.";
+
+  async function prepareLeaveEvidence(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const selectedFiles = Array.from(input.files ?? []);
+    if (!selectedFiles.length) {
+      setEvidenceMessage("");
+      return;
+    }
+
+    setIsPreparingEvidence(true);
+    setEvidenceMessage("Menyiapkan foto untuk upload...");
+
+    try {
+      const prepared = await prepareEvidenceFiles(selectedFiles);
+      const otherInput =
+        input.name === "bukti_izin"
+          ? unitHeadEvidenceRef.current
+          : leaveEvidenceRef.current;
+      const otherFiles = Array.from(otherInput?.files ?? []);
+
+      if (
+        totalFileBytes([...prepared.files, ...otherFiles]) >
+        EVIDENCE_MAX_TOTAL_BYTES
+      ) {
+        throw new Error(
+          "Total seluruh bukti terlalu besar. Maksimal 10 MB setelah foto dikompresi."
+        );
+      }
+
+      replaceInputFiles(input, prepared.files);
+      setEvidenceMessage(
+        prepared.wasOptimized
+          ? "Foto kamera sudah diperkecil dan siap diupload."
+          : "Bukti siap diupload."
+      );
+    } catch (error) {
+      input.value = "";
+      setEvidenceMessage(
+        error instanceof Error ? error.message : "Bukti gagal disiapkan untuk upload."
+      );
+    } finally {
+      setIsPreparingEvidence(false);
+    }
+  }
 
   return (
     <form action={submitLeaveRequestAction} className="space-y-5">
@@ -177,8 +231,16 @@ export function LeaveRequestForm({
         {unitHead === "SUDAH" && (
           <div className="space-y-1.5">
             <Label htmlFor="bukti_ss_kepala_unit">Bukti Screenshot Izin Kepala Unit</Label>
-            <Input id="bukti_ss_kepala_unit" name="bukti_ss_kepala_unit" type="file"
-              accept="image/*" required />
+            <Input
+              ref={unitHeadEvidenceRef}
+              id="bukti_ss_kepala_unit"
+              name="bukti_ss_kepala_unit"
+              type="file"
+              accept="image/*"
+              required
+              disabled={isPreparingEvidence}
+              onChange={prepareLeaveEvidence}
+            />
             <p className="text-xs text-muted-foreground">
               Upload screenshot persetujuan kepala unit dari WhatsApp atau media komunikasi lain.
             </p>
@@ -194,8 +256,23 @@ export function LeaveRequestForm({
               {evidenceRequired ? "Wajib" : "Opsional"}
             </span>
           </div>
-          <Input id="bukti_izin" name="bukti_izin" type="file" accept="image/*,application/pdf" multiple required={evidenceRequired} />
+          <Input
+            ref={leaveEvidenceRef}
+            id="bukti_izin"
+            name="bukti_izin"
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            required={evidenceRequired}
+            disabled={isPreparingEvidence}
+            onChange={prepareLeaveEvidence}
+          />
           <p className="text-xs text-muted-foreground">{evidenceHelper}</p>
+          {evidenceMessage && (
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {evidenceMessage}
+            </p>
+          )}
           {!evidenceRequired && (
             <label className="flex items-start gap-2 text-xs text-muted-foreground">
               <input type="checkbox" name="no_evidence_ack" className="mt-0.5" />
@@ -209,7 +286,11 @@ export function LeaveRequestForm({
         <p className="text-xs text-muted-foreground">
           Pastikan file sudah benar. Proses upload ke Drive dapat memerlukan beberapa detik.
         </p>
-        <SubmitButton disabled={blocked} className="w-full sm:w-auto">
+        <SubmitButton
+          disabled={blocked || isPreparingEvidence}
+          className="w-full sm:w-auto"
+          pendingText="Mengirim pengajuan..."
+        >
           Kirim Pengajuan Izin
         </SubmitButton>
       </div>

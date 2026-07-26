@@ -5,6 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { EVIDENCE_MAX_TOTAL_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import {
+  prepareEvidenceFiles,
+  replaceInputFiles,
+  totalFileBytes,
+} from "@/lib/evidence-upload-client";
 import { submitCorrectionAction } from "../actions";
 
 const KINDS = [
@@ -35,6 +41,8 @@ export function CorrectionForm({
 }) {
   const [kind, setKind] = useState("");
   const [timeParts, setTimeParts] = useState<string[]>([]);
+  const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
+  const [evidenceMessage, setEvidenceMessage] = useState("");
   const today = localDateString();
   const needsCheckIn = timeParts.includes("MASUK");
   const needsCheckOut = timeParts.includes("PULANG");
@@ -43,6 +51,38 @@ export function CorrectionForm({
     setTimeParts((current) =>
       checked ? Array.from(new Set([...current, value])) : current.filter((v) => v !== value)
     );
+  }
+
+  async function prepareEvidence(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const selectedFiles = Array.from(input.files ?? []);
+    if (!selectedFiles.length) {
+      setEvidenceMessage("");
+      return;
+    }
+
+    setIsPreparingEvidence(true);
+    setEvidenceMessage("Menyiapkan foto untuk upload...");
+
+    try {
+      const prepared = await prepareEvidenceFiles(selectedFiles);
+      if (totalFileBytes(prepared.files) > EVIDENCE_MAX_TOTAL_BYTES) {
+        throw new Error("Total bukti terlalu besar. Maksimal 10 MB setelah foto dikompresi.");
+      }
+      replaceInputFiles(input, prepared.files);
+      setEvidenceMessage(
+        prepared.wasOptimized
+          ? "Foto kamera sudah diperkecil dan siap diupload."
+          : "Bukti siap diupload."
+      );
+    } catch (error) {
+      input.value = "";
+      setEvidenceMessage(
+        error instanceof Error ? error.message : "Bukti gagal disiapkan untuk upload."
+      );
+    } finally {
+      setIsPreparingEvidence(false);
+    }
   }
 
   return (
@@ -158,10 +198,23 @@ export function CorrectionForm({
       <FormSection title="Bukti Pendukung" description="Bukti bersifat opsional dan akan disimpan ke Google Drive Yayasan.">
         <div className="space-y-1.5">
           <Label htmlFor="bukti">Bukti Pendukung</Label>
-          <Input id="bukti" name="bukti" type="file" accept="image/*,application/pdf" multiple />
+          <Input
+            id="bukti"
+            name="bukti"
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            disabled={isPreparingEvidence}
+            onChange={prepareEvidence}
+          />
           <p className="text-xs text-muted-foreground">
             Untuk kasus lupa tap biasanya tidak ada bukti fisik. Untuk kartu rusak/hilang, upload foto jika tersedia.
           </p>
+          {evidenceMessage && (
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {evidenceMessage}
+            </p>
+          )}
         </div>
       </FormSection>
 
@@ -169,7 +222,11 @@ export function CorrectionForm({
         <p className="text-xs text-muted-foreground">
           Jika disetujui, sistem akan memperbarui data presensi sesuai tanggal dan waktu yang dipilih.
         </p>
-        <SubmitButton className="w-full sm:w-auto">
+        <SubmitButton
+          className="w-full sm:w-auto"
+          disabled={isPreparingEvidence}
+          pendingText="Mengirim pengajuan..."
+        >
           Kirim Pengajuan Koreksi
         </SubmitButton>
       </div>
