@@ -66,6 +66,7 @@ export function LeaveRequestForm({
   const leaveEvidenceRef = useRef<HTMLInputElement>(null);
   const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
   const [evidenceMessage, setEvidenceMessage] = useState("");
+  const [noEvidenceAck, setNoEvidenceAck] = useState(false);
   const today = localDateString();
   const maxStartDate = localDateString(addDays(new Date(), 7));
 
@@ -78,6 +79,14 @@ export function LeaveRequestForm({
   const evidenceHelper = evidenceRequired
     ? "Bukti wajib untuk jenis izin ini. Upload foto atau PDF pendukung."
     : "Bukti opsional. Jika tidak ada bukti fisik, centang pernyataan di bawah.";
+
+  function handleNoEvidenceAck(checked: boolean) {
+    setNoEvidenceAck(checked);
+    if (checked && leaveEvidenceRef.current) {
+      leaveEvidenceRef.current.value = "";
+      setEvidenceMessage("");
+    }
+  }
 
   async function prepareLeaveEvidence(event: React.ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -264,7 +273,7 @@ export function LeaveRequestForm({
             accept="image/*,application/pdf"
             multiple
             required={evidenceRequired}
-            disabled={isPreparingEvidence}
+            disabled={isPreparingEvidence || (!evidenceRequired && noEvidenceAck)}
             onChange={prepareLeaveEvidence}
           />
           <p className="text-xs text-muted-foreground">{evidenceHelper}</p>
@@ -275,7 +284,13 @@ export function LeaveRequestForm({
           )}
           {!evidenceRequired && (
             <label className="flex items-start gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" name="no_evidence_ack" className="mt-0.5" />
+              <input
+                type="checkbox"
+                name="no_evidence_ack"
+                className="mt-0.5"
+                checked={noEvidenceAck}
+                onChange={(event) => handleNoEvidenceAck(event.target.checked)}
+              />
               <span>Saya menyatakan tidak ada bukti fisik untuk izin ini, dan bersedia melengkapi jika diminta Yayasan.</span>
             </label>
           )}

@@ -65,3 +65,38 @@ test("attendance correction note is optional", () => {
   assert.match(reasonTextarea, /rows=\{4\}/);
   assert.doesNotMatch(reasonTextarea, /\brequired\b/);
 });
+
+test("no-evidence acknowledgement clears and disables leave evidence", () => {
+  const leaveForm = readFileSync(
+    "src/app/dashboard/leave-requests/_components/leave-request-form.tsx",
+    "utf8"
+  );
+  const leaveAction = readFileSync(
+    "src/app/dashboard/leave-requests/actions.ts",
+    "utf8"
+  );
+
+  assert.match(
+    leaveForm,
+    /const \[noEvidenceAck, setNoEvidenceAck\] = useState\(false\)/
+  );
+  assert.match(leaveForm, /function handleNoEvidenceAck/);
+  assert.match(leaveForm, /leaveEvidenceRef\.current\.value = ""/);
+  assert.match(
+    leaveForm,
+    /disabled=\{isPreparingEvidence \|\| \(!evidenceRequired && noEvidenceAck\)\}/
+  );
+  assert.match(leaveForm, /checked=\{noEvidenceAck\}/);
+  assert.match(
+    leaveForm,
+    /onChange=\{\(event\) => handleNoEvidenceAck\(event\.target\.checked\)\}/
+  );
+  assert.match(
+    leaveAction,
+    /const noEvidenceAck = text\(formData, "no_evidence_ack"\) === "on"/
+  );
+  assert.match(
+    leaveAction,
+    /const evidence = noEvidenceAck\s*\? \[\]\s*:\s*formData/
+  );
+});

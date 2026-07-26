@@ -46,6 +46,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
 
   const startDate = text(formData, "start_date");
   const endDate = text(formData, "end_date") || startDate;
+  const noEvidenceAck = text(formData, "no_evidence_ack") === "on";
 
   const { data: newId, error } = await supabase.rpc("submit_leave_request", {
     p_start_date: startDate,
@@ -54,7 +55,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
     p_leave_time_type: text(formData, "leave_time_type") as Database["public"]["Enums"]["leave_time_type_enum"],
     p_reason: text(formData, "reason"),
     p_unit_head_approved: unitHeadApproved,
-    p_no_evidence_ack: text(formData, "no_evidence_ack") === "on",
+    p_no_evidence_ack: noEvidenceAck,
   });
 
   if (error || !newId) {
@@ -72,7 +73,11 @@ export async function submitLeaveRequestAction(formData: FormData) {
   const folderName = `${sanitize(profile?.full_name ?? "pegawai")}_${startDate}`;
   const segments = [monthSegment(new Date(startDate)), folderName];
 
-  const evidence = formData.getAll("bukti_izin").filter((f): f is File => f instanceof File && f.size > 0);
+  const evidence = noEvidenceAck
+    ? []
+    : formData
+        .getAll("bukti_izin")
+        .filter((f): f is File => f instanceof File && f.size > 0);
   const unitHeadSs = formData.getAll("bukti_ss_kepala_unit").filter((f): f is File => f instanceof File && f.size > 0);
 
   const rows: {
