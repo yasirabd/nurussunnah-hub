@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import { useState } from "react";
 import {
   BookOpen,
   Briefcase,
@@ -22,7 +23,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { EMPLOYEE_STATUS_OPTIONS } from "@/lib/employee-status";
+import { toTitleCaseName } from "@/lib/registration-review.mjs";
 import { approveRegistrationAction, rejectRegistrationAction } from "../actions";
 
 export type RegistrationDetail = {
@@ -43,6 +46,7 @@ export type RegistrationDetail = {
   instagram: string | null;
   twitter: string | null;
   employee_status: string;
+  home_unit_id: string | null;
   position_name: string | null;
   uniform_size: string | null;
   emergency_name: string | null;
@@ -51,25 +55,16 @@ export type RegistrationDetail = {
   ktp_url: string | null;
   photo_url: string | null;
   note: string | null;
-  unit_label: string | null;
 };
 
-function fmtDate(iso: string | null) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
-}
+export type RegistrationUnitOption = {
+  id: string;
+  name: string;
+  code: string;
+};
 
-function Item({ label, value }: { label: string; value: React.ReactNode }) {
-  const shown = value === null || value === undefined || value === "" ? "-" : value;
-  return (
-    <div className="space-y-0.5">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="break-words text-sm">{shown}</dd>
-    </div>
-  );
-}
+const selectClassName =
+  "h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 function Group({
   icon: Icon,
@@ -81,123 +76,240 @@ function Group({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-[var(--radius-md)] border bg-secondary/20 p-4">
+    <section className="space-y-4 rounded-[var(--radius-md)] border bg-secondary/20 p-4">
       <h3 className="flex items-center gap-2 text-sm font-semibold">
         <Icon className="h-4 w-4 text-muted-foreground" />
         {title}
       </h3>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">{children}</dl>
+      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </section>
   );
 }
 
-export function RegistrationReview({ reg }: { reg: RegistrationDetail }) {
-  const socials = [reg.facebook, reg.instagram, reg.twitter].filter(Boolean).length > 0;
+function Field({
+  regId,
+  label,
+  name,
+  defaultValue,
+  required = false,
+  ...props
+}: {
+  regId: string;
+  label: string;
+  name: string;
+  defaultValue?: string | null;
+  required?: boolean;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "defaultValue" | "name" | "required">) {
+  const id = `${name}_${regId}`;
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium" htmlFor={id}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </label>
+      <Input id={id} name={name} defaultValue={defaultValue ?? ""} required={required} {...props} />
+    </div>
+  );
+}
+
+function SelectField({
+  regId,
+  label,
+  name,
+  defaultValue,
+  required = false,
+  children,
+}: {
+  regId: string;
+  label: string;
+  name: string;
+  defaultValue: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  const id = `${name}_${regId}`;
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium" htmlFor={id}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </label>
+      <select
+        id={id}
+        name={name}
+        defaultValue={defaultValue}
+        required={required}
+        className={selectClassName}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
+function TextareaField({
+  regId,
+  label,
+  name,
+  defaultValue,
+  required = false,
+}: {
+  regId: string;
+  label: string;
+  name: string;
+  defaultValue?: string | null;
+  required?: boolean;
+}) {
+  const id = `${name}_${regId}`;
+  return (
+    <div className="space-y-1.5 sm:col-span-2">
+      <label className="text-sm font-medium" htmlFor={id}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </label>
+      <Textarea id={id} name={name} defaultValue={defaultValue ?? ""} required={required} />
+    </div>
+  );
+}
+
+export function RegistrationReview({
+  reg,
+  units,
+}: {
+  reg: RegistrationDetail;
+  units: RegistrationUnitOption[];
+}) {
+  const [fullName, setFullName] = useState(reg.full_name);
+
   return (
     <Dialog>
       <DialogTrigger render={<Button size="sm" variant="outline" />}>Tinjau</DialogTrigger>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
               <UserRound className="h-6 w-6 text-muted-foreground" />
             </span>
             <div className="min-w-0">
-              <DialogTitle className="truncate">{reg.full_name}</DialogTitle>
+              <DialogTitle className="truncate">{fullName}</DialogTitle>
               <DialogDescription className="truncate">{reg.email}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <form action={approveRegistrationAction} className="space-y-4">
+          <input type="hidden" name="id" value={reg.id} />
+
           <Group icon={UserRound} title="Data Diri">
-            <Item label="NIK" value={reg.nik} />
-            <Item label="No. HP" value={reg.phone} />
-            <Item label="Jenis Kelamin" value={reg.gender === "P" ? "Perempuan" : "Laki-laki"} />
-            <Item label="Status Perkawinan" value={reg.marital_status} />
-            <Item label="Tempat Lahir" value={reg.birth_place} />
-            <Item label="Tanggal Lahir" value={fmtDate(reg.birth_date)} />
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-sm font-medium" htmlFor={`full_name_${reg.id}`}>
+                Nama Lengkap <span className="text-destructive">*</span>
+              </label>
+              <Input
+                id={`full_name_${reg.id}`}
+                name="full_name"
+                value={fullName}
+                onChange={(event) => setFullName(event.currentTarget.value)}
+                onBlur={(event) => setFullName(toTitleCaseName(event.currentTarget.value))}
+                required
+              />
+              <p className="text-xs text-muted-foreground">Otomatis diubah ke Title Case saat kolom ditinggalkan.</p>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <span className="text-sm font-medium">Email</span>
+              <div className="flex h-10 items-center rounded-[var(--radius-sm)] border bg-muted/40 px-3 text-sm">
+                {reg.email}
+              </div>
+              <p className="text-xs text-muted-foreground">Email pendaftaran tidak dapat diubah saat validasi.</p>
+            </div>
+            <Field regId={reg.id} label="NIK" name="nik" defaultValue={reg.nik} inputMode="numeric" maxLength={16} required />
+            <Field regId={reg.id} label="No. HP" name="phone" defaultValue={reg.phone} type="tel" required />
+            <SelectField regId={reg.id} label="Jenis Kelamin" name="gender" defaultValue={reg.gender} required>
+              <option value="L">Laki-laki</option>
+              <option value="P">Perempuan</option>
+            </SelectField>
+            <SelectField regId={reg.id} label="Status Perkawinan" name="marital_status" defaultValue={reg.marital_status ?? ""} required>
+              <option value="">Pilih status</option>
+              <option value="Belum Kawin">Belum Kawin</option>
+              <option value="Kawin">Kawin</option>
+              <option value="Cerai Mati">Cerai Mati</option>
+              <option value="Cerai Hidup">Cerai Hidup</option>
+            </SelectField>
+            <Field regId={reg.id} label="Tempat Lahir" name="birth_place" defaultValue={reg.birth_place} required />
+            <Field regId={reg.id} label="Tanggal Lahir" name="birth_date" defaultValue={reg.birth_date} type="date" required />
           </Group>
 
           <Group icon={MapPin} title="Alamat">
-            <Item label="Alamat KTP" value={reg.address_ktp} />
-            <Item label="Alamat Domisili" value={reg.address_domicile} />
+            <TextareaField regId={reg.id} label="Alamat KTP" name="address_ktp" defaultValue={reg.address_ktp} required />
+            <TextareaField regId={reg.id} label="Alamat Domisili" name="address_domicile" defaultValue={reg.address_domicile} required />
           </Group>
 
           <Group icon={BookOpen} title="Pendidikan">
-            <Item label="Pendidikan Terakhir" value={reg.last_education} />
-            <Item label="Program Studi" value={reg.study_program} />
+            <SelectField regId={reg.id} label="Pendidikan Terakhir" name="last_education" defaultValue={reg.last_education ?? ""} required>
+              <option value="">Pilih pendidikan</option>
+              {[
+                "SD/Sederajat",
+                "SMP/Sederajat",
+                "SMA/Sederajat",
+                "D3",
+                "S1",
+                "S2",
+                "S3",
+              ].map((level) => <option key={level} value={level}>{level}</option>)}
+            </SelectField>
+            <Field regId={reg.id} label="Program Studi" name="study_program" defaultValue={reg.study_program} />
           </Group>
 
           <Group icon={Briefcase} title="Penempatan">
-            <Item label="Unit Penempatan" value={reg.unit_label} />
-            <Item label="Jabatan" value={reg.position_name} />
-            <Item label="Ukuran Seragam" value={reg.uniform_size} />
+            <SelectField regId={reg.id} label="Unit Penempatan" name="home_unit_id" defaultValue={reg.home_unit_id ?? ""} required>
+              <option value="">Pilih unit</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>
+              ))}
+            </SelectField>
+            <Field regId={reg.id} label="Jabatan" name="position_name" defaultValue={reg.position_name} required />
+            <SelectField regId={reg.id} label="Ukuran Seragam" name="uniform_size" defaultValue={reg.uniform_size ?? ""} required>
+              <option value="">Pilih ukuran</option>
+              {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((size) => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </SelectField>
           </Group>
 
           <Group icon={ShieldAlert} title="Kontak Darurat">
-            <Item label="Nama" value={reg.emergency_name} />
-            <Item label="Hubungan" value={reg.emergency_relation} />
-            <Item label="No. HP" value={reg.emergency_phone} />
+            <Field regId={reg.id} label="Nama" name="emergency_name" defaultValue={reg.emergency_name} required />
+            <Field regId={reg.id} label="Hubungan" name="emergency_relation" defaultValue={reg.emergency_relation} required />
+            <Field regId={reg.id} label="No. HP" name="emergency_phone" defaultValue={reg.emergency_phone} type="tel" required />
           </Group>
 
-          {socials && (
-            <Group icon={Phone} title="Media Sosial">
-              <Item label="Facebook" value={reg.facebook} />
-              <Item label="Instagram" value={reg.instagram} />
-              <Item label="Twitter / X" value={reg.twitter} />
-            </Group>
-          )}
+          <Group icon={Phone} title="Media Sosial">
+            <Field regId={reg.id} label="Facebook" name="facebook" defaultValue={reg.facebook} />
+            <Field regId={reg.id} label="Instagram" name="instagram" defaultValue={reg.instagram} />
+            <Field regId={reg.id} label="Twitter / X" name="twitter" defaultValue={reg.twitter} />
+          </Group>
 
-          <section className="space-y-3 rounded-[var(--radius-md)] border bg-secondary/20 p-4">
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Dokumen
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <DocButton icon={IdCard} label="Scan KTP" url={reg.ktp_url} />
-              <DocButton icon={UserRound} label="Pas Foto" url={reg.photo_url} />
+          <Group icon={FileText} title="Catatan & Dokumen">
+            <TextareaField regId={reg.id} label="Catatan" name="note" defaultValue={reg.note} />
+            <div className="space-y-2 sm:col-span-2">
+              <p className="text-sm font-medium">Dokumen pendaftaran</p>
+              <div className="flex flex-wrap gap-2">
+                <DocButton icon={IdCard} label="Scan KTP" url={reg.ktp_url} />
+                <DocButton icon={UserRound} label="Pas Foto" url={reg.photo_url} />
+              </div>
             </div>
-          </section>
-        </div>
+          </Group>
 
-        <form
-          action={approveRegistrationAction}
-          className="space-y-4 rounded-[var(--radius-md)] border border-primary/30 bg-primary/5 p-4"
-        >
-          <input type="hidden" name="id" value={reg.id} />
-          <p className="text-sm font-semibold">Validasi Pendaftaran</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium" htmlFor={`join_${reg.id}`}>
-                Tanggal Masuk <span className="text-destructive">*</span>
-              </label>
-              <Input id={`join_${reg.id}`} name="join_date" type="date" required />
-              <p className="text-xs leading-5 text-muted-foreground">Dasar pembuatan NIY & awal jabatan.</p>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium" htmlFor={`status_${reg.id}`}>
-                Status Pegawai <span className="text-destructive">*</span>
-              </label>
-              <select
-                id={`status_${reg.id}`}
-                name="employee_status"
-                defaultValue="CPTY"
-                required
-                className="h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                {EMPLOYEE_STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
+          <section className="space-y-4 rounded-[var(--radius-md)] border border-primary/30 bg-primary/5 p-4">
+            <p className="text-sm font-semibold">Validasi Pendaftaran</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field regId={reg.id} label="Tanggal Masuk" name="join_date" type="date" required />
+              <SelectField regId={reg.id} label="Status Pegawai" name="employee_status" defaultValue={reg.employee_status || "CPTY"} required>
+                {EMPLOYEE_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
-              </select>
-              <p className="text-xs leading-5 text-muted-foreground">Ditentukan saat validasi.</p>
+              </SelectField>
             </div>
-          </div>
-          <Button type="submit" className="w-full">
-            <Check className="h-4 w-4" /> Setujui &amp; Buat Akun Pegawai
-          </Button>
+            <Button type="submit" className="w-full">
+              <Check className="h-4 w-4" /> Setujui &amp; Buat Akun Pegawai
+            </Button>
+          </section>
         </form>
 
         <form action={rejectRegistrationAction}>

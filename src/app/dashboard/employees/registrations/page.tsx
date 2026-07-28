@@ -56,6 +56,12 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
 
   const rows = pending ?? [];
 
+  const { data: units } = await supabase
+    .from("units")
+    .select("id, name, code")
+    .eq("is_active", true)
+    .order("code", { ascending: true });
+
   const { data: inviteRows } = await supabase
     .from("employee_invites")
     .select("id, code, status, expires_at, created_at")
@@ -149,7 +155,8 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
                     facebook: r.facebook,
                     instagram: r.instagram,
                     twitter: r.twitter,
-                    employee_status: EMPLOYEE_STATUS_LABELS[r.employee_status] ?? r.employee_status,
+                    employee_status: r.employee_status,
+                    home_unit_id: r.home_unit_id,
                     position_name: r.position_name,
                     uniform_size: r.uniform_size,
                     emergency_name: r.emergency_name,
@@ -158,7 +165,6 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
                     ktp_url: r.ktp_url,
                     photo_url: r.photo_url,
                     note: r.note,
-                    unit_label: unitLabel,
                   };
                   return (
                     <TableRow key={r.id}>
@@ -179,7 +185,7 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <RegistrationReview reg={detail} />
+                        <RegistrationReview reg={detail} units={units ?? []} />
                       </TableCell>
                     </TableRow>
                   );
