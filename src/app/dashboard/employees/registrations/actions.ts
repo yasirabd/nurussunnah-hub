@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { buildNiy, nextSequence } from "@/lib/niy.mjs";
-import { isEmployeeStatus } from "@/lib/employee-status";
+import { normalizeRegistrationApproval } from "@/lib/registration-review.mjs";
 import { moveAndRenameFolder, employeeDocumentRootFolderId } from "@/lib/google-drive";
 
 const DEFAULT_EMPLOYEE_PASSWORD = "bismillahns";
@@ -34,11 +34,11 @@ async function ensureHrdAdmin() {
 export async function approveRegistrationAction(formData: FormData) {
   const { supabase, reviewerId } = await ensureHrdAdmin();
   const id = String(formData.get("id") ?? "").trim();
-  const joinDate = String(formData.get("join_date") ?? "").trim();
-  const employeeStatus = String(formData.get("employee_status") ?? "").trim();
   if (!id) redirectWith(false, "ID pendaftaran tidak valid.");
-  if (!joinDate) redirectWith(false, "Tanggal masuk wajib diisi sebagai dasar NIY.");
-  if (!isEmployeeStatus(employeeStatus)) redirectWith(false, "Status pegawai wajib dipilih.");
+
+  const normalized = normalizeRegistrationApproval(formData);
+  if ("error" in normalized) redirectWith(false, normalized.error);
+  const approval = normalized.data;
 
   const { data: reg, error: fetchError } = await supabase
     .from("employee_registrations")
@@ -49,15 +49,22 @@ export async function approveRegistrationAction(formData: FormData) {
   if (fetchError) redirectWith(false, fetchError.message);
   if (!reg) redirectWith(false, "Pendaftaran tidak ditemukan atau sudah diproses.");
 
-  if (!reg.birth_date) redirectWith(false, "Tanggal lahir pendaftar kosong; tidak bisa membuat NIY.");
+  const { data: selectedUnit, error: unitError } = await supabase
+    .from("units")
+    .select("id")
+    .eq("id", approval.home_unit_id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (unitError) redirectWith(false, unitError.message);
+  if (!selectedUnit) redirectWith(false, "Unit penempatan tidak valid atau sudah tidak aktif.");
 
   // Generate NIY (mengikuti generator intake): urut berikutnya dari NIY existing.
   const { data: niyRows } = await supabase.from("profiles").select("employee_no");
   const existing = (niyRows ?? []).map((r) => r.employee_no).filter(Boolean) as string[];
   const niyResult = buildNiy({
-    birthDateISO: reg.birth_date,
-    joinDateISO: joinDate,
-    gender: reg.gender,
+    birthDateISO: approval.birth_date,
+    joinDateISO: approval.join_date,
+    gender: approval.gender,
     sequence: nextSequence(existing),
   });
   if (!niyResult.niy) {
@@ -69,9 +76,9 @@ export async function approveRegistrationAction(formData: FormData) {
   const { data: dupEmail } = await supabase
     .from("profiles")
     .select("id")
-    .or(`email.eq.${reg.email},employee_no.eq.${employeeNo}`)
+    .or(`email.eq.${reg.email},employee_no.eq.${employeeNo},nik.eq.${approval.nik}`)
     .maybeSingle();
-  if (dupEmail) redirectWith(false, "Email atau NIY sudah terdaftar sebagai pegawai.");
+  if (dupEmail) redirectWith(false, "Email, NIK, atau NIY sudah terdaftar sebagai pegawai.");
 
   const admin = createAdminClient();
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -79,9 +86,9 @@ export async function approveRegistrationAction(formData: FormData) {
     password: DEFAULT_EMPLOYEE_PASSWORD,
     email_confirm: true,
     user_metadata: {
-      full_name: reg.full_name,
+      full_name: approval.full_name,
       employee_no: employeeNo,
-      gender: reg.gender,
+      gender: approval.gender,
     },
   });
   if (authError || !authData.user?.id) {
@@ -91,24 +98,24 @@ export async function approveRegistrationAction(formData: FormData) {
 
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: userId,
-    full_name: reg.full_name,
+    full_name: approval.full_name,
     employee_no: employeeNo,
     email: reg.email,
-    nik: reg.nik,
-    phone: reg.phone,
-    gender: reg.gender,
-    marital_status: reg.marital_status,
-    birth_place: reg.birth_place,
-    birth_date: reg.birth_date,
-    last_education: reg.last_education,
-    study_program: reg.study_program,
-    address_ktp: reg.address_ktp,
-    address_domicile: reg.address_domicile,
-    facebook: reg.facebook,
-    instagram: reg.instagram,
-    twitter: reg.twitter,
-    home_unit_id: reg.home_unit_id,
-    employee_status: employeeStatus,
+    nik: approval.nik,
+    phone: approval.phone,
+    gender: approval.gender,
+    marital_status: approval.marital_status,
+    birth_place: approval.birth_place,
+    birth_date: approval.birth_date,
+    last_education: approval.last_education,
+    study_program: approval.study_program,
+    address_ktp: approval.address_ktp,
+    address_domicile: approval.address_domicile,
+    facebook: approval.facebook,
+    instagram: approval.instagram,
+    twitter: approval.twitter,
+    home_unit_id: approval.home_unit_id,
+    employee_status: approval.employee_status,
     active_status: "AKTIF",
     avatar_url: reg.photo_url,
     must_change_password: true,
@@ -117,7 +124,7 @@ export async function approveRegistrationAction(formData: FormData) {
 
   await supabase.from("user_roles").insert({ user_id: userId, role: "PEGAWAI" });
 
-  if (reg.home_unit_id) {
+  if (approval.home_unit_id) {
     const { data: activeYear } = await supabase
       .from("academic_years")
       .select("id")
@@ -125,9 +132,9 @@ export async function approveRegistrationAction(formData: FormData) {
       .maybeSingle();
     if (activeYear?.id) {
       await supabase.from("user_unit_assignments").upsert(
-        {
-          user_id: userId,
-          unit_id: reg.home_unit_id,
+          {
+            user_id: userId,
+            unit_id: approval.home_unit_id,
           assignment_type: "HOME",
           academic_year_id: activeYear.id,
         },
@@ -136,25 +143,23 @@ export async function approveRegistrationAction(formData: FormData) {
     }
   }
 
-  if (reg.position_name) {
+  if (approval.position_name) {
     await supabase.from("position_histories").insert({
       user_id: userId,
-      unit_id: reg.home_unit_id,
-      position_name: reg.position_name,
-      start_date: joinDate,
+      unit_id: approval.home_unit_id,
+      position_name: approval.position_name,
+      start_date: approval.join_date,
       is_current: true,
     });
   }
 
-  const uniform = (reg.uniform_size ?? "").toUpperCase();
-  const validUniform = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"].includes(uniform);
   await supabase.from("employee_intake").upsert(
     {
       user_id: userId,
-      emergency_name: reg.emergency_name,
-      emergency_relation: reg.emergency_relation,
-      emergency_phone: reg.emergency_phone,
-      uniform_size: validUniform ? (uniform as "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL") : null,
+      emergency_name: approval.emergency_name,
+      emergency_relation: approval.emergency_relation,
+      emergency_phone: approval.emergency_phone,
+      uniform_size: approval.uniform_size,
       ktp_url: reg.ktp_url,
       photo_url: reg.photo_url,
       created_by: reviewerId,
@@ -165,32 +170,56 @@ export async function approveRegistrationAction(formData: FormData) {
   // Pindahkan folder dokumen dari TEMP ke folder dokumen pegawai: [3 digit NIY]-NAMA.
   if (reg.drive_folder_id) {
     const last3 = employeeNo.replace(/\D/g, "").slice(-3);
-    const folderName = `${last3}-${reg.full_name.toUpperCase()}`;
+    const folderName = `${last3}-${approval.full_name.toUpperCase()}`;
     try {
       await moveAndRenameFolder(reg.drive_folder_id, employeeDocumentRootFolderId(), folderName);
     } catch (e) {
       redirectWith(
         false,
-        `Pegawai ${reg.full_name} dibuat (NIY ${employeeNo}), tetapi folder dokumen gagal dipindahkan: ${
+        `Pegawai ${approval.full_name} dibuat (NIY ${employeeNo}), tetapi folder dokumen gagal dipindahkan: ${
           e instanceof Error ? e.message : "kesalahan Drive"
         }. Pindahkan manual bila perlu.`
       );
     }
   }
 
+  const registrationUpdates = {
+    full_name: approval.full_name,
+    nik: approval.nik,
+    phone: approval.phone,
+    gender: approval.gender,
+    marital_status: approval.marital_status,
+    birth_place: approval.birth_place,
+    birth_date: approval.birth_date,
+    last_education: approval.last_education,
+    study_program: approval.study_program,
+    address_ktp: approval.address_ktp,
+    address_domicile: approval.address_domicile,
+    facebook: approval.facebook,
+    instagram: approval.instagram,
+    twitter: approval.twitter,
+    home_unit_id: approval.home_unit_id,
+    employee_status: approval.employee_status,
+    position_name: approval.position_name,
+    uniform_size: approval.uniform_size,
+    emergency_name: approval.emergency_name,
+    emergency_relation: approval.emergency_relation,
+    emergency_phone: approval.emergency_phone,
+    note: approval.note,
+    status: "DISETUJUI" as const,
+    employee_no: employeeNo,
+    reviewed_by: reviewerId,
+    reviewed_at: new Date().toISOString(),
+  };
+
   await supabase
     .from("employee_registrations")
-    .update({
-      status: "DISETUJUI",
-      employee_no: employeeNo,
-      reviewed_by: reviewerId,
-      reviewed_at: new Date().toISOString(),
-    })
+    .update(registrationUpdates)
     .eq("id", id);
 
   revalidatePath(BASE);
   revalidatePath("/dashboard/employees");
-  redirectWith(true, `${reg.full_name} divalidasi. NIY ${employeeNo}, akun dibuat (password: bismillahns).`);
+  redirectWith(true, `${approval.full_name} divalidasi. NIY ${employeeNo}, akun dibuat (password: bismillahns).`);
 }
 
 export async function rejectRegistrationAction(formData: FormData) {

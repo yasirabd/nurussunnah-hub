@@ -27,4 +27,4 @@ export type RegistrationApprovalData = {
 export function toTitleCaseName(value: unknown): string;
 export function normalizeRegistrationApproval(
   formData: FormData,
-): { data: RegistrationApprovalData; error?: never } | { data?: never; error: string };
+): { data: RegistrationApprovalData } | { error: string };
