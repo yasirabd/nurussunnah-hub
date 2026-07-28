@@ -90,3 +90,17 @@ test("normalizeRegistrationApproval rejects invalid phone and enum values", () =
     error: "Ukuran seragam wajib dipilih.",
   });
 });
+
+test("normalizeRegistrationApproval rejects malformed calendar dates", () => {
+  const invalidBirthDate = validFormData();
+  invalidBirthDate.set("birth_date", "2026-99-99");
+  assert.deepEqual(normalizeRegistrationApproval(invalidBirthDate), {
+    error: "Tanggal lahir tidak valid.",
+  });
+
+  const invalidJoinDate = validFormData();
+  invalidJoinDate.set("join_date", "2026-02-30");
+  assert.deepEqual(normalizeRegistrationApproval(invalidJoinDate), {
+    error: "Tanggal masuk tidak valid.",
+  });
+});

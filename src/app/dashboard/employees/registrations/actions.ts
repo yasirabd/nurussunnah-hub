@@ -122,38 +122,51 @@ export async function approveRegistrationAction(formData: FormData) {
   });
   if (profileError) redirectWith(false, profileError.message);
 
-  await supabase.from("user_roles").insert({ user_id: userId, role: "PEGAWAI" });
+  const { error: roleError } = await supabase
+    .from("user_roles")
+    .insert({ user_id: userId, role: "PEGAWAI" });
+  if (roleError) {
+    redirectWith(false, `Akun pegawai dibuat, tetapi role PEGAWAI gagal disimpan: ${roleError.message}`);
+  }
 
   if (approval.home_unit_id) {
-    const { data: activeYear } = await supabase
+    const { data: activeYear, error: activeYearError } = await supabase
       .from("academic_years")
       .select("id")
       .eq("is_active", true)
       .maybeSingle();
-    if (activeYear?.id) {
-      await supabase.from("user_unit_assignments").upsert(
-          {
-            user_id: userId,
-            unit_id: approval.home_unit_id,
-          assignment_type: "HOME",
-          academic_year_id: activeYear.id,
-        },
-        { onConflict: "user_id,unit_id,assignment_type,academic_year_id" }
-      );
+    if (activeYearError) redirectWith(false, activeYearError.message);
+    if (!activeYear?.id) {
+      redirectWith(false, "Akun pegawai dibuat, tetapi tahun ajaran aktif tidak ditemukan.");
+    }
+    const { error: assignmentError } = await supabase.from("user_unit_assignments").upsert(
+      {
+        user_id: userId,
+        unit_id: approval.home_unit_id,
+        assignment_type: "HOME",
+        academic_year_id: activeYear.id,
+      },
+      { onConflict: "user_id,unit_id,assignment_type,academic_year_id" }
+    );
+    if (assignmentError) {
+      redirectWith(false, `Akun pegawai dibuat, tetapi penempatan unit gagal disimpan: ${assignmentError.message}`);
     }
   }
 
   if (approval.position_name) {
-    await supabase.from("position_histories").insert({
+    const { error: positionError } = await supabase.from("position_histories").insert({
       user_id: userId,
       unit_id: approval.home_unit_id,
       position_name: approval.position_name,
       start_date: approval.join_date,
       is_current: true,
     });
+    if (positionError) {
+      redirectWith(false, `Akun pegawai dibuat, tetapi riwayat jabatan gagal disimpan: ${positionError.message}`);
+    }
   }
 
-  await supabase.from("employee_intake").upsert(
+  const { error: intakeError } = await supabase.from("employee_intake").upsert(
     {
       user_id: userId,
       emergency_name: approval.emergency_name,
@@ -166,6 +179,9 @@ export async function approveRegistrationAction(formData: FormData) {
     },
     { onConflict: "user_id" }
   );
+  if (intakeError) {
+    redirectWith(false, `Akun pegawai dibuat, tetapi data intake gagal disimpan: ${intakeError.message}`);
+  }
 
   // Pindahkan folder dokumen dari TEMP ke folder dokumen pegawai: [3 digit NIY]-NAMA.
   if (reg.drive_folder_id) {
@@ -212,10 +228,19 @@ export async function approveRegistrationAction(formData: FormData) {
     reviewed_at: new Date().toISOString(),
   };
 
-  await supabase
+  const { data: updatedRegistration, error: registrationError } = await supabase
     .from("employee_registrations")
     .update(registrationUpdates)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("status", "MENUNGGU")
+    .select("id")
+    .maybeSingle();
+  if (registrationError) {
+    redirectWith(false, `Pegawai dibuat, tetapi audit pendaftaran gagal diperbarui: ${registrationError.message}`);
+  }
+  if (!updatedRegistration) {
+    redirectWith(false, "Pegawai dibuat, tetapi pendaftaran sudah diproses oleh pengguna lain.");
+  }
 
   revalidatePath(BASE);
   revalidatePath("/dashboard/employees");

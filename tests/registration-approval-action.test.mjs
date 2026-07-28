@@ -24,3 +24,14 @@ test("approval keeps stored email and documents but uses corrected employee data
   assert.match(source, /emergency_name: approval\.emergency_name/);
   assert.match(source, /registrationUpdates/);
 });
+
+test("approval surfaces required downstream write failures", () => {
+  assert.match(source, /error: roleError/);
+  assert.match(source, /error: assignmentError/);
+  assert.match(source, /error: positionError/);
+  assert.match(source, /error: intakeError/);
+  assert.match(source, /error: registrationError/);
+  assert.match(source, /\.eq\("status", "MENUNGGU"\)/);
+  assert.match(source, /select\("id"\)/);
+  assert.match(source, /if \(!updatedRegistration\)/);
+});

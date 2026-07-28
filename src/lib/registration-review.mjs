@@ -23,6 +23,12 @@ function isValidPhone(value) {
   return /^(?:\+?62|0)\d{8,13}$/.test(value);
 }
 
+function isValidIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 export function toTitleCaseName(value) {
   return String(value ?? "")
     .trim()
@@ -75,6 +81,12 @@ export function normalizeRegistrationApproval(formData) {
     return { error: "Nomor HP kontak darurat tidak valid." };
   }
 
+  const birthDate = text(formData, "birth_date");
+  if (!isValidIsoDate(birthDate)) return { error: "Tanggal lahir tidak valid." };
+
+  const joinDate = text(formData, "join_date");
+  if (!isValidIsoDate(joinDate)) return { error: "Tanggal masuk tidak valid." };
+
   const gender = text(formData, "gender");
   if (!GENDERS.includes(gender)) return { error: "Jenis kelamin wajib dipilih." };
 
@@ -106,7 +118,7 @@ export function normalizeRegistrationApproval(formData) {
       gender,
       marital_status: maritalStatus,
       birth_place: text(formData, "birth_place"),
-      birth_date: text(formData, "birth_date"),
+      birth_date: birthDate,
       last_education: lastEducation,
       study_program: nullable(formData, "study_program"),
       address_ktp: text(formData, "address_ktp"),
@@ -121,7 +133,7 @@ export function normalizeRegistrationApproval(formData) {
       emergency_relation: text(formData, "emergency_relation"),
       emergency_phone: emergencyPhone,
       note: nullable(formData, "note"),
-      join_date: text(formData, "join_date"),
+      join_date: joinDate,
       employee_status: employeeStatus,
     },
   };
