@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { submitRegistrationAction } from "./actions";
 
 export const metadata = { title: "Pendaftaran Pegawai", robots: { index: false, follow: false } };
@@ -210,7 +211,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         </Section>
 
         <div className="flex justify-end border-t pt-4">
-          <Button type="submit">Kirim Data Pendaftaran</Button>
+          <SubmitButton pendingText="Mengirim data...">Kirim Data Pendaftaran</SubmitButton>
         </div>
       </form>
     </main>

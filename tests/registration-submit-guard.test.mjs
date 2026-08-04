@@ -13,6 +13,12 @@ test("submit validates the invite before uploading documents to Drive", () => {
   assert.ok(check < upload, "invite check must run before the Drive upload");
 });
 
+test("submit button reports pending state and blocks double submission", () => {
+  assert.match(page, /import \{ SubmitButton \} from "@\/components\/ui\/submit-button"/);
+  assert.match(page, /<SubmitButton pendingText="Mengirim data\.\.\.">/);
+  assert.doesNotMatch(page, /<Button type="submit">/);
+});
+
 test("register page shows the submit error instead of the generic gate", () => {
   const errorParam = page.indexOf('param(sp, "error")');
   const gateCheck = page.indexOf('rpc("check_employee_invite"');
