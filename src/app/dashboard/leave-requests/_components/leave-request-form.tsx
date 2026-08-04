@@ -89,7 +89,9 @@ export function LeaveRequestForm({
   }
 
   async function prepareLeaveEvidence(event: React.ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
+    // `currentTarget` is nulled out once this handler awaits, so hold on to
+    // `target` which stays valid across the async compression step below.
+    const input = event.target;
     const selectedFiles = Array.from(input.files ?? []);
     if (!selectedFiles.length) {
       setEvidenceMessage("");
