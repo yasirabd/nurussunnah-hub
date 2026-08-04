@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { RegistrationFileField } from "./_components/registration-file-field";
 import { submitRegistrationAction } from "./actions";
 
 export const metadata = { title: "Pendaftaran Pegawai", robots: { index: false, follow: false } };
@@ -200,8 +201,20 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         </Section>
 
         <Section title="Dokumen & Seragam">
-          <FileField label="Scan / Foto KTP" name="ktp_file" helper="Format gambar atau PDF." accept="image/*,application/pdf" required />
-          <FileField label="Pas Foto Formal" name="photo_file" helper="Foto formal terbaru." accept="image/*" required />
+          <RegistrationFileField
+            label="Scan / Foto KTP"
+            name="ktp_file"
+            helper="Format gambar atau PDF. Foto kamera otomatis diperkecil."
+            accept="image/*,application/pdf"
+            required
+          />
+          <RegistrationFileField
+            label="Pas Foto Formal"
+            name="photo_file"
+            helper="Foto formal terbaru. Foto kamera otomatis diperkecil."
+            accept="image/*"
+            required
+          />
           <Select label="Ukuran Seragam" name="uniform_size" defaultValue="" required helper="Untuk pengadaan seragam kerja.">
             <option value="">Pilih ukuran</option>
             {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((sz) => (
@@ -253,25 +266,6 @@ function Field({
     <div className="space-y-1.5">
       <FieldLabel name={props.name} label={label} required={props.required} />
       <Input id={props.name} {...props} />
-      {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
-    </div>
-  );
-}
-
-function FileField({
-  label,
-  helper,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; helper?: string }) {
-  return (
-    <div className="space-y-1.5">
-      <FieldLabel name={props.name} label={label} required={props.required} />
-      <input
-        id={props.name}
-        type="file"
-        className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-[var(--radius-sm)] file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
-        {...props}
-      />
       {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
     </div>
   );
