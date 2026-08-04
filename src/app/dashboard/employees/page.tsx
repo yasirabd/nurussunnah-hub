@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Building2, ClipboardPaste, Plus, Search, Upload, Users } from "lucide-react";
+import { Building2, ClipboardPaste, Plus, Upload, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,10 +12,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import type { ActiveStatus, EmployeeStatus } from "@/types/database";
 import { EmployeeDirectoryTable } from "./employee-directory-table";
+import { DirectoryFilterForm } from "./_components/directory-filter-form";
 import { DownloadEmployeesExcel } from "./_components/download-employees-excel";
 import { PaginationControls } from "./_components/pagination-controls";
 import { EmployeesTabs } from "./_components/employees-tabs";
@@ -278,36 +278,15 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           <CardDescription>Cari berdasarkan nama, NIY, email, unit, atau status aktif.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto]">
-            <input type="hidden" name="page" value="1" />
-            <input type="hidden" name="pageSize" value={pageSize} />
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input name="q" defaultValue={q} className="pl-9" placeholder="Cari pegawai" />
-            </div>
-            <select
-              name="unit"
-              defaultValue={normalizedUnitId}
-              className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm"
-            >
-              {canManageEmployees && <option value="">Semua unit</option>}
-              {(units ?? []).map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.code} - {unit.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="active"
-              defaultValue={active}
-              className="h-10 rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm"
-            >
-              <option value="active">Aktif</option>
-              {canFilterInactive && <option value="inactive">Non-aktif</option>}
-              {canFilterInactive && <option value="all">Semua status</option>}
-            </select>
-            <Button type="submit">Terapkan</Button>
-          </form>
+          <DirectoryFilterForm
+            q={q}
+            unitId={normalizedUnitId}
+            active={active}
+            pageSize={pageSize}
+            units={units ?? []}
+            canManageEmployees={canManageEmployees}
+            canFilterInactive={canFilterInactive}
+          />
         </CardContent>
       </Card>
 
