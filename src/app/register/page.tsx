@@ -60,13 +60,22 @@ export default async function RegisterPage({ searchParams }: PageProps) {
     );
   }
 
+  const error = param(sp, "error");
+
   const supabase = await createClient();
   const { data: valid } = await supabase.rpc("check_employee_invite", { p_code: invite });
   if (!valid) {
-    return <Gate message="Kode undangan tidak valid, sudah dipakai, atau kedaluwarsa. Minta kode baru ke HRD." />;
+    // Submit yang gagal setelah kode terpakai tetap harus menampilkan sebabnya,
+    // bukan gate generik yang menyembunyikan pesan error.
+    return (
+      <Gate
+        message={
+          error ||
+          "Kode undangan tidak valid, sudah dipakai, atau kedaluwarsa. Minta kode baru ke HRD."
+        }
+      />
+    );
   }
-
-  const error = param(sp, "error");
 
   const admin = createAdminClient();
   const { data: units } = await admin

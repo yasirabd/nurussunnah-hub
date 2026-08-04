@@ -68,6 +68,14 @@ export async function submitRegistrationAction(formData: FormData) {
   if (emergencyPhone && !isValidPhone(emergencyPhone))
     back(invite, false, "Nomor HP kontak darurat tidak valid.");
 
+  // Validasi kode sebelum upload agar kode mati tidak meninggalkan file yatim di TEMP.
+  // RPC tetap memvalidasi ulang (anti-race saat dua submit bersamaan).
+  const supabase = await createClient();
+  const { data: inviteValid } = await supabase.rpc("check_employee_invite", { p_code: invite });
+  if (!inviteValid) {
+    back(invite, false, "Kode undangan tidak valid, sudah dipakai, atau kedaluwarsa. Minta kode baru ke HRD.");
+  }
+
   // Upload dokumen ke folder TEMP Drive; dipindahkan & di-rename saat validasi.
   let ktpUrl: string | null = null;
   let photoUrl: string | null = null;
@@ -104,7 +112,6 @@ export async function submitRegistrationAction(formData: FormData) {
     }
   }
 
-  const supabase = await createClient();
   const { error } = await supabase.rpc("submit_employee_registration", {
     p_invite_code: invite,
     p_full_name: fullName,
