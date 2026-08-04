@@ -1,39 +1,40 @@
 ﻿// Parser untuk baris respons Google Form "Konfirmasi Penawaran Kerja & Data PKWT".
 // Sumber: satu baris di-copy dari Google Sheet respons (tab-separated / TSV).
 //
-// Urutan kolom Sheet (sesuai docs/google-form-konfirmasi-pkwt.md):
+// Urutan kolom Sheet (29 kolom, sesuai docs/google-form-konfirmasi-pkwt.md):
 //   0  Timestamp
 //   1  Email Address (Collect email = ON)
 //   2  Nama Lengkap (Surat Penawaran)
-//   3  Posisi yang Ditawarkan
-//   4  Unit Penempatan
-//   5  Bersedia? (Ya/Tidak)
-//   6  Alasan menolak
-//   7  Nama lengkap sesuai KTP
+//   3  Unit Penempatan
+//   4  Posisi yang Ditawarkan
+//   5  Bersedia menerima penawaran? (Ya/Tidak)
+//   6  Alasan menolak penawaran
+//   7  Nama Lengkap sesuai KTP
 //   8  NIK
-//   9  Tempat lahir
-//   10 Tanggal lahir
-//   11 Jenis kelamin
-//   12 Status pernikahan
-//   13 Pendidikan terakhir
-//   14 Program studi
+//   9  Tempat Lahir
+//   10 Tanggal Lahir
+//   11 Jenis Kelamin
+//   12 Status Pernikahan
+//   13 Pendidikan Terakhir
+//   14 Program studi/jurusan
 //   15 Alamat sesuai KTP
-//   16 Domisili sama? (Ya/Tidak)
-//   17 Alamat domisili
-//   18 Nomor WhatsApp
-//   19 Email aktif
-//   20 Nama kontak darurat
-//   21 Hubungan kontak darurat
-//   22 Nomor HP kontak darurat
-//   23 Tanggal mulai sesuai surat? (Ya/Tidak)
-//   24 Tanggal usulan mulai bekerja
-//   25 Keterangan tanggal
-//   26 Ukuran seragam
-//   27 URL scan/foto KTP
-//   28 URL pas foto formal
-//   29 (opsional) checkbox pernyataan
+//   16 Alamat domisili
+//   17 Nomor WhatsApp aktif
+//   18 Email aktif
+//   19 Nama kontak darurat
+//   20 Hubungan dengan kontak darurat
+//   21 Nomor HP kontak darurat
+//   22 Tanggal mulai sesuai Surat Penawaran? (Ya/Tidak)
+//   23 Tanggal usulan mulai bekerja      — tidak disimpan
+//   24 Keterangan tanggal                — tidak disimpan
+//   25 Ukuran seragam
+//   26 URL scan/foto KTP
+//   27 URL pas foto formal
+//   28 Checkbox pernyataan               — tidak disimpan
 //
 // Catatan: parser toleran terhadap kolom kosong (branching yang tak diisi).
+
+import { normalizeEducation } from './education.mjs';
 
 export const INTAKE_COLUMN_INDEX = {
   timestamp: 0,
@@ -138,6 +139,15 @@ export function parseFormDate(raw) {
   return '';
 }
 
+// Samakan format nomor HP dengan jalur registrasi (registration-review.mjs):
+// buang spasi, tanda hubung, dan tanda kurung yang lazim di isian Google Form.
+export function normalizePhone(raw) {
+  const compact = (raw || '').trim().replace(/[\s()-]/g, '');
+  return compact.startsWith('+')
+    ? '+' + compact.slice(1).replace(/\D/g, '')
+    : compact.replace(/\D/g, '');
+}
+
 export function normalizeUniformSize(raw) {
   const v = (raw || '').trim().toUpperCase();
   return UNIFORM_SIZES.includes(v) ? v : '';
@@ -178,6 +188,11 @@ export function parseIntakeRow(rawLine) {
 
   const uniformSize = normalizeUniformSize(cell(cols, idx.uniform_size));
 
+  const lastEducation = normalizeEducation(cell(cols, idx.last_education));
+  if (cell(cols, idx.last_education) && !lastEducation) {
+    warnings.push('Pendidikan terakhir tidak dikenali; pilih manual.');
+  }
+
   // full_name: utamakan nama sesuai KTP, fallback ke nama surat penawaran.
   const fullName = cell(cols, idx.full_name) || cell(cols, idx.offer_name);
   const email = (cell(cols, idx.email) || cell(cols, idx.email_address)).toLowerCase();
@@ -187,12 +202,12 @@ export function parseIntakeRow(rawLine) {
     full_name: fullName,
     nik: cell(cols, idx.nik),
     email,
-    phone: cell(cols, idx.phone),
+    phone: normalizePhone(cell(cols, idx.phone)),
     gender,
     marital_status: normalizeMarital(cell(cols, idx.marital_status)),
     birth_place: cell(cols, idx.birth_place),
     birth_date: birthDate,
-    last_education: cell(cols, idx.last_education),
+    last_education: lastEducation,
     study_program: cell(cols, idx.study_program),
     address_ktp: addressKtp,
     address_domicile: addressDomicile,
@@ -202,7 +217,7 @@ export function parseIntakeRow(rawLine) {
     // employee_intake
     emergency_name: cell(cols, idx.emergency_name),
     emergency_relation: cell(cols, idx.emergency_relation),
-    emergency_phone: cell(cols, idx.emergency_phone),
+    emergency_phone: normalizePhone(cell(cols, idx.emergency_phone)),
     uniform_size: uniformSize,
     ktp_url: cell(cols, idx.ktp_url),
     photo_url: cell(cols, idx.photo_url),

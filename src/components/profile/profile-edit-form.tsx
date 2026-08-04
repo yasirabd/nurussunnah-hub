@@ -15,19 +15,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { EDUCATION_LEVELS, EDUCATION_WITH_STUDY_PROGRAM } from "@/lib/education.mjs";
 import type { Profile } from "@/types/database";
 
 const MARITAL_STATUS_OPTIONS = ["Belum Kawin", "Kawin", "Cerai Mati", "Cerai Hidup"] as const;
-const EDUCATION_OPTIONS = [
-  "SD/Sederajat",
-  "SMP/Sederajat",
-  "SMA/Sederajat",
-  "D3",
-  "S1",
-  "S2",
-  "S3",
-] as const;
-const EDUCATION_WITH_STUDY_PROGRAM = new Set<string>(["D3", "S1", "S2", "S3"]);
 const UNIFORM_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] as const;
 
 type IntakeValue = {
@@ -97,7 +88,7 @@ export function ProfileEditForm({ profile, intake }: ProfileEditFormProps) {
                 className="sm:col-span-2"
               >
                 <option value="">Pilih pendidikan</option>
-                {EDUCATION_OPTIONS.map((option) => (
+                {EDUCATION_LEVELS.map((option) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </SelectField>

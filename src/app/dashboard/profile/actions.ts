@@ -3,18 +3,9 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { EDUCATION_LEVELS, EDUCATION_WITH_STUDY_PROGRAM } from '@/lib/education.mjs';
 
 const MARITAL_STATUS_OPTIONS = ['Belum Kawin', 'Kawin', 'Cerai Mati', 'Cerai Hidup'] as const;
-const EDUCATION_OPTIONS = [
-  'SD/Sederajat',
-  'SMP/Sederajat',
-  'SMA/Sederajat',
-  'D3',
-  'S1',
-  'S2',
-  'S3',
-] as const;
-const EDUCATION_WITH_STUDY_PROGRAM = new Set<string>(['D3', 'S1', 'S2', 'S3']);
 const UNIFORM_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
 
 function text(formData: FormData, key: string) {
@@ -36,7 +27,7 @@ export async function updateMyProfileAction(formData: FormData) {
   if (!user) redirect('/auth/login');
 
   const maritalStatus = optionOrNull(text(formData, 'marital_status'), MARITAL_STATUS_OPTIONS);
-  const lastEducation = optionOrNull(text(formData, 'last_education'), EDUCATION_OPTIONS);
+  const lastEducation = optionOrNull(text(formData, 'last_education'), EDUCATION_LEVELS);
   const studyProgram = lastEducation && EDUCATION_WITH_STUDY_PROGRAM.has(lastEducation)
     ? text(formData, 'study_program') || null
     : null;

@@ -16,7 +16,7 @@ function validFormData() {
     marital_status: "Belum Kawin",
     birth_place: "Bandung",
     birth_date: "1990-01-01",
-    last_education: "S1",
+    last_education: "D4/S1",
     study_program: "Teknik Informatika",
     address_ktp: "Jl. Contoh",
     address_domicile: "Jl. Contoh",

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { EDUCATION_LEVELS } from "@/lib/education.mjs";
 import { EMPLOYEE_STATUS_OPTIONS } from "@/lib/employee-status";
 import { toTitleCaseName } from "@/lib/registration-review.mjs";
 import { approveRegistrationAction, rejectRegistrationAction } from "../actions";
@@ -244,15 +245,9 @@ export function RegistrationReview({
           <Group icon={BookOpen} title="Pendidikan">
             <SelectField regId={reg.id} label="Pendidikan Terakhir" name="last_education" defaultValue={reg.last_education ?? ""} required>
               <option value="">Pilih pendidikan</option>
-              {[
-                "SD/Sederajat",
-                "SMP/Sederajat",
-                "SMA/Sederajat",
-                "D3",
-                "S1",
-                "S2",
-                "S3",
-              ].map((level) => <option key={level} value={level}>{level}</option>)}
+              {EDUCATION_LEVELS.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
             </SelectField>
             <Field regId={reg.id} label="Program Studi" name="study_program" defaultValue={reg.study_program} />
           </Group>

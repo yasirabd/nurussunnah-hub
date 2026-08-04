@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { EDUCATION_LEVELS } from "@/lib/education.mjs";
 import { ACTIVE_STATUS_OPTIONS, EMPLOYEE_STATUS_OPTIONS } from "@/lib/employee-status";
 
 export type EmployeeFormValue = {
@@ -131,13 +132,9 @@ export function EmployeeFormFields({
         <Field label="Tanggal Lahir" name="birth_date" type="date" defaultValue={employee?.birth_date} />
         <SelectField label="Pendidikan Terakhir" name="last_education" defaultValue={employee?.last_education ?? ""}>
           <option value="">Pilih pendidikan</option>
-          <option value="SD/Sederajat">SD/Sederajat</option>
-          <option value="SMP/Sederajat">SMP/Sederajat</option>
-          <option value="SMA/Sederajat">SMA/Sederajat</option>
-          <option value="D3">D3</option>
-          <option value="S1">S1</option>
-          <option value="S2">S2</option>
-          <option value="S3">S3</option>
+          {EDUCATION_LEVELS.map((level) => (
+            <option key={level} value={level}>{level}</option>
+          ))}
         </SelectField>
         <Field label="Program Studi" name="study_program" defaultValue={employee?.study_program} />
       </FormSection>

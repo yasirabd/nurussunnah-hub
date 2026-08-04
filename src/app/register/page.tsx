@@ -3,6 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { EDUCATION_LEVELS } from "@/lib/education.mjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -156,13 +157,9 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         <Section title="Pendidikan">
           <Select label="Pendidikan Terakhir" name="last_education" defaultValue="" required>
             <option value="">Pilih pendidikan</option>
-            <option value="SD/Sederajat">SD/Sederajat</option>
-            <option value="SMP/Sederajat">SMP/Sederajat</option>
-            <option value="SMA/Sederajat">SMA/Sederajat</option>
-            <option value="D3">D3</option>
-            <option value="S1">S1</option>
-            <option value="S2">S2</option>
-            <option value="S3">S3</option>
+            {EDUCATION_LEVELS.map((level) => (
+              <option key={level} value={level}>{level}</option>
+            ))}
           </Select>
           <Field label="Program Studi / Jurusan" name="study_program" helper="Isi bila pendidikan D3 ke atas." />
         </Section>

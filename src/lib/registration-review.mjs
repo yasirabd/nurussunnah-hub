@@ -1,7 +1,8 @@
+import { EDUCATION_LEVELS } from "./education.mjs";
+
 const EMPLOYEE_STATUSES = ["MAGANG", "HONORER", "CPTY", "PTY"];
 const GENDERS = ["L", "P"];
 const MARITAL_STATUSES = ["Belum Kawin", "Kawin", "Cerai Mati", "Cerai Hidup"];
-const EDUCATION_LEVELS = ["SD/Sederajat", "SMP/Sederajat", "SMA/Sederajat", "D3", "S1", "S2", "S3"];
 const UNIFORM_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 function text(formData, key) {
