@@ -70,6 +70,13 @@ export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[];
       active_status: "AKTIF",
       home_unit_id: matchedUnit?.id ?? null,
       employee_no: niyResult.niy || null,
+      nik: parsed.nik || null,
+      emergency_name: parsed.emergency_name || null,
+      emergency_relation: parsed.emergency_relation || null,
+      emergency_phone: parsed.emergency_phone || null,
+      uniform_size: parsed.uniform_size || null,
+      ktp_url: parsed.ktp_url || null,
+      photo_url: parsed.photo_url || null,
     };
   }, [parsed, units, niyResult]);
 
@@ -169,22 +176,12 @@ export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[];
 
           <EmployeeFormFields employee={employee} units={units} showDefaultPasswordHelp />
 
-          <input type="hidden" name="nik" value={parsed.nik} />
+          {/* URL dokumen hanya ditampilkan sebagai tautan oleh EmployeeFormFields,
+              jadi perlu hidden input agar ikut ter-submit. Field lain (NIK, kontak
+              darurat, seragam) sudah punya input sendiri di sana — menduplikasinya
+              di sini membuat formData mengambil input pertama yang kosong. */}
           <input type="hidden" name="ktp_url" value={parsed.ktp_url} />
           <input type="hidden" name="photo_url" value={parsed.photo_url} />
-
-          <section className="space-y-4 rounded-[var(--radius-md)] border bg-secondary/30 p-4">
-            <h2 className="text-base font-semibold tracking-normal">Data Intake (Kontak Darurat & Dokumen)</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <IntakeField label="NIK" name="nik_display" defaultValue={parsed.nik} readOnly helper="Tersimpan otomatis; ubah lewat NIK di data pribadi bila perlu." />
-              <IntakeField label="Ukuran Seragam" name="uniform_size" defaultValue={parsed.uniform_size} placeholder="XS/S/M/L/XL/XXL/XXXL" />
-              <IntakeField label="Nama Kontak Darurat" name="emergency_name" defaultValue={parsed.emergency_name} />
-              <IntakeField label="Hubungan Kontak Darurat" name="emergency_relation" defaultValue={parsed.emergency_relation} />
-              <IntakeField label="No. HP Kontak Darurat" name="emergency_phone" defaultValue={parsed.emergency_phone} />
-              <IntakeLink label="Scan/Foto KTP" url={parsed.ktp_url} />
-              <IntakeLink label="Pas Foto Formal" url={parsed.photo_url} />
-            </div>
-          </section>
 
           <RoleCheckboxes roles={["PEGAWAI"]} />
           <PositionField positionName={parsed.offer_position || undefined} />
@@ -202,37 +199,3 @@ export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[];
   );
 }
 
-function IntakeField({
-  label,
-  helper,
-  defaultValue,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; helper?: string }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium" htmlFor={props.name}>{label}</label>
-      <input
-        id={props.name}
-        defaultValue={defaultValue ?? ""}
-        className="h-10 w-full rounded-[var(--radius-sm)] border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        {...props}
-      />
-      {helper && <p className="text-xs leading-5 text-muted-foreground">{helper}</p>}
-    </div>
-  );
-}
-
-function IntakeLink({ label, url }: { label: string; url: string }) {
-  return (
-    <div className="space-y-1.5">
-      <span className="text-sm font-medium">{label}</span>
-      {url ? (
-        <a href={url} target="_blank" rel="noopener noreferrer" className="block truncate text-sm text-primary underline">
-          Buka dokumen
-        </a>
-      ) : (
-        <p className="text-sm text-muted-foreground">Tidak ada.</p>
-      )}
-    </div>
-  );
-}
