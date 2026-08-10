@@ -3,9 +3,30 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
+  EVIDENCE_MAX_FILE_BYTES,
+  evidenceCompressionAttempts,
   fitEvidenceImage,
+  isEvidenceFileWithinLimit,
   shouldOptimizeEvidenceFile,
 } from "../src/lib/attendance-correction-upload.mjs";
+
+test("leave evidence uses a 5 MB per-file limit", () => {
+  assert.equal(EVIDENCE_MAX_FILE_BYTES, 5_000_000);
+  assert.equal(isEvidenceFileWithinLimit(5_000_000), true);
+  assert.equal(isEvidenceFileWithinLimit(5_000_001), false);
+});
+
+test("image compression attempts preserve ratio and become progressively smaller", () => {
+  const attempts = evidenceCompressionAttempts(4000, 3000);
+
+  assert.ok(attempts.length >= 4);
+  assert.deepEqual(attempts[0], { width: 2560, height: 1920, quality: 0.9 });
+  assert.ok(attempts.at(-1).width < attempts[0].width);
+  assert.ok(attempts.at(-1).quality < attempts[0].quality);
+  for (const attempt of attempts) {
+    assert.equal(attempt.width / attempt.height, 4 / 3);
+  }
+});
 
 test("large camera images are selected for browser optimization", () => {
   assert.equal(shouldOptimizeEvidenceFile("image/jpeg", 2_500_000), true);
@@ -36,6 +57,12 @@ test("attendance correction and leave request share browser image preparation", 
   const clientUtility = readFileSync("src/lib/evidence-upload-client.ts", "utf8");
 
   assert.match(clientUtility, /export async function prepareEvidenceFiles/);
+  assert.match(clientUtility, /evidenceCompressionAttempts/);
+  assert.match(clientUtility, /EVIDENCE_MAX_FILE_BYTES/);
+  assert.match(clientUtility, /isEvidenceFileWithinLimit\(blob\.size, maxFileBytes\)/);
+  assert.match(clientUtility, /tidak dapat diperkecil hingga di bawah 5 MB/);
+  assert.match(clientUtility, /for \(const file of files\)/);
+  assert.doesNotMatch(clientUtility, /Promise\.all\(\s*files\.map/);
   assert.match(clientUtility, /export function replaceInputFiles/);
   assert.match(clientUtility, /export function totalFileBytes/);
   assert.match(correctionForm, /from "@\/lib\/evidence-upload-client"/);
@@ -97,6 +124,6 @@ test("no-evidence acknowledgement clears and disables leave evidence", () => {
   );
   assert.match(
     leaveAction,
-    /const evidence = noEvidenceAck\s*\? \[\]\s*:\s*formData/
+    /const evidence = noEvidenceAck\s*\? \[\]\s*:\s*evidenceFiles\(formData, "bukti_izin"\)/
   );
 });

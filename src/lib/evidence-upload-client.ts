@@ -1,5 +1,8 @@
 import {
+  EVIDENCE_MAX_FILE_BYTES,
+  evidenceCompressionAttempts,
   fitEvidenceImage,
+  isEvidenceFileWithinLimit,
   shouldOptimizeEvidenceFile,
 } from "@/lib/attendance-correction-upload.mjs";
 
@@ -20,34 +23,86 @@ function decodeImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-async function optimizeEvidenceImage(file: File): Promise<File> {
+function canvasToJpeg(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", quality)
+  );
+}
+
+async function optimizeEvidenceImage(
+  file: File,
+  maxFileBytes?: number
+): Promise<File> {
   if (!shouldOptimizeEvidenceFile(file.type, file.size)) return file;
 
   const image = await decodeImage(file);
-  const size = fitEvidenceImage(image.naturalWidth, image.naturalHeight);
   const canvas = document.createElement("canvas");
-  canvas.width = size.width;
-  canvas.height = size.height;
-
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Browser tidak dapat menyiapkan foto untuk upload.");
-  context.drawImage(image, 0, 0, size.width, size.height);
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 0.82)
-  );
-  if (!blob) throw new Error("Foto gagal dikompresi.");
-  if (blob.size >= file.size) return file;
+  const attempts = maxFileBytes
+    ? evidenceCompressionAttempts(image.naturalWidth, image.naturalHeight)
+    : [
+        {
+          ...fitEvidenceImage(image.naturalWidth, image.naturalHeight),
+          quality: 0.82,
+        },
+      ];
 
-  const baseName = file.name.replace(/\.[^.]+$/, "") || "bukti";
-  return new File([blob], `${baseName}.jpg`, {
-    type: "image/jpeg",
-    lastModified: file.lastModified,
-  });
+  for (const attempt of attempts) {
+    canvas.width = attempt.width;
+    canvas.height = attempt.height;
+    context.drawImage(image, 0, 0, attempt.width, attempt.height);
+
+    const blob = await canvasToJpeg(canvas, attempt.quality);
+    if (!blob) throw new Error("Foto gagal dikompresi.");
+
+    const isSmaller = blob.size < file.size;
+    const isWithinLimit =
+      !maxFileBytes || isEvidenceFileWithinLimit(blob.size, maxFileBytes);
+    if (isSmaller && isWithinLimit) {
+      const baseName = file.name.replace(/\.[^.]+$/, "") || "bukti";
+      return new File([blob], `${baseName}.jpg`, {
+        type: "image/jpeg",
+        lastModified: file.lastModified,
+      });
+    }
+  }
+
+  if (maxFileBytes && file.size > maxFileBytes) {
+    throw new Error(
+      `Foto ${file.name} tidak dapat diperkecil hingga di bawah 5 MB.`
+    );
+  }
+  return file;
 }
 
-export async function prepareEvidenceFiles(files: File[]) {
-  const preparedFiles = await Promise.all(files.map(optimizeEvidenceImage));
+export async function prepareEvidenceFiles(
+  files: File[],
+  options: { maxFileBytes?: number } = {
+    maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
+  }
+) {
+  const maxFileBytes = options.maxFileBytes;
+  const preparedFiles: File[] = [];
+  for (const file of files) {
+    preparedFiles.push(await optimizeEvidenceImage(file, maxFileBytes));
+  }
+
+  const oversizedFile = maxFileBytes
+    ? preparedFiles.find(
+        (file) => !isEvidenceFileWithinLimit(file.size, maxFileBytes)
+      )
+    : undefined;
+  if (oversizedFile) {
+    const isPdf = oversizedFile.type === "application/pdf";
+    throw new Error(
+      isPdf
+        ? `PDF ${oversizedFile.name} melebihi 5 MB. Pilih PDF yang lebih kecil.`
+        : `File ${oversizedFile.name} melebihi batas 5 MB.`
+    );
+  }
+
   return {
     files: preparedFiles,
     wasOptimized: preparedFiles.some((file, index) => file.size < files[index].size),

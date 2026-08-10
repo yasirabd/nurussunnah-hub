@@ -10,6 +10,10 @@ import {
   leaveRootFolderId,
   monthSegment,
 } from "@/lib/google-drive";
+import {
+  EVIDENCE_MAX_FILE_BYTES,
+  isEvidenceFileWithinLimit,
+} from "@/lib/attendance-correction-upload.mjs";
 
 const PATH = "/dashboard/leave-requests";
 
@@ -25,6 +29,25 @@ function redirectWith(ok: boolean, message: string, tab?: string): never {
 
 function sanitize(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, "_").slice(0, 60);
+}
+
+function evidenceFiles(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .filter((file): file is File => file instanceof File && file.size > 0);
+}
+
+function validateEvidenceFileSizes(files: File[]) {
+  const oversized = files.find(
+    (file) => !isEvidenceFileWithinLimit(file.size, EVIDENCE_MAX_FILE_BYTES)
+  );
+  if (oversized) {
+    redirectWith(
+      false,
+      `File ${oversized.name} melebihi batas 5 MB. Pilih file yang lebih kecil.`,
+      "ajukan"
+    );
+  }
 }
 
 export async function submitLeaveRequestAction(formData: FormData) {
@@ -47,6 +70,11 @@ export async function submitLeaveRequestAction(formData: FormData) {
   const startDate = text(formData, "start_date");
   const endDate = text(formData, "end_date") || startDate;
   const noEvidenceAck = text(formData, "no_evidence_ack") === "on";
+  const evidence = noEvidenceAck ? [] : evidenceFiles(formData, "bukti_izin");
+  const unitHeadSs = evidenceFiles(formData, "bukti_ss_kepala_unit");
+
+  validateEvidenceFileSizes(evidence);
+  validateEvidenceFileSizes(unitHeadSs);
 
   const { data: newId, error } = await supabase.rpc("submit_leave_request", {
     p_start_date: startDate,
@@ -72,13 +100,6 @@ export async function submitLeaveRequestAction(formData: FormData) {
     .maybeSingle();
   const folderName = `${sanitize(profile?.full_name ?? "pegawai")}_${startDate}`;
   const segments = [monthSegment(new Date(startDate)), folderName];
-
-  const evidence = noEvidenceAck
-    ? []
-    : formData
-        .getAll("bukti_izin")
-        .filter((f): f is File => f instanceof File && f.size > 0);
-  const unitHeadSs = formData.getAll("bukti_ss_kepala_unit").filter((f): f is File => f instanceof File && f.size > 0);
 
   const rows: {
     leave_request_id: string;

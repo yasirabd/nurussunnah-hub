@@ -5,11 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EVIDENCE_MAX_TOTAL_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
 import {
   prepareEvidenceFiles,
   replaceInputFiles,
-  totalFileBytes,
 } from "@/lib/evidence-upload-client";
 import { submitLeaveRequestAction } from "../actions";
 
@@ -66,6 +65,7 @@ export function LeaveRequestForm({
   const leaveEvidenceRef = useRef<HTMLInputElement>(null);
   const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
   const [evidenceMessage, setEvidenceMessage] = useState("");
+  const [evidenceMessageFor, setEvidenceMessageFor] = useState("");
   const [noEvidenceAck, setNoEvidenceAck] = useState(false);
   const today = localDateString();
   const maxStartDate = localDateString(addDays(new Date(), 7));
@@ -85,6 +85,7 @@ export function LeaveRequestForm({
     if (checked && leaveEvidenceRef.current) {
       leaveEvidenceRef.current.value = "";
       setEvidenceMessage("");
+      setEvidenceMessageFor("");
     }
   }
 
@@ -95,28 +96,18 @@ export function LeaveRequestForm({
     const selectedFiles = Array.from(input.files ?? []);
     if (!selectedFiles.length) {
       setEvidenceMessage("");
+      setEvidenceMessageFor("");
       return;
     }
 
     setIsPreparingEvidence(true);
+    setEvidenceMessageFor(input.name);
     setEvidenceMessage("Menyiapkan foto untuk upload...");
 
     try {
-      const prepared = await prepareEvidenceFiles(selectedFiles);
-      const otherInput =
-        input.name === "bukti_izin"
-          ? unitHeadEvidenceRef.current
-          : leaveEvidenceRef.current;
-      const otherFiles = Array.from(otherInput?.files ?? []);
-
-      if (
-        totalFileBytes([...prepared.files, ...otherFiles]) >
-        EVIDENCE_MAX_TOTAL_BYTES
-      ) {
-        throw new Error(
-          "Total seluruh bukti terlalu besar. Maksimal 10 MB setelah foto dikompresi."
-        );
-      }
+      const prepared = await prepareEvidenceFiles(selectedFiles, {
+        maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
+      });
 
       replaceInputFiles(input, prepared.files);
       setEvidenceMessage(
@@ -253,8 +244,13 @@ export function LeaveRequestForm({
               onChange={prepareLeaveEvidence}
             />
             <p className="text-xs text-muted-foreground">
-              Upload screenshot persetujuan kepala unit dari WhatsApp atau media komunikasi lain.
+              Maksimal 5 MB per file. Foto yang lebih besar akan diperkecil otomatis.
             </p>
+            {evidenceMessageFor === "bukti_ss_kepala_unit" && evidenceMessage && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {evidenceMessage}
+              </p>
+            )}
           </div>
         )}
       </FormSection>
@@ -278,8 +274,10 @@ export function LeaveRequestForm({
             disabled={isPreparingEvidence || (!evidenceRequired && noEvidenceAck)}
             onChange={prepareLeaveEvidence}
           />
-          <p className="text-xs text-muted-foreground">{evidenceHelper}</p>
-          {evidenceMessage && (
+          <p className="text-xs text-muted-foreground">
+            {evidenceHelper} Maksimal 5 MB per file. Foto yang lebih besar akan diperkecil otomatis.
+          </p>
+          {evidenceMessageFor === "bukti_izin" && evidenceMessage && (
             <p className="text-xs text-muted-foreground" aria-live="polite">
               {evidenceMessage}
             </p>

@@ -6,6 +6,10 @@ const form = readFileSync(
   "src/app/dashboard/leave-requests/_components/leave-request-form.tsx",
   "utf8"
 );
+const action = readFileSync(
+  "src/app/dashboard/leave-requests/actions.ts",
+  "utf8"
+);
 
 test("evidence preparation reads the input before awaiting", () => {
   // React pools/nullifies `currentTarget` after an await, so the handler must
@@ -18,12 +22,20 @@ test("evidence preparation reads the input before awaiting", () => {
   assert.match(form, /const input = event\.target/);
 });
 
-test("evidence size check compares against the correct sibling input", () => {
-  // `bukti_izin` must be compared against the unit-head input and vice versa.
-  const branch = form.match(
-    /input\.name === "bukti_izin"\s*\?\s*(\w+)\.current\s*:\s*(\w+)\.current/
-  );
-  assert.ok(branch, "sibling-input selection branch not found");
-  assert.equal(branch[1], "unitHeadEvidenceRef");
-  assert.equal(branch[2], "leaveEvidenceRef");
+test("leave evidence enforces 5 MB for each file instead of a combined limit", () => {
+  assert.match(form, /prepareEvidenceFiles\(selectedFiles, \{\s*maxFileBytes: EVIDENCE_MAX_FILE_BYTES/);
+  assert.match(form, /Maksimal 5 MB per file/);
+  assert.match(form, /Foto yang lebih besar akan diperkecil otomatis/);
+  assert.doesNotMatch(form, /EVIDENCE_MAX_TOTAL_BYTES/);
+  assert.doesNotMatch(form, /totalFileBytes/);
+});
+
+test("server rejects oversized leave evidence before persisting the request", () => {
+  const validation = action.indexOf("validateEvidenceFileSizes(evidence);");
+  const persist = action.indexOf('supabase.rpc("submit_leave_request"');
+
+  assert.ok(validation >= 0, "server size validation is missing");
+  assert.ok(validation < persist, "file sizes must be validated before persistence");
+  assert.match(action, /EVIDENCE_MAX_FILE_BYTES/);
+  assert.match(action, /melebihi batas 5 MB/);
 });
