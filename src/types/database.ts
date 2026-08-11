@@ -439,6 +439,24 @@ export type Database = {
           },
         ]
       }
+      employee_no_counters: {
+        Row: {
+          last_value: number
+          series_key: string
+          updated_at: string
+        }
+        Insert: {
+          last_value?: number
+          series_key: string
+          updated_at?: string
+        }
+        Update: {
+          last_value?: number
+          series_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address_domicile: string | null
@@ -450,6 +468,7 @@ export type Database = {
           email: string
           employee_no: string
           employee_status: Database["public"]["Enums"]["employee_status_enum"]
+          employee_status_effective_date: string | null
           active_status: Database["public"]["Enums"]["active_status_enum"]
           active_status_end_date: string | null
           active_status_note: string | null
@@ -479,6 +498,7 @@ export type Database = {
           email: string
           employee_no: string
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          employee_status_effective_date?: string | null
           active_status?: Database["public"]["Enums"]["active_status_enum"]
           active_status_end_date?: string | null
           active_status_note?: string | null
@@ -508,6 +528,7 @@ export type Database = {
           email?: string
           employee_no?: string
           employee_status?: Database["public"]["Enums"]["employee_status_enum"]
+          employee_status_effective_date?: string | null
           active_status?: Database["public"]["Enums"]["active_status_enum"]
           active_status_end_date?: string | null
           active_status_note?: string | null
@@ -884,6 +905,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_employee_no: {
+        Args: {
+          p_employee_status: string
+          p_effective_date: string
+          p_birth_date?: string | null
+          p_gender?: string | null
+        }
+        Returns: string
+      }
       generate_employee_invite: {
         Args: never
         Returns: string
