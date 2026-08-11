@@ -69,3 +69,42 @@ export function buildNiy({ birthDateISO, joinDateISO, gender, sequence }) {
     : '';
   return { niy, parts, missing };
 }
+
+export function academicYearForDate(dateISO, academicYears) {
+  const matches = (academicYears || []).filter(
+    (year) => dateISO && year.start_date <= dateISO && dateISO <= year.end_date,
+  );
+  if (matches.length === 0) return { error: 'Tanggal tidak termasuk Tahun Pelajaran mana pun.' };
+  if (matches.length > 1) return { error: 'Tanggal termasuk lebih dari satu Tahun Pelajaran.' };
+  return { id: matches[0].id, startYear: Number(matches[0].start_date.slice(0, 4)) };
+}
+
+export function parseMagangNiy(value) {
+  const niy = String(value || '').trim().toUpperCase().replace(/\s+/g, '');
+  const match = niy.match(/^MAG-(\d{4})-(\d{3})$/);
+  if (!match) return null;
+  const sequence = Number(match[2]);
+  if (sequence < 1 || sequence > 999) return null;
+  return { year: Number(match[1]), sequence, niy };
+}
+
+export function buildMagangNiy(startYear, sequence) {
+  if (!Number.isInteger(startYear) || !Number.isInteger(sequence) || sequence < 1 || sequence > 999) return '';
+  return `MAG-${startYear}-${String(sequence).padStart(3, '0')}`;
+}
+
+export function nextMagangSequence(existingNiys, startYear) {
+  let max = 0;
+  for (const value of existingNiys || []) {
+    const parsed = parseMagangNiy(value);
+    if (parsed?.year === startYear && parsed.sequence > max) max = parsed.sequence;
+  }
+  return max + 1;
+}
+
+export function validateManualMagangNiy(value, startYear) {
+  const parsed = parseMagangNiy(value);
+  if (!parsed) return { error: 'NIY Magang harus mengikuti format MAG-YYYY-NNN dengan urutan 001-999.' };
+  if (parsed.year !== startYear) return { error: 'Tahun pada NIY Magang harus sesuai Tahun Pelajaran tanggal mulai.' };
+  return { niy: parsed.niy };
+}
