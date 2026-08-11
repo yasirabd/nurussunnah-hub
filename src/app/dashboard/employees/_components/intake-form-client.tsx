@@ -11,6 +11,7 @@ import {
   EmployeeFormFields,
   PositionField,
   RoleCheckboxes,
+  type AcademicYearOption,
   type EmployeeFormValue,
   type UnitOption,
 } from "../_components/employee-form-fields";
@@ -19,7 +20,15 @@ import { buildNiy, nextSequence } from "@/lib/niy.mjs";
 
 type ParsedIntake = ReturnType<typeof parseIntakeRow>["data"];
 
-export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[]; existingNiys: string[] }) {
+export function IntakeFormClient({
+  units,
+  existingNiys,
+  academicYears,
+}: {
+  units: UnitOption[];
+  existingNiys: string[];
+  academicYears: AcademicYearOption[];
+}) {
   const [raw, setRaw] = useState("");
   const [parsed, setParsed] = useState<ParsedIntake | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -67,6 +76,7 @@ export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[];
       address_ktp: parsed.address_ktp || null,
       address_domicile: parsed.address_domicile || null,
       employee_status: "CPTY",
+      employee_status_effective_date: joinDate,
       active_status: "AKTIF",
       home_unit_id: matchedUnit?.id ?? null,
       employee_no: niyResult.niy || null,
@@ -174,7 +184,13 @@ export function IntakeFormClient({ units, existingNiys }: { units: UnitOption[];
             </div>
           )}
 
-          <EmployeeFormFields employee={employee} units={units} showDefaultPasswordHelp />
+          <EmployeeFormFields
+            employee={employee}
+            units={units}
+            academicYears={academicYears}
+            existingEmployeeNos={existingNiys}
+            showDefaultPasswordHelp
+          />
 
           {/* URL dokumen hanya ditampilkan sebagai tautan oleh EmployeeFormFields,
               jadi perlu hidden input agar ikut ter-submit. Field lain (NIK, kontak

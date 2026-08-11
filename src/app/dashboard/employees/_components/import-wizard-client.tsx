@@ -91,6 +91,7 @@ export function ImportWizardClient({ serverUnits }: { serverUnits: UnitOption[] 
       const getMarital = colIdx("STATUS PERKAWINAN");
       const getBirthPlace = colIdx("TEMPAT LAHIR");
       const getBirthDate = colIdx("TANGGAL LAHIR");
+      const getMagangStartDate = colIdx("TANGGAL MULAI MAGANG");
       const getLastEdu = colIdx("IJAZAH TERAKHIR");
       const getUnit = colIdx("UNIT");
       const getAlamatKtp = colIdx("ALAMAT KTP");
@@ -113,6 +114,11 @@ export function ImportWizardClient({ serverUnits }: { serverUnits: UnitOption[] 
         if (!isNaN(birthNum) && birthNum > 20000 && birthNum < 60000) {
           birthDateStr = serialDateToISO(birthNum);
         }
+        let magangStartDate = getMagangStartDate(raw);
+        const magangStartNum = Number(magangStartDate);
+        if (!isNaN(magangStartNum) && magangStartNum > 20000 && magangStartNum < 60000) {
+          magangStartDate = serialDateToISO(magangStartNum);
+        }
 
         rows.push({
           rowNumber: rows.length + 1,
@@ -132,6 +138,7 @@ export function ImportWizardClient({ serverUnits }: { serverUnits: UnitOption[] 
           twitter: getTwitter(raw) || null,
           instagram: getInstagram(raw) || null,
           employee_status: getStatusKepeg(raw),
+          employee_status_effective_date: magangStartDate || null,
           unit_name: getUnit(raw),
         });
       }
@@ -141,7 +148,7 @@ export function ImportWizardClient({ serverUnits }: { serverUnits: UnitOption[] 
 
         // Auto-generate NIY for empty NIY
         let employeeNo = row.employee_no;
-        if (!employeeNo || !employeeNo.trim()) {
+        if ((!employeeNo || !employeeNo.trim()) && row.employee_status.trim().toUpperCase() !== "MAGANG") {
           employeeNo = `H-${row.rowNumber}`;
         }
 

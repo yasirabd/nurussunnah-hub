@@ -67,3 +67,13 @@ test("seksi Data Intake dan helper matinya sudah dihapus", () => {
   assert.doesNotMatch(intake, /function IntakeField\(/);
   assert.doesNotMatch(intake, /function IntakeLink\(/);
 });
+
+test("intake meneruskan tahun pelajaran, NIY, dan tanggal masuk ke form status-aware", () => {
+  assert.match(intake, /academicYears/);
+  assert.match(intake, /existingEmployeeNos={existingNiys}/);
+  assert.match(intake, /employee_status_effective_date: joinDate/);
+});
+
+test("prefill intake baru tidak memakai mode preserve milik profil tersimpan", () => {
+  assert.match(fields, /showDefaultPasswordHelp \? "manual"/);
+});

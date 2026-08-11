@@ -35,3 +35,13 @@ test("approval surfaces required downstream write failures", () => {
   assert.match(source, /select\("id"\)/);
   assert.match(source, /if \(!updatedRegistration\)/);
 });
+
+test("approval allocates NIY by approved status and join date", () => {
+  assert.match(source, /resolveEmployeeNo/);
+  assert.match(source, /employeeStatus: approval\.employee_status/);
+  assert.match(source, /effectiveDate: approval\.join_date/);
+  assert.match(source, /mode: "auto"/);
+  assert.match(source, /employee_status_effective_date/);
+  assert.doesNotMatch(source, /buildNiy/);
+  assert.doesNotMatch(source, /nextSequence/);
+});

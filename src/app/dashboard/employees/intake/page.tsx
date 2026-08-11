@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { IntakeFormClient } from "../_components/intake-form-client";
-import type { UnitOption } from "../_components/employee-form-fields";
+import type { AcademicYearOption, UnitOption } from "../_components/employee-form-fields";
 
 export const metadata: Metadata = { title: "Intake Penawaran Kerja" };
 
@@ -29,14 +29,11 @@ export default async function IntakePage({ searchParams }: PageProps) {
   const roleNames = (roles ?? []).map((item) => item.role);
   if (!roleNames.includes("HRD") && !roleNames.includes("ADMIN")) redirect("/dashboard");
 
-  const { data: units } = await supabase
-    .from("units")
-    .select("id, name, code")
-    .order("code", { ascending: true });
-
-  const { data: niyRows } = await supabase
-    .from("profiles")
-    .select("employee_no");
+  const [{ data: units }, { data: niyRows }, { data: academicYears }] = await Promise.all([
+    supabase.from("units").select("id, name, code").order("code", { ascending: true }),
+    supabase.from("profiles").select("employee_no"),
+    supabase.from("academic_years").select("id, start_date, end_date").order("start_date"),
+  ]);
   const existingNiys = (niyRows ?? []).map((r) => r.employee_no).filter(Boolean) as string[];
 
   const success = paramValue(params, "success");
@@ -66,7 +63,11 @@ export default async function IntakePage({ searchParams }: PageProps) {
         <div className="rounded-[var(--radius-md)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
       )}
 
-      <IntakeFormClient units={(units ?? []) as UnitOption[]} existingNiys={existingNiys} />
+      <IntakeFormClient
+        units={(units ?? []) as UnitOption[]}
+        existingNiys={existingNiys}
+        academicYears={(academicYears ?? []) as AcademicYearOption[]}
+      />
     </div>
   );
 }

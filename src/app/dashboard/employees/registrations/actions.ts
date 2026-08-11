@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { buildNiy, nextSequence } from "@/lib/niy.mjs";
+import { resolveEmployeeNo } from "@/lib/employee-niy-server";
 import { normalizeRegistrationApproval } from "@/lib/registration-review.mjs";
 import { moveAndRenameFolder, employeeDocumentRootFolderId } from "@/lib/google-drive";
 
@@ -58,19 +58,16 @@ export async function approveRegistrationAction(formData: FormData) {
   if (unitError) redirectWith(false, unitError.message);
   if (!selectedUnit) redirectWith(false, "Unit penempatan tidak valid atau sudah tidak aktif.");
 
-  // Generate NIY (mengikuti generator intake): urut berikutnya dari NIY existing.
-  const { data: niyRows } = await supabase.from("profiles").select("employee_no");
-  const existing = (niyRows ?? []).map((r) => r.employee_no).filter(Boolean) as string[];
-  const niyResult = buildNiy({
-    birthDateISO: approval.birth_date,
-    joinDateISO: approval.join_date,
+  const niyResult = await resolveEmployeeNo({
+    supabase,
+    mode: "auto",
+    employeeStatus: approval.employee_status,
+    effectiveDate: approval.join_date,
+    birthDate: approval.birth_date,
     gender: approval.gender,
-    sequence: nextSequence(existing),
   });
-  if (!niyResult.niy) {
-    redirectWith(false, `NIY gagal dibuat. Lengkapi: ${niyResult.missing.join(", ")}.`);
-  }
-  const employeeNo = niyResult.niy;
+  if ("error" in niyResult) redirectWith(false, niyResult.error);
+  const employeeNo = niyResult.employeeNo;
 
   // Guard against duplicate email/NIK/NIY.
   const { data: dupEmail } = await supabase
@@ -116,6 +113,7 @@ export async function approveRegistrationAction(formData: FormData) {
     twitter: approval.twitter,
     home_unit_id: approval.home_unit_id,
     employee_status: approval.employee_status,
+    employee_status_effective_date: approval.join_date,
     active_status: "AKTIF",
     avatar_url: reg.photo_url,
     must_change_password: true,

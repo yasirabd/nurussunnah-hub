@@ -509,6 +509,7 @@ export type BulkImportRow = {
   twitter: string | null
   instagram: string | null
   employee_status: string
+  employee_status_effective_date: string | null
   unit_name: string
 }
 export type ImportPreviewRow = BulkImportRow & {
@@ -548,6 +549,7 @@ function parseDate(raw: string | null): string | null {
     'oktober': '10', 'desember': '12',
   }
   const trimmed = raw.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
   // Excel serial date number
   const num = Number(trimmed)
   if (!isNaN(num) && num > 20000 && num < 60000) {
@@ -560,9 +562,9 @@ function parseDate(raw: string | null): string | null {
   }
   return null
 }
-function guessEmail(row: BulkImportRow): string {
+function guessEmail(row: BulkImportRow, employeeNo = row.employee_no): string {
   if (row.email && row.email.includes('@')) return row.email.toLowerCase().replace(/\s/g, '')
-  return `${row.employee_no}@nurussunnah.sch.id`
+  return `${employeeNo}@nurussunnah.sch.id`
 }
 // ??? Bulk Import Action ???
 export async function importBulkEmployeesAction(
@@ -581,30 +583,47 @@ export async function importBulkEmployeesAction(
   const admin = createAdminClient()
   const result: ImportResult = { total: rows.length, success: 0, skipped: 0, errors: [] }
   for (const row of rows) {
-    // Auto-generate NIY for empty NIY (honorer without NIY)
-    let employeeNo = row.employee_no
-    if (!employeeNo || !employeeNo.trim()) {
+    const employeeStatus = normalizeImportedEmployeeStatus(row.employee_status)
+    const isMagang = employeeStatus === 'MAGANG'
+    let employeeNo = row.employee_no.trim().toUpperCase().replace(/\s/g, '')
+    if (!employeeNo && !isMagang) {
       employeeNo = `H-${row.rowNumber}`
     }
-    employeeNo = employeeNo.trim().toUpperCase().replace(/\s/g, '')
     const unitId = unitMap.get(row.unit_name.trim().toLowerCase())
     if (!unitId) {
       result.skipped++
       result.errors.push({ row: row.rowNumber, reason: `Unit "${row.unit_name}" tidak ditemukan di sistem` })
       continue
     }
+    const effectiveDate = parseDate(row.employee_status_effective_date)
+    const birthDate = parseDate(row.birth_date)
+    const gender = normalizeGender(row.gender)
+    const niyResult = await resolveEmployeeNo({
+      supabase,
+      mode: employeeNo ? 'manual' : 'auto',
+      submittedEmployeeNo: employeeNo,
+      employeeStatus,
+      effectiveDate,
+      birthDate,
+      gender,
+    })
+    if ('error' in niyResult) {
+      result.skipped++
+      result.errors.push({ row: row.rowNumber, reason: niyResult.error })
+      continue
+    }
+    employeeNo = niyResult.employeeNo
+    const email = guessEmail(row, employeeNo)
     const { data: existing } = await supabase
       .from('profiles')
       .select('id')
-      .or(`employee_no.eq.${row.employee_no.trim()},email.eq.${guessEmail(row)}`)
+      .or(`employee_no.eq.${employeeNo},email.eq.${email}`)
       .maybeSingle()
     if (existing) {
       result.skipped++
       result.errors.push({ row: row.rowNumber, reason: 'NIY atau email sudah terdaftar' })
       continue
     }
-    const email = guessEmail(row)
-
     // Check if auth user already exists (e.g. from a previous import attempt)
     let userId: string | null = null
     // Try to find existing auth user by email via Admin API
@@ -645,17 +664,18 @@ export async function importBulkEmployeesAction(
       employee_no: employeeNo,
       email,
       phone: row.phone || null,
-      gender: normalizeGender(row.gender),
+      gender,
       marital_status: row.marital_status || null,
       birth_place: row.birth_place || null,
-      birth_date: parseDate(row.birth_date),
+      birth_date: birthDate,
       last_education: row.last_education || null,
       address_ktp: row.address_ktp || null,
       address_domicile: row.address_domicile || row.address_ktp || null,
       facebook: row.facebook || null,
       twitter: row.twitter || null,
       instagram: row.instagram || null,
-      employee_status: normalizeImportedEmployeeStatus(row.employee_status),
+      employee_status: employeeStatus,
+      employee_status_effective_date: effectiveDate,
       active_status: normalizeActiveStatus(row.active_status),
       home_unit_id: unitId,
       must_change_password: true,

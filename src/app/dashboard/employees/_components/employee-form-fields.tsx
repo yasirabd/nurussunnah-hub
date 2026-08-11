@@ -88,7 +88,9 @@ export function EmployeeFormFields({
   const [employeeStatus, setEmployeeStatus] = useState(employee?.employee_status ?? "CPTY");
   const [effectiveDate, setEffectiveDate] = useState(employee?.employee_status_effective_date ?? "");
   const [employeeNo, setEmployeeNo] = useState(employee?.employee_no ?? "");
-  const [employeeNoMode, setEmployeeNoMode] = useState<EmployeeNoMode>(employee ? "preserve" : "manual");
+  const [employeeNoMode, setEmployeeNoMode] = useState<EmployeeNoMode>(
+    showDefaultPasswordHelp ? "manual" : employee ? "preserve" : "manual",
+  );
   const [birthDate, setBirthDate] = useState(employee?.birth_date ?? "");
   const [gender, setGender] = useState(employee?.gender ?? "L");
 
@@ -117,8 +119,7 @@ export function EmployeeFormFields({
     setEmployeeStatus(nextStatus);
     if (nextStatus === "MAGANG" || (originalEmployeeStatus === "MAGANG" && nextStatus === "CPTY")) {
       setEmployeeNoMode("auto");
-      setEffectiveDate("");
-      setEmployeeNo("");
+      setEmployeeNo(previewEmployeeNo(nextStatus, effectiveDate));
     }
   }
 
