@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
 import { isActiveStatus, isEmployeeStatus } from '@/lib/employee-status';
 import { normalizeImportedEmployeeStatus } from '@/lib/employee-status-import.mjs';
+import { resolveEmployeeNo, type EmployeeNoMode } from '@/lib/employee-niy-server';
 import { todayWIB, serialDateToISO } from '@/lib/timezone';
 import type { ActiveStatus, EmployeeStatus, UserRoleEnum } from '@/types/database';
 function text(formData: FormData, key: string) {
@@ -46,6 +47,10 @@ function activeStatus(formData: FormData): ActiveStatus {
 function normalizeEmployeeNo(formData: FormData) {
   return text(formData, 'employee_no').replace(/\s/g, '').toUpperCase();
 }
+function employeeNoMode(formData: FormData, fallback: EmployeeNoMode): EmployeeNoMode {
+  const value = text(formData, 'employee_no_mode');
+  return value === 'preserve' || value === 'auto' || value === 'manual' ? value : fallback;
+}
 function selectedRoles(formData: FormData): UserRoleEnum[] {
   const roles = roleOptions.filter((role) => formData.get(role) === 'on');
   return roles.length ? roles : ['PEGAWAI'];
@@ -69,6 +74,7 @@ function profilePayload(formData: FormData) {
     instagram: nullableText(formData, 'instagram'),
     twitter: nullableText(formData, 'twitter'),
     employee_status: employeeStatus(formData),
+    employee_status_effective_date: nullableDate(formData, 'employee_status_effective_date'),
     active_status: activeStatus(formData),
     home_unit_id: nullableText(formData, 'home_unit_id'),
   };
@@ -194,6 +200,35 @@ export async function updateEmployeeProfileAction(formData: FormData) {
   const returnTo = safeReturnTo(formData);
   const id = text(formData, 'id');
   const payload = profilePayload(formData);
+  const { data: currentProfile, error: currentProfileError } = await supabase
+    .from('profiles')
+    .select('employee_no, employee_status, employee_status_effective_date')
+    .eq('id', id)
+    .maybeSingle();
+  if (currentProfileError || !currentProfile) {
+    redirectToPath(returnTo, false, currentProfileError?.message ?? 'Data pegawai tidak ditemukan.');
+  }
+  const magangToCpty = currentProfile.employee_status === 'MAGANG' && payload.employee_status === 'CPTY';
+  const effectiveDate = payload.employee_status === 'MAGANG' || magangToCpty
+    ? payload.employee_status_effective_date
+    : currentProfile.employee_status_effective_date;
+  if (magangToCpty && !effectiveDate) {
+    redirectToPath(returnTo, false, 'Tanggal Pengangkatan CPTY wajib diisi.');
+  }
+  const niyResult = await resolveEmployeeNo({
+    supabase,
+    mode: magangToCpty ? 'auto' : employeeNoMode(formData, 'preserve'),
+    submittedEmployeeNo: payload.employee_no,
+    employeeStatus: payload.employee_status,
+    effectiveDate,
+    birthDate: payload.birth_date,
+    gender: payload.gender,
+    currentEmployeeNo: currentProfile.employee_no,
+    excludeUserId: id,
+  });
+  if ('error' in niyResult) redirectToPath(returnTo, false, niyResult.error);
+  payload.employee_no = niyResult.employeeNo;
+  payload.employee_status_effective_date = effectiveDate;
   const leavePayload = normalizeLeavePayload(formData);
   const statusDetailPayload = normalizeStatusDetailPayload(formData);
   if (leavePayload.error) redirectToPath(returnTo, false, leavePayload.error);
@@ -233,10 +268,20 @@ export async function createEmployeeAction(formData: FormData) {
   const leavePayload = normalizeLeavePayload(formData);
   const statusDetailPayload = normalizeStatusDetailPayload(formData);
   if (!payload.full_name) redirectToPath(returnTo, false, 'Nama lengkap wajib diisi.');
-  if (!payload.employee_no) redirectToPath(returnTo, false, 'NIY wajib diisi.');
   if (!payload.email) redirectToPath(returnTo, false, 'Email wajib diisi.');
   if (leavePayload.error) redirectToPath(returnTo, false, leavePayload.error);
   if (statusDetailPayload.error) redirectToPath(returnTo, false, statusDetailPayload.error);
+  const niyResult = await resolveEmployeeNo({
+    supabase,
+    mode: employeeNoMode(formData, 'manual'),
+    submittedEmployeeNo: payload.employee_no,
+    employeeStatus: payload.employee_status,
+    effectiveDate: payload.employee_status_effective_date,
+    birthDate: payload.birth_date,
+    gender: payload.gender,
+  });
+  if ('error' in niyResult) redirectToPath(returnTo, false, niyResult.error);
+  payload.employee_no = niyResult.employeeNo;
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email: payload.email,
     password: DEFAULT_EMPLOYEE_PASSWORD,
@@ -308,11 +353,21 @@ export async function createIntakeEmployeeAction(formData: FormData) {
   const leavePayload = normalizeLeavePayload(formData);
   const statusDetailPayload = normalizeStatusDetailPayload(formData);
   if (!payload.full_name) redirectToPath(returnTo, false, 'Nama lengkap wajib diisi.');
-  if (!payload.employee_no) redirectToPath(returnTo, false, 'NIY wajib diisi.');
   if (!payload.email) redirectToPath(returnTo, false, 'Email wajib diisi.');
   if (nik && !/^\d{16}$/.test(nik)) redirectToPath(returnTo, false, 'NIK harus 16 digit angka.');
   if (leavePayload.error) redirectToPath(returnTo, false, leavePayload.error);
   if (statusDetailPayload.error) redirectToPath(returnTo, false, statusDetailPayload.error);
+  const niyResult = await resolveEmployeeNo({
+    supabase,
+    mode: employeeNoMode(formData, 'manual'),
+    submittedEmployeeNo: payload.employee_no,
+    employeeStatus: payload.employee_status,
+    effectiveDate: payload.employee_status_effective_date,
+    birthDate: payload.birth_date,
+    gender: payload.gender,
+  });
+  if ('error' in niyResult) redirectToPath(returnTo, false, niyResult.error);
+  payload.employee_no = niyResult.employeeNo;
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email: payload.email,
     password: DEFAULT_EMPLOYEE_PASSWORD,
