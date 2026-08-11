@@ -21,7 +21,7 @@ export type RegistrationApprovalData = {
   emergency_phone: string;
   note: string | null;
   join_date: string;
-  employee_status: "MAGANG" | "HONORER" | "CPTY" | "PTY";
+  employee_status: "MAGANG" | "HONORER" | "OUTSOURCE" | "CPTY" | "PTY";
 };
 
 export function toTitleCaseName(value: unknown): string;
