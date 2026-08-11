@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -13,10 +14,14 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
-const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic"],
+const notoSansArabic = localFont({
+  src: [
+    { path: "./fonts/noto-sans-arabic-300.ttf", weight: "300", style: "normal" },
+    { path: "./fonts/noto-sans-arabic-400.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/noto-sans-arabic-500.ttf", weight: "500", style: "normal" },
+  ],
   variable: "--font-arabic",
-  weight: ["300", "400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
