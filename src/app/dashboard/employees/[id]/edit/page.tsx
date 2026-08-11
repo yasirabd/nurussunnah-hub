@@ -12,6 +12,7 @@ import {
 import {
   EmployeeFormFields,
   type EmployeeLeaveFormValue,
+  type AcademicYearOption,
   PositionField,
   RoleCheckboxes,
   type EmployeeFormValue,
@@ -48,10 +49,10 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
   const canEditPosition = canManageEmployees || currentRoleNames.includes("KEPALA_UNIT");
   if (!canEditPosition) redirect("/dashboard");
 
-  const [{ data: profile }, { data: roles }, { data: position }, { data: units }, { data: activeLeave }, { data: intake }] = await Promise.all([
+  const [{ data: profile }, { data: roles }, { data: position }, { data: units }, { data: activeLeave }, { data: intake }, { data: academicYears }, { data: employeeNos }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, employee_no, nik, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, active_status, active_status_start_date, active_status_end_date, active_status_note, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
+      .select("id, full_name, employee_no, nik, email, phone, gender, marital_status, birth_place, birth_date, last_education, study_program, address_ktp, address_domicile, facebook, instagram, twitter, employee_status, employee_status_effective_date, active_status, active_status_start_date, active_status_end_date, active_status_note, home_unit_id, units!profiles_home_unit_id_fkey(id, name, code)")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", id),
@@ -73,6 +74,8 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
       .select("emergency_name, emergency_relation, emergency_phone, uniform_size, ktp_url, photo_url")
       .eq("user_id", id)
       .maybeSingle(),
+    supabase.from("academic_years").select("id, start_date, end_date").order("start_date"),
+    supabase.from("profiles").select("employee_no"),
   ]);
 
   if (!profile) redirect("/dashboard/employees");
@@ -82,6 +85,7 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
   const returnTo = `/dashboard/employees/${id}/edit`;
   const success = paramValue(queryParams, "success");
   const error = paramValue(queryParams, "error");
+  const existingEmployeeNos = (employeeNos ?? []).map((item) => item.employee_no);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -107,6 +111,8 @@ export default async function EditEmployeePage({ params, searchParams }: PagePro
             employee={employee}
             activeLeave={activeLeave as EmployeeLeaveFormValue | null}
             units={(units ?? []) as UnitOption[]}
+            academicYears={(academicYears ?? []) as AcademicYearOption[]}
+            existingEmployeeNos={existingEmployeeNos}
           />
           <div className="flex justify-end">
             <Button type="submit">

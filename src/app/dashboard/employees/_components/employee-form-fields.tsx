@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EDUCATION_LEVELS } from "@/lib/education.mjs";
 import { ACTIVE_STATUS_OPTIONS, EMPLOYEE_STATUS_OPTIONS } from "@/lib/employee-status";
+import {
+  academicYearForDate,
+  buildMagangNiy,
+  buildNiy,
+  nextMagangSequence,
+  nextSequence,
+} from "@/lib/niy.mjs";
+import type { EmployeeNoMode } from "@/lib/employee-niy-server";
 
 export type EmployeeFormValue = {
   full_name?: string | null;
@@ -26,6 +34,7 @@ export type EmployeeFormValue = {
   instagram?: string | null;
   twitter?: string | null;
   employee_status?: string | null;
+  employee_status_effective_date?: string | null;
   active_status?: string | null;
   active_status_start_date?: string | null;
   active_status_end_date?: string | null;
@@ -51,29 +60,81 @@ export type UnitOption = {
   code: string;
 };
 
+export type AcademicYearOption = {
+  id: string;
+  start_date: string;
+  end_date: string;
+};
+
 const roleOptions = ["PEGAWAI", "KEPALA_UNIT", "HRD", "ADMIN"] as const;
 
 export function EmployeeFormFields({
   employee,
   activeLeave,
   units,
+  academicYears = [],
+  existingEmployeeNos = [],
   showDefaultPasswordHelp = false,
 }: {
   employee?: EmployeeFormValue | null;
   activeLeave?: EmployeeLeaveFormValue | null;
   units: UnitOption[];
+  academicYears?: AcademicYearOption[];
+  existingEmployeeNos?: string[];
   showDefaultPasswordHelp?: boolean;
 }) {
+  const originalEmployeeStatus = employee?.employee_status ?? null;
   const [activeStatus, setActiveStatus] = useState(employee?.active_status ?? "AKTIF");
+  const [employeeStatus, setEmployeeStatus] = useState(employee?.employee_status ?? "CPTY");
+  const [effectiveDate, setEffectiveDate] = useState(employee?.employee_status_effective_date ?? "");
+  const [employeeNo, setEmployeeNo] = useState(employee?.employee_no ?? "");
+  const [employeeNoMode, setEmployeeNoMode] = useState<EmployeeNoMode>(employee ? "preserve" : "manual");
+  const [birthDate, setBirthDate] = useState(employee?.birth_date ?? "");
+  const [gender, setGender] = useState(employee?.gender ?? "L");
+
+  function previewEmployeeNo(status: string, date: string, nextBirthDate = birthDate, nextGender = gender) {
+    if (!date) return "";
+    if (status === "MAGANG") {
+      const academicYear = academicYearForDate(date, academicYears);
+      if ("error" in academicYear) return "";
+      return buildMagangNiy(
+        academicYear.startYear,
+        nextMagangSequence(existingEmployeeNos, academicYear.startYear),
+      );
+    }
+    if (originalEmployeeStatus === "MAGANG" && status === "CPTY") {
+      return buildNiy({
+        birthDateISO: nextBirthDate,
+        joinDateISO: date,
+        gender: nextGender,
+        sequence: nextSequence(existingEmployeeNos),
+      }).niy;
+    }
+    return employeeNo;
+  }
+
+  function handleEmployeeStatusChange(nextStatus: string) {
+    setEmployeeStatus(nextStatus);
+    if (nextStatus === "MAGANG" || (originalEmployeeStatus === "MAGANG" && nextStatus === "CPTY")) {
+      setEmployeeNoMode("auto");
+      setEffectiveDate("");
+      setEmployeeNo("");
+    }
+  }
 
   return (
     <>
       <FormSection title="Akun & Kepegawaian">
         <Field label="Nama Lengkap" name="full_name" defaultValue={employee?.full_name} required />
+        <input type="hidden" name="employee_no_mode" value={employeeNoMode} />
         <Field
           label="NIY"
           name="employee_no"
-          defaultValue={employee?.employee_no}
+          value={employeeNo}
+          onChange={(event) => {
+            setEmployeeNo(event.currentTarget.value);
+            setEmployeeNoMode("manual");
+          }}
           helper="Spasi akan dihapus dan huruf dibuat kapital."
           required
         />
@@ -88,13 +149,33 @@ export function EmployeeFormFields({
             </option>
           ))}
         </SelectField>
-        <SelectField label="Status Pegawai" name="employee_status" defaultValue={employee?.employee_status ?? "CPTY"}>
+        <SelectField
+          label="Status Pegawai"
+          name="employee_status"
+          value={employeeStatus}
+          onChange={(event) => handleEmployeeStatusChange(event.currentTarget.value)}
+        >
           {EMPLOYEE_STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
         </SelectField>
+        {(employeeStatus === "MAGANG" || (originalEmployeeStatus === "MAGANG" && employeeStatus === "CPTY")) && (
+          <Field
+            label={employeeStatus === "MAGANG" ? "Tanggal Mulai Magang" : "Tanggal Pengangkatan CPTY"}
+            name="employee_status_effective_date"
+            type="date"
+            value={effectiveDate}
+            onChange={(event) => {
+              const nextDate = event.currentTarget.value;
+              setEffectiveDate(nextDate);
+              setEmployeeNoMode("auto");
+              setEmployeeNo(previewEmployeeNo(employeeStatus, nextDate));
+            }}
+            required
+          />
+        )}
         <SelectField
           label="Status Aktif"
           name="active_status"
@@ -117,7 +198,19 @@ export function EmployeeFormFields({
       </FormSection>
 
       <FormSection title="Data Pribadi">
-        <SelectField label="Jenis Kelamin" name="gender" defaultValue={employee?.gender ?? "L"}>
+        <SelectField
+          label="Jenis Kelamin"
+          name="gender"
+          value={gender}
+          onChange={(event) => {
+            const nextGender = event.currentTarget.value as "L" | "P";
+            setGender(nextGender);
+            if (originalEmployeeStatus === "MAGANG" && employeeStatus === "CPTY" && effectiveDate) {
+              setEmployeeNoMode("auto");
+              setEmployeeNo(previewEmployeeNo(employeeStatus, effectiveDate, birthDate, nextGender));
+            }
+          }}
+        >
           <option value="L">Laki-laki</option>
           <option value="P">Perempuan</option>
         </SelectField>
@@ -129,7 +222,20 @@ export function EmployeeFormFields({
           <option value="Cerai Hidup">Cerai Hidup</option>
         </SelectField>
         <Field label="Tempat Lahir" name="birth_place" defaultValue={employee?.birth_place} />
-        <Field label="Tanggal Lahir" name="birth_date" type="date" defaultValue={employee?.birth_date} />
+        <Field
+          label="Tanggal Lahir"
+          name="birth_date"
+          type="date"
+          value={birthDate}
+          onChange={(event) => {
+            const nextBirthDate = event.currentTarget.value;
+            setBirthDate(nextBirthDate);
+            if (originalEmployeeStatus === "MAGANG" && employeeStatus === "CPTY" && effectiveDate) {
+              setEmployeeNoMode("auto");
+              setEmployeeNo(previewEmployeeNo(employeeStatus, effectiveDate, nextBirthDate, gender));
+            }
+          }}
+        />
         <SelectField label="Pendidikan Terakhir" name="last_education" defaultValue={employee?.last_education ?? ""}>
           <option value="">Pilih pendidikan</option>
           {EDUCATION_LEVELS.map((level) => (

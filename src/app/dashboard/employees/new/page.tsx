@@ -9,6 +9,7 @@ import {
   EmployeeFormFields,
   PositionField,
   RoleCheckboxes,
+  type AcademicYearOption,
   type UnitOption,
 } from "../_components/employee-form-fields";
 
@@ -31,10 +32,12 @@ export default async function NewEmployeePage({ searchParams }: PageProps) {
   const roleNames = (roles ?? []).map((item) => item.role);
   if (!roleNames.includes("HRD") && !roleNames.includes("ADMIN")) redirect("/dashboard");
 
-  const { data: units } = await supabase
-    .from("units")
-    .select("id, name, code")
-    .order("code", { ascending: true });
+  const [{ data: units }, { data: academicYears }, { data: employeeNos }] = await Promise.all([
+    supabase.from("units").select("id, name, code").order("code", { ascending: true }),
+    supabase.from("academic_years").select("id, start_date, end_date").order("start_date"),
+    supabase.from("profiles").select("employee_no"),
+  ]);
+  const existingEmployeeNos = (employeeNos ?? []).map((item) => item.employee_no);
 
   const success = paramValue(params, "success");
   const error = paramValue(params, "error");
@@ -59,7 +62,12 @@ export default async function NewEmployeePage({ searchParams }: PageProps) {
 
       <form action={createEmployeeAction} className="space-y-5">
         <input type="hidden" name="return_to" value="/dashboard/employees/new" />
-        <EmployeeFormFields units={(units ?? []) as UnitOption[]} showDefaultPasswordHelp />
+        <EmployeeFormFields
+          units={(units ?? []) as UnitOption[]}
+          academicYears={(academicYears ?? []) as AcademicYearOption[]}
+          existingEmployeeNos={existingEmployeeNos}
+          showDefaultPasswordHelp
+        />
         <RoleCheckboxes roles={["PEGAWAI"]} />
         <PositionField />
         <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
