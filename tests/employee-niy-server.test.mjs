@@ -22,4 +22,7 @@ test("direct employee actions resolve NIY from stored and submitted status", () 
   assert.match(source, /currentProfile\.employee_status === 'MAGANG'/);
   assert.match(source, /payload\.employee_status === 'CPTY'/);
   assert.match(source, /employee_no_mode/);
+  assert.match(source, /statusChangedToMagang/);
+  assert.match(source, /magangEffectiveDateChanged/);
+  assert.match(source, /requestedMode === 'preserve'/);
 });

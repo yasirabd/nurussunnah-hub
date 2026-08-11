@@ -113,7 +113,7 @@ export async function approveRegistrationAction(formData: FormData) {
     twitter: approval.twitter,
     home_unit_id: approval.home_unit_id,
     employee_status: approval.employee_status,
-    employee_status_effective_date: approval.join_date,
+    employee_status_effective_date: approval.employee_status === "MAGANG" ? approval.join_date : null,
     active_status: "AKTIF",
     avatar_url: reg.photo_url,
     must_change_password: true,

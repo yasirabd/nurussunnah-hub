@@ -209,15 +209,24 @@ export async function updateEmployeeProfileAction(formData: FormData) {
     redirectToPath(returnTo, false, currentProfileError?.message ?? 'Data pegawai tidak ditemukan.');
   }
   const magangToCpty = currentProfile.employee_status === 'MAGANG' && payload.employee_status === 'CPTY';
+  const statusChangedToMagang = currentProfile.employee_status !== 'MAGANG' && payload.employee_status === 'MAGANG';
   const effectiveDate = payload.employee_status === 'MAGANG' || magangToCpty
     ? payload.employee_status_effective_date
     : currentProfile.employee_status_effective_date;
+  const magangEffectiveDateChanged = currentProfile.employee_status === 'MAGANG'
+    && payload.employee_status === 'MAGANG'
+    && effectiveDate !== currentProfile.employee_status_effective_date;
   if (magangToCpty && !effectiveDate) {
     redirectToPath(returnTo, false, 'Tanggal Pengangkatan CPTY wajib diisi.');
   }
+  const requestedMode = employeeNoMode(formData, 'preserve');
+  const mode = magangToCpty
+    || (requestedMode === 'preserve' && (statusChangedToMagang || magangEffectiveDateChanged))
+    ? 'auto'
+    : requestedMode;
   const niyResult = await resolveEmployeeNo({
     supabase,
-    mode: magangToCpty ? 'auto' : employeeNoMode(formData, 'preserve'),
+    mode,
     submittedEmployeeNo: payload.employee_no,
     employeeStatus: payload.employee_status,
     effectiveDate,
