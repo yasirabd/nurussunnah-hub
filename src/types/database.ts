@@ -1156,7 +1156,7 @@ export type Database = {
       active_status_enum: "AKTIF" | "CUTI" | "NONAKTIF" | "RESIGN" | "DIBERHENTIKAN" | "PENSIUN"
       employee_registration_status_enum: "MENUNGGU" | "DISETUJUI" | "DITOLAK"
       employee_invite_status_enum: "AKTIF" | "TERPAKAI" | "KEDALUWARSA"
-      employee_status_enum: "MAGANG" | "HONORER" | "CPTY" | "PTY"
+      employee_status_enum: "MAGANG" | "HONORER" | "OUTSOURCE" | "CPTY" | "PTY"
       gender_enum: "L" | "P"
       review_action_enum: "REVIEWED" | "APPROVED" | "REJECTED" | "REOPENED"
       user_role_enum: "PEGAWAI" | "KEPALA_UNIT" | "HRD" | "ADMIN"

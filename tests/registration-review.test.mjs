@@ -55,6 +55,15 @@ test("normalizeRegistrationApproval returns corrected approval data", () => {
   assert.equal(result.data.note, "Perlu konfirmasi jadwal");
 });
 
+test("normalizeRegistrationApproval accepts outsource employees", () => {
+  const formData = validFormData();
+  formData.set("employee_status", "OUTSOURCE");
+
+  const result = normalizeRegistrationApproval(formData);
+  assert.equal(result.error, undefined);
+  assert.equal(result.data.employee_status, "OUTSOURCE");
+});
+
 test("normalizeRegistrationApproval rejects missing required data", () => {
   const formData = validFormData();
   formData.set("full_name", "");

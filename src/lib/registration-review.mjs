@@ -1,6 +1,6 @@
 import { EDUCATION_LEVELS } from "./education.mjs";
 
-const EMPLOYEE_STATUSES = ["MAGANG", "HONORER", "CPTY", "PTY"];
+const EMPLOYEE_STATUSES = ["MAGANG", "HONORER", "OUTSOURCE", "CPTY", "PTY"];
 const GENDERS = ["L", "P"];
 const MARITAL_STATUSES = ["Belum Kawin", "Kawin", "Cerai Mati", "Cerai Hidup"];
 const UNIFORM_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];

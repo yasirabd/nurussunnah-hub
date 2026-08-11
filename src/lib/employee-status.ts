@@ -3,6 +3,7 @@
 export const EMPLOYEE_STATUS_OPTIONS = [
   { value: "MAGANG", label: "Magang" },
   { value: "HONORER", label: "Honorer" },
+  { value: "OUTSOURCE", label: "Outsource" },
   { value: "CPTY", label: "Calon Pegawai Tetap Yayasan" },
   { value: "PTY", label: "Pegawai Tetap Yayasan" },
 ] as const satisfies readonly { value: EmployeeStatus; label: string }[];

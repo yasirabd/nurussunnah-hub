@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
 import { isActiveStatus, isEmployeeStatus } from '@/lib/employee-status';
+import { normalizeImportedEmployeeStatus } from '@/lib/employee-status-import.mjs';
 import { todayWIB, serialDateToISO } from '@/lib/timezone';
 import type { ActiveStatus, EmployeeStatus, UserRoleEnum } from '@/types/database';
 function text(formData: FormData, key: string) {
@@ -474,23 +475,12 @@ const ACTIVE_STATUS_MAP: Record<string, 'AKTIF' | 'NONAKTIF'> = {
   'AKTIF': 'AKTIF',
   'NONAKTIF': 'NONAKTIF',
 }
-const EMPLOYEE_STATUS_MAP: Record<string, EmployeeStatus> = {
-  'PTY': 'PTY',
-  'HONORER': 'HONORER',
-  'MAGANG': 'MAGANG',
-  'CPTY': 'CPTY',
-  'CALON PTY': 'CPTY',
-}
 function normalizeGender(raw: string): 'L' | 'P' {
   return GENDER_MAP[raw.trim().toUpperCase()] ?? 'L'
 }
 function normalizeActiveStatus(raw: string): 'AKTIF' | 'NONAKTIF' {
   const key = raw.trim().toUpperCase().replace(/[- ]/g, '')
   return ACTIVE_STATUS_MAP[key] ?? 'AKTIF'
-}
-function normalizeEmployeeStatus(raw: string): EmployeeStatus {
-  const key = raw.trim().toUpperCase()
-  return EMPLOYEE_STATUS_MAP[key] || 'CPTY'
 }
 function parseDate(raw: string | null): string | null {
   if (!raw || !raw.trim()) return null
@@ -610,7 +600,7 @@ export async function importBulkEmployeesAction(
       facebook: row.facebook || null,
       twitter: row.twitter || null,
       instagram: row.instagram || null,
-      employee_status: normalizeEmployeeStatus(row.employee_status),
+      employee_status: normalizeImportedEmployeeStatus(row.employee_status),
       active_status: normalizeActiveStatus(row.active_status),
       home_unit_id: unitId,
       must_change_password: true,
