@@ -1,6 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { requireFeatureAccess } from '@/lib/auth/feature-access';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeLeavePayload, normalizeStatusDetailPayload } from '@/lib/employee-leave.mjs';
@@ -194,6 +195,7 @@ async function replaceRoles(
   if (insertError) throw insertError;
 }
 export async function updateEmployeeProfileAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageEmployees();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
@@ -268,6 +270,7 @@ export async function updateEmployeeProfileAction(formData: FormData) {
   redirectToPath(returnTo, true, 'Data pegawai berhasil diperbarui.');
 }
 export async function createEmployeeAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageEmployees();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
@@ -351,6 +354,7 @@ function intakePayload(formData: FormData) {
 }
 
 export async function createIntakeEmployeeAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageEmployees();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
@@ -427,6 +431,7 @@ export async function createIntakeEmployeeAction(formData: FormData) {
   redirectWith(true, 'Pegawai baru dari intake berhasil ditambahkan. Password awal: bismillahns.');
 }
 export async function updateEmployeeRolesAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageEmployees();
   const returnTo = safeReturnTo(formData);
   const userId = text(formData, 'user_id');
@@ -440,6 +445,7 @@ export async function updateEmployeeRolesAction(formData: FormData) {
   redirectToPath(returnTo, true, 'Role pegawai berhasil diperbarui.');
 }
 export async function deactivateEmployeeAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageEmployees();
   const admin = createAdminClient();
   const id = text(formData, 'id');
@@ -456,6 +462,7 @@ export async function deactivateEmployeeAction(formData: FormData) {
   redirectWith(true, 'Pegawai berhasil dinonaktifkan.');
 }
 export async function updateEmployeeCurrentPositionAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const returnTo = safeReturnTo(formData);
   const { data: { user } } = await supabase.auth.getUser();
@@ -579,6 +586,7 @@ function guessEmail(row: BulkImportRow, employeeNo = row.employee_no): string {
 export async function importBulkEmployeesAction(
   rows: BulkImportRow[]
 ): Promise<ImportResult> {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageEmployees()
   const [unitResult, yearResult] = await Promise.all([
     supabase.from('units').select('id, name'),
@@ -713,6 +721,7 @@ export async function importBulkEmployeesAction(
 }
 
 export async function resetPasswordAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');

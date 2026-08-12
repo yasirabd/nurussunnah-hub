@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { requireFeatureAccess } from '@/lib/auth/feature-access';
 import { createClient } from '@/lib/supabase/server';
 import { EDUCATION_LEVELS, EDUCATION_WITH_STUDY_PROGRAM } from '@/lib/education.mjs';
 
@@ -22,6 +23,7 @@ function optionOrNull<T extends readonly string[]>(value: string, options: T) {
 }
 
 export async function updateMyProfileAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');

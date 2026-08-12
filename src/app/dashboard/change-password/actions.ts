@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { requirePasswordChangeAccess } from '@/lib/auth/feature-access';
 
 const DEFAULT_EMPLOYEE_PASSWORD = 'bismillahns';
 
@@ -13,9 +13,7 @@ export async function changeInitialPasswordAction(formData: FormData) {
   if (password === DEFAULT_EMPLOYEE_PASSWORD) redirect('/dashboard/change-password?error=Gunakan%20password%20baru%20yang%20berbeda.');
   if (password !== confirmPassword) redirect('/dashboard/change-password?error=Konfirmasi%20password%20tidak%20sama.');
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login');
+  const { supabase, user } = await requirePasswordChangeAccess();
 
   const { error: passwordError } = await supabase.auth.updateUser({ password });
   if (passwordError) redirect(`/dashboard/change-password?error=${encodeURIComponent(passwordError.message)}`);
@@ -23,7 +21,9 @@ export async function changeInitialPasswordAction(formData: FormData) {
   const { error: profileError } = await supabase
     .from('profiles')
     .update({ must_change_password: false })
-    .eq('id', user.id);
+    .eq('id', user.id)
+    .select('id')
+    .single();
   if (profileError) redirect(`/dashboard/change-password?error=${encodeURIComponent(profileError.message)}`);
 
   redirect('/dashboard?success=Password%20berhasil%20diperbarui.');

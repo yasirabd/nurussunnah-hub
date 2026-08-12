@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireFeatureAccess } from "@/lib/auth/feature-access";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +33,7 @@ async function ensureHrdAdmin() {
 }
 
 export async function approveRegistrationAction(formData: FormData) {
+  await requireFeatureAccess();
   const { supabase, reviewerId } = await ensureHrdAdmin();
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirectWith(false, "ID pendaftaran tidak valid.");
@@ -246,6 +248,7 @@ export async function approveRegistrationAction(formData: FormData) {
 }
 
 export async function rejectRegistrationAction(formData: FormData) {
+  await requireFeatureAccess();
   const { supabase } = await ensureHrdAdmin();
   const id = String(formData.get("id") ?? "").trim();
   if (!id) redirectWith(false, "ID pendaftaran tidak valid.");
@@ -259,6 +262,7 @@ export async function rejectRegistrationAction(formData: FormData) {
 }
 
 export async function generateInviteAction() {
+  await requireFeatureAccess();
   const { supabase } = await ensureHrdAdmin();
   const { error } = await supabase.rpc("generate_employee_invite");
   if (error) redirectWith(false, error.message);

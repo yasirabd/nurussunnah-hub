@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 
 function text(formData: FormData, key: string) {
@@ -33,6 +34,7 @@ async function ensureCanManageAcademicYears() {
 }
 
 export async function createAcademicYearAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageAcademicYears();
   const isActive = formData.get("is_active") === "on";
 
@@ -57,6 +59,7 @@ export async function createAcademicYearAction(formData: FormData) {
 }
 
 export async function setActiveAcademicYearAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageAcademicYears();
   const id = text(formData, "id");
 
@@ -78,6 +81,7 @@ export async function setActiveAcademicYearAction(formData: FormData) {
 }
 
 export async function updateAcademicYearAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureCanManageAcademicYears();
   const id = text(formData, "id");
 

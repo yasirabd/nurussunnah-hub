@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 
 function text(formData: FormData, key: string) {
@@ -32,6 +33,7 @@ async function ensureAdmin() {
 }
 
 export async function updateOrganizationAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureAdmin();
 
   const { error } = await supabase
@@ -47,6 +49,7 @@ export async function updateOrganizationAction(formData: FormData) {
 }
 
 export async function createUnitAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureAdmin();
 
   const { error } = await supabase.from("units").insert({
@@ -61,6 +64,7 @@ export async function createUnitAction(formData: FormData) {
 }
 
 export async function updateUnitAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await ensureAdmin();
 
   const { error } = await supabase

@@ -1,7 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getFeatureAccessState } from "@/lib/auth/feature-access";
 import { generateOfferLetterDocx, normalizeOfferLetterPayload } from "@/lib/offer-letter-docx.mjs";
 
 type OfferLetterValues = Record<string, string> & { candidate_name: string };
@@ -10,9 +10,18 @@ type OfferLetterPayload =
   | { ok: false; missing: string[]; values: OfferLetterValues };
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/auth/login", request.url));
+  const access = await getFeatureAccessState();
+  if (access.status === "unauthenticated") {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+  if (access.status === "password_change_required") {
+    return new NextResponse("Password change required", { status: 403 });
+  }
+  if (access.status === "missing_profile") {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  const { supabase, user } = access;
 
   const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
   const roleNames = (roles ?? []).map((item) => item.role);

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 
 function text(formData: FormData, key: string) {
@@ -14,6 +15,7 @@ function redirectWith(ok: boolean, message: string): never {
 }
 
 export async function submitFeedbackAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const rating = Number.parseInt(text(formData, "rating"), 10);
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 import { deriveAttendanceTimeScope } from "@/lib/attendance-correction.mjs";
 import type { Database } from "@/types/database";
@@ -27,6 +28,7 @@ function sanitize(name: string) {
 }
 
 export async function submitCorrectionAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const {
     data: { user },
@@ -98,6 +100,7 @@ export async function submitCorrectionAction(formData: FormData) {
 }
 
 export async function reviewCorrectionAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const { error } = await supabase.rpc("review_attendance_correction", {
     p_id: text(formData, "id"),

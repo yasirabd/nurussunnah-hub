@@ -14,7 +14,7 @@ test("middleware keeps dashboard requests cheap on Cloudflare", () => {
 });
 
 test("dashboard layout owns profile-dependent password redirects", () => {
-  assert.match(dashboardLayout, /context\.profile\?\.must_change_password/);
+  assert.match(dashboardLayout, /context\.profile\??\.must_change_password/);
   assert.match(dashboardLayout, /headers\(\)/);
   assert.match(dashboardLayout, /\/dashboard\/change-password/);
 });

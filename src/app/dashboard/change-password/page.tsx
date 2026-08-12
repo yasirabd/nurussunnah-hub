@@ -1,4 +1,4 @@
-import { KeyRound } from 'lucide-react';
+import { KeyRound, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { changeInitialPasswordAction } from './actions';
@@ -44,6 +44,14 @@ export default async function ChangePasswordPage({ searchParams }: PageProps) {
           />
           <Button type="submit" className="w-full">Simpan Password</Button>
         </form>
+        <Button
+          variant="ghost"
+          className="mt-3 w-full"
+          render={<a href="/auth/logout" />}
+        >
+          <LogOut data-icon="inline-start" />
+          Keluar
+        </Button>
       </section>
     </div>
   );

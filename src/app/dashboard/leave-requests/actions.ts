@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import {
@@ -51,6 +52,7 @@ function validateEvidenceFileSizes(files: File[]) {
 }
 
 export async function submitLeaveRequestAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
 
   const {
@@ -156,6 +158,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
 }
 
 export async function reviewLeaveRequestAction(formData: FormData) {
+  await requireFeatureAccess();
   const supabase = await createClient();
   const { error } = await supabase.rpc("review_leave_request", {
     p_id: text(formData, "id"),
