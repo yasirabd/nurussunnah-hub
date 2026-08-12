@@ -244,7 +244,7 @@ export function LeaveRequestForm({
               onChange={prepareLeaveEvidence}
             />
             <p className="text-xs text-muted-foreground">
-              Maksimal 5 MB per file. Foto yang lebih besar akan diperkecil otomatis.
+              Maksimal 1 foto, 5 MB. Foto yang lebih besar akan diperkecil otomatis.
             </p>
             {evidenceMessageFor === "bukti_ss_kepala_unit" && evidenceMessage && (
               <p className="text-xs text-muted-foreground" aria-live="polite">
@@ -268,14 +268,13 @@ export function LeaveRequestForm({
             id="bukti_izin"
             name="bukti_izin"
             type="file"
-            accept="image/*,application/pdf"
-            multiple
+            accept="image/*"
             required={evidenceRequired}
             disabled={isPreparingEvidence || (!evidenceRequired && noEvidenceAck)}
             onChange={prepareLeaveEvidence}
           />
           <p className="text-xs text-muted-foreground">
-            {evidenceHelper} Maksimal 5 MB per file. Foto yang lebih besar akan diperkecil otomatis.
+            {evidenceHelper} Maksimal 1 foto, 5 MB. Foto yang lebih besar akan diperkecil otomatis.
           </p>
           {evidenceMessageFor === "bukti_izin" && evidenceMessage && (
             <p className="text-xs text-muted-foreground" aria-live="polite">

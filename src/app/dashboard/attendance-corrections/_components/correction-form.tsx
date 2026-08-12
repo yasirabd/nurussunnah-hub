@@ -212,13 +212,12 @@ export function CorrectionForm({
             id="bukti"
             name="bukti"
             type="file"
-            accept="image/*,application/pdf"
-            multiple
+            accept="image/*"
             disabled={isPreparingEvidence}
             onChange={prepareEvidence}
           />
           <p className="text-xs text-muted-foreground">
-            Untuk kasus lupa tap biasanya tidak ada bukti fisik. Untuk kartu rusak/hilang, upload foto jika tersedia.
+            Maksimal 1 foto, 5 MB. Untuk kasus lupa tap biasanya tidak ada bukti fisik.
           </p>
           {evidenceMessage && (
             <p className="text-xs text-muted-foreground" aria-live="polite">

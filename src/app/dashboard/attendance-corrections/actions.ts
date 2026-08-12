@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 import { deriveAttendanceTimeScope } from "@/lib/attendance-correction.mjs";
+import {
+  EvidenceValidationError,
+  validateSingleEvidenceImage,
+} from "@/lib/evidence-upload-server";
 import type { Database } from "@/types/database";
 import {
   uploadToDrive,
@@ -42,6 +46,16 @@ export async function submitCorrectionAction(formData: FormData) {
 
   if (!timeScope) redirectWith(false, "Pilih presensi yang perlu dikoreksi.", "ajukan");
 
+  let files: File[];
+  try {
+    files = validateSingleEvidenceImage(formData, "bukti", "Bukti pendukung");
+  } catch (error) {
+    if (error instanceof EvidenceValidationError) {
+      redirectWith(false, error.message, "ajukan");
+    }
+    throw error;
+  }
+
   const { data: newId, error } = await supabase.rpc("submit_attendance_correction", {
     p_event_date: eventDate,
     p_correction_kind: text(formData, "correction_kind") as Database["public"]["Enums"]["attendance_correction_kind_enum"],
@@ -56,10 +70,6 @@ export async function submitCorrectionAction(formData: FormData) {
   }
 
   const correctionId = newId as unknown as string;
-  const files = formData
-    .getAll("bukti")
-    .filter((f): f is File => f instanceof File && f.size > 0);
-
   if (files.length) {
     try {
       const { data: profile } = await supabase
@@ -89,7 +99,7 @@ export async function submitCorrectionAction(formData: FormData) {
         false,
         `Pengajuan tersimpan, tetapi upload bukti ke Drive gagal: ${
           e instanceof Error ? e.message : "unknown"
-        }.`,
+        }. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.`,
         "riwayat"
       );
     }

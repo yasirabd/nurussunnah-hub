@@ -7,14 +7,14 @@ import { requireFeatureAccess } from "@/lib/auth/feature-access";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import {
+  EvidenceValidationError,
+  validateSingleEvidenceImage,
+} from "@/lib/evidence-upload-server";
+import {
   uploadToDrive,
   leaveRootFolderId,
   monthSegment,
 } from "@/lib/google-drive";
-import {
-  EVIDENCE_MAX_FILE_BYTES,
-  isEvidenceFileWithinLimit,
-} from "@/lib/attendance-correction-upload.mjs";
 
 const PATH = "/dashboard/leave-requests";
 
@@ -30,25 +30,6 @@ function redirectWith(ok: boolean, message: string, tab?: string): never {
 
 function sanitize(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, "_").slice(0, 60);
-}
-
-function evidenceFiles(formData: FormData, key: string) {
-  return formData
-    .getAll(key)
-    .filter((file): file is File => file instanceof File && file.size > 0);
-}
-
-function validateEvidenceFileSizes(files: File[]) {
-  const oversized = files.find(
-    (file) => !isEvidenceFileWithinLimit(file.size, EVIDENCE_MAX_FILE_BYTES)
-  );
-  if (oversized) {
-    redirectWith(
-      false,
-      `File ${oversized.name} melebihi batas 5 MB. Pilih file yang lebih kecil.`,
-      "ajukan"
-    );
-  }
 }
 
 export async function submitLeaveRequestAction(formData: FormData) {
@@ -72,11 +53,23 @@ export async function submitLeaveRequestAction(formData: FormData) {
   const startDate = text(formData, "start_date");
   const endDate = text(formData, "end_date") || startDate;
   const noEvidenceAck = text(formData, "no_evidence_ack") === "on";
-  const evidence = noEvidenceAck ? [] : evidenceFiles(formData, "bukti_izin");
-  const unitHeadSs = evidenceFiles(formData, "bukti_ss_kepala_unit");
-
-  validateEvidenceFileSizes(evidence);
-  validateEvidenceFileSizes(unitHeadSs);
+  let evidence: File[];
+  let unitHeadSs: File[];
+  try {
+    evidence = noEvidenceAck
+      ? []
+      : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin");
+    unitHeadSs = validateSingleEvidenceImage(
+      formData,
+      "bukti_ss_kepala_unit",
+      "Bukti screenshot izin kepala unit"
+    );
+  } catch (error) {
+    if (error instanceof EvidenceValidationError) {
+      redirectWith(false, error.message, "ajukan");
+    }
+    throw error;
+  }
 
   const { data: newId, error } = await supabase.rpc("submit_leave_request", {
     p_start_date: startDate,
@@ -148,7 +141,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
       false,
       `Pengajuan tersimpan, tetapi upload bukti ke Drive gagal: ${
         e instanceof Error ? e.message : "unknown"
-      }. Silakan hubungi admin.`,
+      }. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.`,
       "riwayat"
     );
   }

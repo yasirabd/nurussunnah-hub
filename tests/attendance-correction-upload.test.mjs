@@ -124,6 +124,74 @@ test("no-evidence acknowledgement clears and disables leave evidence", () => {
   );
   assert.match(
     leaveAction,
-    /const evidence = noEvidenceAck\s*\? \[\]\s*:\s*evidenceFiles\(formData, "bukti_izin"\)/
+    /evidence = noEvidenceAck\s*\? \[\]\s*:\s*validateSingleEvidenceImage\(formData, "bukti_izin"/
+  );
+});
+
+test("attendance correction and leave evidence inputs accept one image only", () => {
+  const correctionForm = readFileSync(
+    "src/app/dashboard/attendance-corrections/_components/correction-form.tsx",
+    "utf8"
+  );
+  const leaveForm = readFileSync(
+    "src/app/dashboard/leave-requests/_components/leave-request-form.tsx",
+    "utf8"
+  );
+  const inputFor = (source, name) =>
+    source
+      .match(/<Input[\s\S]*?\/>/g)
+      ?.find((input) => input.includes(`name="${name}"`));
+
+  for (const [source, name] of [
+    [correctionForm, "bukti"],
+    [leaveForm, "bukti_ss_kepala_unit"],
+    [leaveForm, "bukti_izin"],
+  ]) {
+    const input = inputFor(source, name);
+    assert.ok(input, `${name} input must exist`);
+    assert.match(input, /accept="image\/\*"/);
+    assert.doesNotMatch(input, /\bmultiple\b/);
+  }
+
+  assert.match(correctionForm, /Maksimal 1 foto, 5 MB/);
+  assert.match(leaveForm, /Maksimal 1 foto, 5 MB/g);
+});
+
+test("server validates each evidence field before creating a request", () => {
+  const serverUtility = readFileSync("src/lib/evidence-upload-server.ts", "utf8");
+  const correctionAction = readFileSync(
+    "src/app/dashboard/attendance-corrections/actions.ts",
+    "utf8"
+  );
+  const leaveAction = readFileSync(
+    "src/app/dashboard/leave-requests/actions.ts",
+    "utf8"
+  );
+
+  assert.match(serverUtility, /export function validateSingleEvidenceImage/);
+  assert.match(serverUtility, /files\.length > 1/);
+  assert.match(serverUtility, /file\.type\.startsWith\("image\/"\)/);
+  assert.match(serverUtility, /EVIDENCE_MAX_FILE_BYTES/);
+
+  assert.match(
+    correctionAction,
+    /validateSingleEvidenceImage\(formData, "bukti", "Bukti pendukung"\)/
+  );
+  assert.ok(
+    correctionAction.indexOf("validateSingleEvidenceImage") <
+      correctionAction.indexOf('supabase.rpc("submit_attendance_correction"')
+  );
+
+  assert.match(
+    leaveAction,
+    /validateSingleEvidenceImage\(\s*formData,\s*"bukti_ss_kepala_unit",\s*"Bukti screenshot izin kepala unit"\s*\)/
+  );
+  assert.match(
+    leaveAction,
+    /validateSingleEvidenceImage\(formData, "bukti_izin", "Bukti izin"\)/
+  );
+  assert.ok(
+    leaveAction.indexOf("validateSingleEvidenceImage") <
+      leaveAction.indexOf('supabase.rpc("submit_leave_request"')
   );
 });
