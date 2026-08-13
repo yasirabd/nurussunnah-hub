@@ -65,9 +65,14 @@ export function instagramCaptionShort({ unit, area, members }) {
   ].join('\n')
 }
 
+// No flag here, unlike the caption. 🇮🇩 is a regional-indicator pair and Windows
+// ships no country-flag glyphs, so WhatsApp Desktop renders it as the bare
+// letters "ID". The caption keeps it because Instagram is read on phones; this
+// is a submission form read by the PIC and judges on whatever they happen to
+// use, where legibility beats decoration.
 export function whatsappSubmission({ unit, area, members, link }) {
   return [
-    '🇮🇩 Lomba Kebersihan Nurus Sunnah 2026',
+    'Lomba Kebersihan Nurus Sunnah 2026',
     '',
     `🏫 Unit: ${unit}`,
     `📍 Area: ${area}`,

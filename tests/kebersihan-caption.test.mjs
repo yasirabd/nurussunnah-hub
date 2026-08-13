@@ -82,9 +82,22 @@ test("caption emoji survive as real code points", () => {
 test("whatsapp submission emoji survive as real code points", () => {
   const message = whatsappSubmission({ ...sample, link: "" });
   assert.ok(!message.includes("�"));
-  assert.ok(message.includes("\u{1F1EE}\u{1F1E9}"), "flag missing");
+  assert.ok(message.includes("\u{1F3EB}"), "school emoji missing");
+  assert.ok(message.includes("\u{1F4CD}"), "location pin missing");
   assert.ok(message.includes("\u{1F465}"), "people emoji missing");
   assert.ok(message.includes("\u{1F517}"), "link emoji missing");
+});
+
+test("whatsapp submission avoids flag emoji entirely", () => {
+  // Regional-indicator pairs have no glyph on Windows, so WhatsApp Desktop
+  // shows the bare letters "ID". Every emoji left in this message exists in
+  // Segoe UI Emoji, Noto Color Emoji and Apple Color Emoji alike.
+  const message = whatsappSubmission({ ...sample, link: "" });
+  assert.doesNotMatch(
+    message,
+    /[\u{1F1E6}-\u{1F1FF}]/u,
+    "submission must not contain a regional indicator"
+  );
 });
 
 test("whatsapp share url carries the finished message", () => {
