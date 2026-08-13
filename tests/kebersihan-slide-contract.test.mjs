@@ -91,6 +91,34 @@ test("slide 1 keeps the rotated HUT-81 badge and logo plate", () => {
   assert.match(hero, /YAYASAN ISLAM/);
 });
 
+test("slide 2 and slide 3 keep their distinct framing and copy", () => {
+  const wide = readFileSync(`${SLIDES_DIR}/slide-wide.tsx`, "utf8");
+  const detail = readFileSync(`${SLIDES_DIR}/slide-detail.tsx`, "utf8");
+
+  assert.match(wide, /export function SlideWide/);
+  assert.match(wide, /CERDAS DALAM MENATA/);
+  assert.match(wide, /300px 36px 36px 36px/);
+  assert.match(wide, /rotate\(-1deg\)/);
+  assert.match(wide, /slot="wide"/);
+
+  assert.match(detail, /export function SlideDetail/);
+  assert.match(detail, /TERTIB & AMANAH/);
+  assert.match(detail, /36px 300px 36px 36px/);
+  assert.match(detail, /rotate\(1deg\)/);
+  assert.match(detail, /slot="detail"/);
+  assert.match(detail, /head="bristles"/);
+
+  for (const source of [wide, detail]) {
+    assert.match(source, /SlideHeader/);
+    assert.match(source, /Bunting/);
+    assert.match(source, /PromoBar/);
+    assert.match(source, /PAPER_BACKGROUND/);
+    assert.match(source, /Bucket/);
+    assert.match(source, /Broom/);
+    assert.match(source, /SprayBottle/);
+  }
+});
+
 test("no slide file leaves a port placeholder behind", () => {
   const files = [
     "slide-hero.tsx",
