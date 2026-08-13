@@ -4,6 +4,11 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { slideFileName } from "@/lib/kebersihan/filenames.mjs";
 
+const PRIMARY =
+  "ks-press min-h-14 w-full rounded-xl bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:opacity-60";
+const SECONDARY =
+  "ks-press min-h-14 w-full rounded-xl border-2 border-border px-4 text-lg font-semibold";
+
 export function ExportActions({
   blobs,
   unit,
@@ -61,71 +66,80 @@ export function ExportActions({
   async function copy(text: string, label: string) {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${label} tersalin.`);
+      toast.success(`${label} sudah tersalin.`);
     } catch {
       toast.error(`${label} gagal disalin. Blok teksnya lalu salin manual.`);
     }
   }
 
   return (
-    <div className="space-y-4">
-      {canShare ? (
-        <button
-          type="button"
-          onClick={shareAll}
-          disabled={sharing}
-          className="w-full rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-60"
-        >
-          SIMPAN 4 SLIDE
-        </button>
-      ) : null}
+    <div className="space-y-6">
+      <div className="space-y-3">
+        {canShare ? (
+          <>
+            <button
+              type="button"
+              onClick={shareAll}
+              disabled={sharing}
+              className={PRIMARY}
+            >
+              Simpan 4 Slide ke HP
+            </button>
+            <p className="text-center text-base text-muted-foreground">
+              Pilih <b>Simpan Gambar</b> saat menu muncul.
+            </p>
+          </>
+        ) : null}
 
-      <div className="grid grid-cols-2 gap-2">
-        {blobs.map((_, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => download(index)}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
-          >
-            Unduh Slide {index + 1}
-          </button>
-        ))}
+        <div className="grid grid-cols-2 gap-3">
+          {blobs.map((_, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => download(index)}
+              className="ks-press min-h-14 rounded-xl border-2 border-border px-3 text-base font-semibold"
+            >
+              Unduh Slide {index + 1}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Caption Instagram</h3>
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Caption Instagram</h3>
         <textarea
           readOnly
           value={caption}
           rows={14}
-          className="w-full rounded-lg border border-border bg-card p-3 text-sm"
+          aria-label="Caption Instagram"
+          className="w-full rounded-xl border-2 border-border bg-card p-3 text-base"
         />
         <button
           type="button"
           onClick={() => copy(caption, "Caption")}
-          className="w-full rounded-lg border border-border px-4 py-2 font-medium"
+          className={SECONDARY}
         >
-          COPY CAPTION
+          Salin Caption
         </button>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">
-          Teks share ke grup SI Nurus Sunnah
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">
+          Teks untuk grup SI Nurus Sunnah
         </h3>
         <textarea
           readOnly
           value={whatsapp}
           rows={10}
-          className="w-full rounded-lg border border-border bg-card p-3 text-sm"
+          aria-label="Teks share WhatsApp"
+          className="w-full rounded-xl border-2 border-border bg-card p-3 text-base"
         />
         <button
           type="button"
           onClick={() => copy(whatsapp, "Teks WhatsApp")}
-          className="w-full rounded-lg border border-border px-4 py-2 font-medium"
+          className={SECONDARY}
         >
-          COPY TEKS WHATSAPP
+          Salin Teks WhatsApp
         </button>
       </div>
     </div>

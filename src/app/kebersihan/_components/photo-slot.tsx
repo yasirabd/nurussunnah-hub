@@ -1,7 +1,11 @@
 "use client";
 
 import type { SlotId } from "@/lib/kebersihan/slot-sizes.mjs";
-import { SLOT_LABELS, SLOT_SIZES } from "@/lib/kebersihan/slot-sizes.mjs";
+import {
+  SLOT_HINTS,
+  SLOT_LABELS,
+  SLOT_SIZES,
+} from "@/lib/kebersihan/slot-sizes.mjs";
 import { positionAxes } from "@/lib/kebersihan/crop-axes.mjs";
 
 export type SlotState = {
@@ -72,29 +76,59 @@ export function PhotoSlotControls({
   const axes = state
     ? positionAxes(state.imgW, state.imgH, box.width, box.height, state.zoom)
     : { x: false, y: false };
+  const inputId = `foto-${slot}`;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <label className="block text-sm font-medium">{SLOT_LABELS[slot]}</label>
+    <div>
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+            state
+              ? "bg-primary text-primary-foreground"
+              : "border-2 border-border text-muted-foreground"
+          }`}
+        >
+          {state ? "✓" : ""}
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold leading-tight">
+            {SLOT_LABELS[slot]}
+          </h3>
+          <p className="mt-1 text-base leading-snug text-muted-foreground">
+            {SLOT_HINTS[slot]}
+          </p>
+        </div>
+      </div>
+
+      {/* The native file input is a small, browser-styled control that reads
+          "Choose File" in English on most phones. A full-width label gives a
+          56px target and Indonesian wording. */}
       <input
+        id={inputId}
         type="file"
         accept="image/*"
-        className="mt-2 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-2 file:text-sm file:font-medium"
+        className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) onPick(file);
+          event.target.value = "";
         }}
       />
+      <label
+        htmlFor={inputId}
+        className={`ks-press mt-3 flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 text-lg font-semibold ${
+          state
+            ? "border-2 border-border bg-card"
+            : "bg-primary text-primary-foreground"
+        }`}
+      >
+        {state ? "Ganti Foto" : "Pilih Foto"}
+      </label>
 
-      {state ? (
-        <div className="mt-3 space-y-3">
-          <div
-            className="overflow-hidden rounded-md border border-border"
-            style={{ aspectRatio: `${box.width} / ${box.height}` }}
-          >
-            <PhotoSlot slot={slot} state={state} />
-          </div>
-
+      {state && (axes.x || axes.y) ? (
+        <div className="ks-reveal mt-4 space-y-1">
+          <p className="text-base font-medium">Atur posisi foto</p>
           <Slider
             label="Perbesar"
             min={1}
@@ -103,10 +137,9 @@ export function PhotoSlotControls({
             value={state.zoom}
             onChange={(zoom) => onChange({ ...state, zoom })}
           />
-
           {axes.x ? (
             <Slider
-              label="Geser kiri–kanan"
+              label="Geser kiri atau kanan"
               min={0}
               max={100}
               step={1}
@@ -114,10 +147,9 @@ export function PhotoSlotControls({
               onChange={(posX) => onChange({ ...state, posX })}
             />
           ) : null}
-
           {axes.y ? (
             <Slider
-              label="Geser atas–bawah"
+              label="Geser atas atau bawah"
               min={0}
               max={100}
               step={1}
@@ -148,16 +180,18 @@ function Slider({
 }) {
   return (
     <div>
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full accent-primary"
-      />
+      <label className="block text-base text-muted-foreground">
+        {label}
+        <input
+          type="range"
+          className="ks-range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+      </label>
     </div>
   );
 }

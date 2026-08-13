@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  SLOT_HINTS,
   SLOT_IDS,
   SLOT_LABELS,
   SLOT_SIZES,
@@ -11,7 +12,16 @@ test("there are five slots, each labelled for the participant", () => {
   assert.deepEqual(SLOT_IDS, ["hero", "wide", "detail", "before", "after"]);
   for (const id of SLOT_IDS) {
     assert.ok(SLOT_LABELS[id].length > 0, `${id} needs a label`);
+    assert.ok(SLOT_HINTS[id].length > 0, `${id} needs a hint`);
     assert.ok(SLOT_SIZES[id].width > 0 && SLOT_SIZES[id].height > 0);
+  }
+});
+
+test("slot wording avoids photography jargon", () => {
+  // Participants are teachers and staff of every age, not content creators.
+  const wording = Object.values(SLOT_LABELS).join(" ").toLowerCase();
+  for (const jargon of ["hero", "wide view", "close up", "improvement"]) {
+    assert.ok(!wording.includes(jargon), `label still says "${jargon}"`);
   }
 });
 
