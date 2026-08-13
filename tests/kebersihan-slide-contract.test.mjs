@@ -150,6 +150,34 @@ test("every slide component is locked to 1080x1350", () => {
   }
 });
 
+test("the page never ships user photos anywhere", () => {
+  const client = readFileSync(
+    "src/app/kebersihan/_components/generator-client.tsx",
+    "utf8"
+  );
+  assert.doesNotMatch(client, /\bfetch\(/);
+  assert.doesNotMatch(client, /"use server"/);
+  assert.match(client, /tidak diunggah ke server/);
+});
+
+test("generate stays disabled until all five photos are in", () => {
+  const client = readFileSync(
+    "src/app/kebersihan/_components/generator-client.tsx",
+    "utf8"
+  );
+  assert.match(client, /SLOT_IDS\.every/);
+  assert.match(client, /disabled=\{!ready \|\| busy\}/);
+  // Sequential, never Promise.all: four 1080x1350 rasterizations in parallel
+  // will exhaust memory on a mid-range phone.
+  assert.doesNotMatch(client, /Promise\.all\([^)]*rasterize/);
+  assert.match(client, /for \(const node of/);
+});
+
+test("the page loads the self-hosted carousel fonts", () => {
+  const page = readFileSync("src/app/kebersihan/page.tsx", "utf8");
+  assert.match(page, /kebersihanFontVariables/);
+});
+
 test("no slide file leaves a port placeholder behind", () => {
   const files = [
     "slide-hero.tsx",
