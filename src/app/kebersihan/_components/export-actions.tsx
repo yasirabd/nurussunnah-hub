@@ -1,28 +1,48 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
+import {
+  isLikelyInstagramLink,
+  whatsappShareUrl,
+  whatsappSubmission,
+} from "@/lib/kebersihan/caption.mjs";
 import { slideFileName } from "@/lib/kebersihan/filenames.mjs";
 
 const PRIMARY =
-  "ks-press min-h-14 w-full rounded-xl bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:opacity-60";
+  "ks-press flex min-h-14 w-full items-center justify-center rounded-xl bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:opacity-60";
 const SECONDARY =
-  "ks-press min-h-14 w-full rounded-xl border-2 border-border px-4 text-lg font-semibold";
+  "ks-press flex min-h-14 w-full items-center justify-center rounded-xl border-2 border-border px-4 text-lg font-semibold";
 
 export function ExportActions({
   blobs,
   unit,
   area,
+  members,
   caption,
-  whatsapp,
+  startStep,
 }: {
   blobs: Blob[];
   unit: string;
   area: string;
+  members: string[];
   caption: string;
-  whatsapp: string;
+  startStep: number;
 }) {
   const [sharing, setSharing] = useState(false);
+  const [link, setLink] = useState("");
+
+  const trimmedLink = link.trim();
+  const hasLink = trimmedLink.length > 0;
+  const linkLooksRight = isLikelyInstagramLink(trimmedLink);
+
+  const whatsapp = whatsappSubmission({
+    unit,
+    area,
+    members,
+    link: trimmedLink,
+  });
 
   const files = useMemo(
     () =>
@@ -56,10 +76,10 @@ export function ExportActions({
 
   function download(index: number) {
     const url = URL.createObjectURL(blobs[index]);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = slideFileName({ unit, area, slide: index + 1 });
-    link.click();
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = slideFileName({ unit, area, slide: index + 1 });
+    anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
@@ -73,8 +93,12 @@ export function ExportActions({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <div className="space-y-4">
+      <Step
+        number={startStep}
+        title="Simpan 4 slide ke HP"
+        hint="Keempatnya akan diunggah sebagai satu carousel."
+      >
         {canShare ? (
           <>
             <button
@@ -85,12 +109,11 @@ export function ExportActions({
             >
               Simpan 4 Slide ke HP
             </button>
-            <p className="text-center text-base text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Pilih <b>Simpan Gambar</b> saat menu muncul.
             </p>
           </>
         ) : null}
-
         <div className="grid grid-cols-2 gap-3">
           {blobs.map((_, index) => (
             <button
@@ -103,45 +126,131 @@ export function ExportActions({
             </button>
           ))}
         </div>
-      </div>
+      </Step>
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Caption Instagram</h3>
+      <Step
+        number={startStep + 1}
+        title="Salin caption, lalu posting"
+        hint="Buat satu postingan carousel berisi keempat slide, tempel captionnya, dan pastikan ada @nurussunnah.ig."
+      >
         <textarea
           readOnly
           value={caption}
-          rows={14}
+          rows={12}
           aria-label="Caption Instagram"
           className="w-full rounded-xl border-2 border-border bg-card p-3 text-base"
         />
         <button
           type="button"
           onClick={() => copy(caption, "Caption")}
-          className={SECONDARY}
+          className={PRIMARY}
         >
           Salin Caption
         </button>
-      </div>
+        <a
+          href="https://www.instagram.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={SECONDARY}
+        >
+          Buka Instagram
+        </a>
+      </Step>
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">
-          Teks untuk grup SI Nurus Sunnah
-        </h3>
+      <Step
+        number={startStep + 2}
+        title="Tempel link postingan Anda"
+        hint="Buka postingan tadi, ketuk ⋯ lalu pilih Salin Tautan, dan tempel di sini."
+      >
+        <input
+          value={link}
+          onChange={(event) => setLink(event.target.value)}
+          inputMode="url"
+          placeholder="https://www.instagram.com/p/..."
+          aria-label="Link postingan Instagram"
+          className="min-h-14 w-full rounded-xl border-2 border-border bg-card px-4 text-base"
+        />
+        {hasLink && !linkLooksRight ? (
+          <p className="text-base text-warning-foreground">
+            Sepertinya ini bukan link Instagram. Periksa lagi, tapi Anda tetap
+            bisa melanjutkan.
+          </p>
+        ) : null}
+      </Step>
+
+      <Step
+        number={startStep + 3}
+        title="Kirim ke grup SI Nurus Sunnah"
+        hint="Link inilah bukti keikutsertaan yang dinilai juri."
+      >
         <textarea
           readOnly
           value={whatsapp}
           rows={10}
-          aria-label="Teks share WhatsApp"
+          aria-label="Teks untuk grup WhatsApp"
           className="w-full rounded-xl border-2 border-border bg-card p-3 text-base"
         />
+        {hasLink ? (
+          <a
+            href={whatsappShareUrl(whatsapp)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={PRIMARY}
+          >
+            Kirim lewat WhatsApp
+          </a>
+        ) : (
+          <button type="button" disabled className={PRIMARY}>
+            Kirim lewat WhatsApp
+          </button>
+        )}
+        {!hasLink ? (
+          <p className="text-base text-muted-foreground">
+            Tempel dulu link postingan di langkah {startStep + 2}.
+          </p>
+        ) : (
+          <p className="text-base text-muted-foreground">
+            WhatsApp akan terbuka dengan pesan yang sudah siap. Tinggal pilih
+            grup <b>SI Nurus Sunnah</b>.
+          </p>
+        )}
         <button
           type="button"
           onClick={() => copy(whatsapp, "Teks WhatsApp")}
           className={SECONDARY}
         >
-          Salin Teks WhatsApp
+          Salin Teks Saja
         </button>
-      </div>
+      </Step>
     </div>
+  );
+}
+
+function Step({
+  number,
+  title,
+  hint,
+  children,
+}: {
+  number: number;
+  title: string;
+  hint: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground">
+          {number}
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold leading-tight">{title}</h3>
+          <p className="mt-1 text-base leading-snug text-muted-foreground">
+            {hint}
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 space-y-3">{children}</div>
+    </section>
   );
 }

@@ -13,3 +13,7 @@ export function instagramCaptionShort(input: AreaIdentity): string;
 export function whatsappSubmission(
   input: AreaIdentity & { link: string }
 ): string;
+
+export function whatsappShareUrl(message: string): string;
+
+export function isLikelyInstagramLink(link: string): boolean;

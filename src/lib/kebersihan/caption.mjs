@@ -79,3 +79,23 @@ export function whatsappSubmission({ unit, area, members, link }) {
     link ? link : LINK_PLACEHOLDER,
   ].join('\n')
 }
+
+/**
+ * Opens WhatsApp with the message already written, letting the participant
+ * pick the SI Nurus Sunnah group. Without this they have to copy the text,
+ * switch apps, paste, and then edit the link placeholder inside the compose
+ * box — which is where submissions get lost.
+ */
+export function whatsappShareUrl(message) {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`
+}
+
+/**
+ * Deliberately lenient: participants paste whatever Instagram handed them, and
+ * a wrong guess here should nudge, never block.
+ */
+export function isLikelyInstagramLink(link) {
+  const value = String(link ?? '').trim()
+  if (!value) return false
+  return /^(https?:\/\/)?(www\.)?instagram\.com\/\S+/i.test(value)
+}

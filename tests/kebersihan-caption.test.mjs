@@ -4,6 +4,8 @@ import {
   HASHTAGS,
   instagramCaption,
   instagramCaptionShort,
+  isLikelyInstagramLink,
+  whatsappShareUrl,
   whatsappSubmission,
 } from "../src/lib/kebersihan/caption.mjs";
 
@@ -83,6 +85,42 @@ test("whatsapp submission emoji survive as real code points", () => {
   assert.ok(message.includes("\u{1F1EE}\u{1F1E9}"), "flag missing");
   assert.ok(message.includes("\u{1F465}"), "people emoji missing");
   assert.ok(message.includes("\u{1F517}"), "link emoji missing");
+});
+
+test("whatsapp share url carries the finished message", () => {
+  const message = whatsappSubmission({
+    ...sample,
+    link: "https://instagram.com/p/abc",
+  });
+  const url = whatsappShareUrl(message);
+
+  assert.ok(url.startsWith("https://wa.me/?text="));
+  // No phone number: WhatsApp then lets the participant pick the group.
+  assert.doesNotMatch(url, /wa\.me\/\d/);
+  assert.equal(decodeURIComponent(url.slice("https://wa.me/?text=".length)), message);
+});
+
+test("whatsapp share url escapes newlines and the hash characters", () => {
+  const url = whatsappShareUrl("baris satu\nbaris #dua");
+  assert.ok(!url.includes("\n"), "raw newline would truncate the message");
+  assert.ok(!url.includes("#dua"), "raw # would be read as a URL fragment");
+});
+
+test("instagram links are recognised in the shapes people actually paste", () => {
+  for (const link of [
+    "https://www.instagram.com/p/Cabc123/",
+    "https://instagram.com/p/Cabc123/",
+    "http://instagram.com/reel/xyz",
+    "instagram.com/p/Cabc123/",
+  ]) {
+    assert.equal(isLikelyInstagramLink(link), true, `should accept ${link}`);
+  }
+});
+
+test("obvious non-instagram input is flagged", () => {
+  for (const link of ["", "   ", "https://facebook.com/p/abc", "belum posting"]) {
+    assert.equal(isLikelyInstagramLink(link), false, `should reject "${link}"`);
+  }
 });
 
 test("caption introduces the team warmly instead of labelling it", () => {

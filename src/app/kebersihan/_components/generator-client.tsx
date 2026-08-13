@@ -5,10 +5,7 @@ import { toast } from "sonner";
 import type { SlotId } from "@/lib/kebersihan/slot-sizes.mjs";
 import { SLOT_IDS } from "@/lib/kebersihan/slot-sizes.mjs";
 import { UNIT_OTHER } from "@/lib/kebersihan/units.mjs";
-import {
-  instagramCaption,
-  whatsappSubmission,
-} from "@/lib/kebersihan/caption.mjs";
+import { instagramCaption } from "@/lib/kebersihan/caption.mjs";
 import { decodePhoto } from "@/lib/kebersihan/image-decode";
 import { rasterizeSlide } from "@/lib/kebersihan/rasterize";
 import { AreaForm } from "./area-form";
@@ -112,12 +109,6 @@ export function GeneratorClient() {
     unit: resolvedUnit,
     area: cleanArea,
     members: cleanMembers,
-  });
-  const whatsapp = whatsappSubmission({
-    unit: resolvedUnit,
-    area: cleanArea,
-    members: cleanMembers,
-    link: "",
   });
 
   const slideProps = { areaName: previewArea, unitName: previewUnit };
@@ -265,34 +256,18 @@ export function GeneratorClient() {
 
       <div ref={resultRef} className="scroll-mt-4">
         {blobs.length === 4 ? (
-          <section className="ks-reveal space-y-4">
-            <h2 className="text-xl font-bold">3. Simpan dan Salin</h2>
+          <div className="ks-reveal">
             <ExportActions
               blobs={blobs}
               unit={resolvedUnit}
               area={cleanArea}
+              members={cleanMembers}
               caption={caption}
-              whatsapp={whatsapp}
+              startStep={3}
             />
-          </section>
+          </div>
         ) : null}
       </div>
-
-      <section className="space-y-2 rounded-2xl border border-border bg-card p-4 sm:p-5">
-        <h2 className="text-lg font-semibold">Setelah Slide Tersimpan</h2>
-        <ol className="list-decimal space-y-2 pl-5 text-base">
-          <li>Unggah keempat slide sebagai satu carousel di Instagram.</li>
-          <li>
-            Tempel caption yang sudah disediakan, dan pastikan ada tanda{" "}
-            <b>@nurussunnah.ig</b>.
-          </li>
-          <li>Buka postingan Anda, lalu salin linknya.</li>
-          <li>
-            Kirim link itu ke grup <b>SI Nurus Sunnah</b> memakai teks yang
-            disediakan di atas.
-          </li>
-        </ol>
-      </section>
 
       {/* Always-visible next action. On a long form the primary button is
           otherwise off-screen most of the time, and the count answers the only
