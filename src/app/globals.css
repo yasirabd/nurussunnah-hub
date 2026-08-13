@@ -243,6 +243,22 @@
     box-shadow: 0 1px 5px oklch(0 0 0 / 0.35);
   }
 
+  /* An axis with no slack keeps its row rather than unmounting: sliders that
+     appear mid-drag shove the preview down while the finger is still moving. */
+  .ks-range:disabled {
+    cursor: default;
+  }
+  .ks-range:disabled::-webkit-slider-thumb {
+    background: var(--muted-foreground);
+    box-shadow: none;
+    opacity: 0.45;
+  }
+  .ks-range:disabled::-moz-range-thumb {
+    background: var(--muted-foreground);
+    box-shadow: none;
+    opacity: 0.45;
+  }
+
   /* The preview appearing right after a photo lands. Seen a handful of times
      per session, and it explains where the photo went. */
   .ks-reveal {

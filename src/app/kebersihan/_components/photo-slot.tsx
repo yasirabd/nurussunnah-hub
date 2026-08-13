@@ -126,72 +126,96 @@ export function PhotoSlotControls({
         {state ? "Ganti Foto" : "Pilih Foto"}
       </label>
 
-      {state && (axes.x || axes.y) ? (
-        <div className="ks-reveal mt-4 space-y-1">
-          <p className="text-base font-medium">Atur posisi foto</p>
-          <Slider
-            label="Perbesar"
-            min={1}
-            max={2.5}
-            step={0.01}
-            value={state.zoom}
-            onChange={(zoom) => onChange({ ...state, zoom })}
-          />
-          {axes.x ? (
+      {state ? (
+        <div className="ks-reveal mt-4 rounded-xl border border-border bg-secondary/40 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-base font-semibold">Atur posisi foto</p>
+            <button
+              type="button"
+              onClick={() => onChange({ ...state, zoom: 1, posX: 50, posY: 50 })}
+              disabled={isDefaultCrop(state)}
+              className="ks-press min-h-11 shrink-0 rounded-lg border-2 border-border bg-card px-3 text-base font-medium disabled:opacity-40"
+            >
+              Atur Ulang
+            </button>
+          </div>
+
+          <div className="mt-2 divide-y divide-border">
+            <Slider
+              label="Perbesar"
+              value={state.zoom}
+              display={`${Math.round(state.zoom * 100)}%`}
+              min={1}
+              max={2.5}
+              step={0.01}
+              onChange={(zoom) => onChange({ ...state, zoom })}
+            />
             <Slider
               label="Geser kiri atau kanan"
+              value={state.posX}
               min={0}
               max={100}
               step={1}
-              value={state.posX}
+              disabled={!axes.x}
               onChange={(posX) => onChange({ ...state, posX })}
             />
-          ) : null}
-          {axes.y ? (
             <Slider
               label="Geser atas atau bawah"
+              value={state.posY}
               min={0}
               max={100}
               step={1}
-              value={state.posY}
+              disabled={!axes.y}
               onChange={(posY) => onChange({ ...state, posY })}
             />
-          ) : null}
+          </div>
         </div>
       ) : null}
     </div>
   );
 }
 
+function isDefaultCrop(state: SlotState) {
+  return state.zoom === 1 && state.posX === 50 && state.posY === 50;
+}
+
 function Slider({
   label,
+  display,
   min,
   max,
   step,
   value,
+  disabled = false,
   onChange,
 }: {
   label: string;
+  display?: string;
   min: number;
   max: number;
   step: number;
   value: number;
+  disabled?: boolean;
   onChange: (value: number) => void;
 }) {
   return (
-    <div>
-      <label className="block text-base text-muted-foreground">
-        {label}
-        <input
-          type="range"
-          className="ks-range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(event) => onChange(Number(event.target.value))}
-        />
-      </label>
-    </div>
+    <label className={`block py-1 ${disabled ? "opacity-50" : ""}`}>
+      <span className="flex items-baseline justify-between gap-2">
+        <span className="text-base">{label}</span>
+        <span className="text-base tabular-nums text-muted-foreground">
+          {disabled ? "sudah pas" : display}
+        </span>
+      </span>
+      <input
+        type="range"
+        className="ks-range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
   );
 }
