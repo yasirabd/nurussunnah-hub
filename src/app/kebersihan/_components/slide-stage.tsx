@@ -3,13 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+const SLIDE_WIDTH = 1080;
+const SLIDE_HEIGHT = 1350;
+
 /**
  * Scales a 1080x1350 slide down to fit the viewport for preview.
  *
- * The transform lives on the outer wrapper on purpose: the inner node keeps
- * its real 1080x1350 layout size, so the same node can be handed straight to
- * the rasterizer. One node, one source of truth — what the participant sees is
- * exactly what gets exported.
+ * The scale lives on a wrapper ABOVE the exported node, never on the node
+ * itself. modern-screenshot honours a transform on the node it is given: the
+ * slide would render shrunken inside a full 1080x1350 canvas, and the leftover
+ * area — transparent, and JPEG has no alpha channel — would come out black.
+ *
+ * Keeping the inner node at its true 1080x1350 means one node serves both the
+ * preview and the export, so what the participant sees is what they get.
  */
 export function SlideStage({
   children,
@@ -25,7 +31,7 @@ export function SlideStage({
     const element = outerRef.current;
     if (!element) return;
     const observer = new ResizeObserver(([entry]) => {
-      setScale(entry.contentRect.width / 1080);
+      setScale(entry.contentRect.width / SLIDE_WIDTH);
     });
     observer.observe(element);
     return () => observer.disconnect();
@@ -33,17 +39,21 @@ export function SlideStage({
 
   return (
     <div ref={outerRef} className="w-full overflow-hidden">
-      <div style={{ height: 1350 * scale }}>
+      <div style={{ height: SLIDE_HEIGHT * scale }}>
         <div
-          ref={nodeRef}
           style={{
-            width: 1080,
-            height: 1350,
+            width: SLIDE_WIDTH,
+            height: SLIDE_HEIGHT,
             transform: `scale(${scale})`,
             transformOrigin: "top left",
           }}
         >
-          {children}
+          <div
+            ref={nodeRef}
+            style={{ width: SLIDE_WIDTH, height: SLIDE_HEIGHT }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>

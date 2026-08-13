@@ -173,6 +173,32 @@ test("generate stays disabled until all five photos are in", () => {
   assert.match(client, /for \(const node of/);
 });
 
+test("the rasterized node carries no scale transform", () => {
+  const stage = readFileSync(
+    "src/app/kebersihan/_components/slide-stage.tsx",
+    "utf8"
+  );
+  const transformIndex = stage.indexOf("transform:");
+  const nodeRefIndex = stage.indexOf("ref={nodeRef}");
+
+  assert.ok(transformIndex > 0, "preview must scale the slide somewhere");
+  assert.ok(nodeRefIndex > 0, "stage must expose the slide node via nodeRef");
+
+  // The scale has to live on a wrapper ABOVE the rasterized node. When it sits
+  // on the node itself, modern-screenshot captures the shrunken render inside a
+  // full 1080x1350 canvas and the remainder stays transparent — which JPEG,
+  // having no alpha channel, flattens to black.
+  assert.ok(
+    transformIndex < nodeRefIndex,
+    "scale must sit on the wrapper, above the node handed to the rasterizer"
+  );
+  assert.doesNotMatch(
+    stage.slice(nodeRefIndex),
+    /transform/,
+    "the node handed to the rasterizer must not be transformed"
+  );
+});
+
 test("the page loads the self-hosted carousel fonts", () => {
   const page = readFileSync("src/app/kebersihan/page.tsx", "utf8");
   assert.match(page, /kebersihanFontVariables/);
