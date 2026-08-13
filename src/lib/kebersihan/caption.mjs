@@ -14,23 +14,28 @@ function numberedMembers(members) {
     .join('\n')
 }
 
+// Warmth comes from concrete detail and short sentences, not from adjectives.
+// The earlier draft opened like a press release ("Dalam semangat HUT ke-81
+// Republik Indonesia, kami berikhtiar...") and recited the three values in a
+// paragraph of their own, which read as institutional rather than human.
 export function instagramCaption({ unit, area, members }) {
   return [
     '🇮🇩 Bersih Tempatnya, Bangga Menjaganya',
     '',
-    'Dalam semangat HUT ke-81 Republik Indonesia, kami berikhtiar menjaga tempat kami bekerja dan berkhidmat agar tetap bersih, rapi, nyaman, dan terawat.',
+    'Hari ini kami membenahi tempat kami sendiri. Menyapu, merapikan, mengembalikan setiap barang ke tempatnya. Pekerjaan yang sederhana, tapi rasanya berbeda setelah selesai.',
     '',
-    `📍 Area: ${area}`,
-    `🏫 Unit: ${unit}`,
+    `📍 ${area}`,
+    `🏫 ${unit}`,
     '',
-    'Anggota area:',
+    'Terima kasih untuk yang mengerjakannya bersama-sama:',
     numberedMembers(members),
     '',
-    'Di Nurus Sunnah, kami belajar untuk cerdas dalam menata, mandiri dalam menjaga, dan menjadikan kebersihan sebagai bagian dari amanah dalam berkhidmat.',
+    'Bagi kami, menjaga kebersihan bukan karena akan dinilai, tapi karena tempat ini amanah yang Allah titipkan. Semoga yang kami rawat hari ini tetap terjaga sampai seterusnya.',
     '',
-    'Karena rasa memiliki tidak cukup hanya diucapkan. Ia terlihat dari bagaimana kita menjaga tempat yang telah Allah amanahkan kepada kita.',
+    'Selamat HUT ke-81 Republik Indonesia.',
+    'Indonesia Berdaulat, Adil, dan Makmur.',
     '',
-    'Bersih Tempatnya, Bangga Menjaganya.',
+    'Bersih Tempatnya, Bangga Menjaganya',
     'Cerdas • Mandiri • Berkarakter Qur’ani',
     '',
     '@nurussunnah.ig',
@@ -43,14 +48,17 @@ export function instagramCaptionShort({ unit, area, members }) {
   return [
     '🇮🇩 Bersih Tempatnya, Bangga Menjaganya',
     '',
-    `📍 Area: ${area}`,
-    `🏫 Unit: ${unit}`,
+    'Kami membenahi tempat kami sendiri hari ini. Sederhana, tapi rasanya berbeda setelah selesai.',
     '',
-    'Anggota area:',
+    `📍 ${area}`,
+    `🏫 ${unit}`,
+    '',
+    'Terima kasih untuk yang mengerjakannya bersama-sama:',
     numberedMembers(members),
     '',
-    'Cerdas • Mandiri • Berkarakter Qur’ani',
+    'Selamat HUT ke-81 Republik Indonesia.',
     '',
+    'Cerdas • Mandiri • Berkarakter Qur’ani',
     '@nurussunnah.ig',
     '',
     HASHTAGS.join(' '),

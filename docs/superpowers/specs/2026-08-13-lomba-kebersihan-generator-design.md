@@ -414,23 +414,25 @@ menyentuh `units.mjs`.
 ```
 🇮🇩 Bersih Tempatnya, Bangga Menjaganya
 
-Dalam semangat HUT ke-81 Republik Indonesia, kami berikhtiar menjaga tempat
-kami bekerja dan berkhidmat agar tetap bersih, rapi, nyaman, dan terawat.
+Hari ini kami membenahi tempat kami sendiri. Menyapu, merapikan,
+mengembalikan setiap barang ke tempatnya. Pekerjaan yang sederhana, tapi
+rasanya berbeda setelah selesai.
 
-📍 Area: {AREA}
-🏫 Unit: {UNIT}
+📍 {AREA}
+🏫 {UNIT}
 
-Anggota area:
+Terima kasih untuk yang mengerjakannya bersama-sama:
 1. {ANGGOTA_1}
 2. {ANGGOTA_2}
 
-Di Nurus Sunnah, kami belajar untuk cerdas dalam menata, mandiri dalam menjaga,
-dan menjadikan kebersihan sebagai bagian dari amanah dalam berkhidmat.
+Bagi kami, menjaga kebersihan bukan karena akan dinilai, tapi karena tempat
+ini amanah yang Allah titipkan. Semoga yang kami rawat hari ini tetap
+terjaga sampai seterusnya.
 
-Karena rasa memiliki tidak cukup hanya diucapkan. Ia terlihat dari bagaimana
-kita menjaga tempat yang telah Allah amanahkan kepada kita.
+Selamat HUT ke-81 Republik Indonesia.
+Indonesia Berdaulat, Adil, dan Makmur.
 
-Bersih Tempatnya, Bangga Menjaganya.
+Bersih Tempatnya, Bangga Menjaganya
 Cerdas • Mandiri • Berkarakter Qur'ani
 
 @nurussunnah.ig
@@ -440,6 +442,19 @@ Cerdas • Mandiri • Berkarakter Qur'ani
 ```
 
 Tepat 5 hashtag.
+
+**Nada.** Kehangatan datang dari detail konkret dan kalimat pendek, bukan dari
+kata sifat. Draf pertama membuka seperti siaran pers ("Dalam semangat HUT ke-81
+Republik Indonesia, kami berikhtiar…") dan membacakan ketiga value dalam satu
+paragraf tersendiri, sehingga terasa kelembagaan alih-alih manusiawi. Daftar
+anggota juga dibuka dengan ucapan terima kasih, bukan label "Anggota area:".
+
+**Emoji.** Hanya 🇮🇩 📍 🏫 di caption, dan 🇮🇩 📍 🏫 👥 🔗 di teks WhatsApp.
+Bendera adalah pasangan regional indicator `U+1F1EE U+1F1E9`; **Windows
+menampilkannya sebagai huruf "ID"** karena Segoe UI Emoji tidak memuat glyph
+bendera negara, sedangkan Android, iOS, dan Instagram menampilkannya sebagai
+bendera. Ini bukan kerusakan encoding. Sebuah test menguji code point-nya
+persis, karena `scripts/seed.mjs` di repo ini membuktikan mojibake bisa terjadi.
 
 ### `whatsappSubmission({ unit, area, members, link })`
 

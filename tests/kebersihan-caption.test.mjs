@@ -57,3 +57,36 @@ test("missing link becomes a visible prompt, not a blank line", () => {
 test("a single member still renders as a numbered list", () => {
   assert.match(instagramCaption({ ...sample, members: ["Ahmad"] }), /1\. Ahmad/);
 });
+
+// scripts/seed.mjs in this repo is full of mojibake, so encoding damage is a
+// demonstrated risk here rather than a theoretical one. These assert the exact
+// code points, which a mangled re-save would break.
+test("caption emoji survive as real code points", () => {
+  const caption = instagramCaption(sample);
+  assert.ok(
+    !caption.includes("�"),
+    "caption contains a replacement character"
+  );
+  assert.ok(
+    caption.includes("\u{1F1EE}\u{1F1E9}"),
+    "Indonesian flag must stay a regional indicator pair"
+  );
+  assert.ok(caption.includes("\u{1F4CD}"), "location pin missing");
+  assert.ok(caption.includes("\u{1F3EB}"), "school emoji missing");
+  assert.ok(caption.includes("•"), "bullet separator missing");
+  assert.ok(caption.includes("Qur’ani"), "curly apostrophe mangled");
+});
+
+test("whatsapp submission emoji survive as real code points", () => {
+  const message = whatsappSubmission({ ...sample, link: "" });
+  assert.ok(!message.includes("�"));
+  assert.ok(message.includes("\u{1F1EE}\u{1F1E9}"), "flag missing");
+  assert.ok(message.includes("\u{1F465}"), "people emoji missing");
+  assert.ok(message.includes("\u{1F517}"), "link emoji missing");
+});
+
+test("caption introduces the team warmly instead of labelling it", () => {
+  const caption = instagramCaption(sample);
+  assert.match(caption, /Terima kasih/);
+  assert.doesNotMatch(caption, /^Anggota area:/m);
+});
