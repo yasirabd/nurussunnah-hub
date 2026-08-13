@@ -53,3 +53,6 @@ tmp-css.txt
 
 # generated binaries
 dist/
+
+# Claude Code local machine settings (permission allowlist, not shareable)
+.claude/settings.local.json
