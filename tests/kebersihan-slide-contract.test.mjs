@@ -67,3 +67,48 @@ test("the bucket keeps its handle arc and tapered body", () => {
   assert.match(deco, /6px solid #801A1F/);
   assert.match(deco, /polygon\(4% 0, 96% 0, 84% 100%, 16% 100%\)/);
 });
+
+test("slide 1 renders a full-size canvas with the designed copy", () => {
+  const hero = readFileSync(`${SLIDES_DIR}/slide-hero.tsx`, "utf8");
+  assert.match(hero, /export function SlideHero/);
+  assert.match(hero, /width: SLIDE_WIDTH/);
+  assert.match(hero, /height: SLIDE_HEIGHT/);
+  assert.match(hero, /BERSIH TEMPATNYA,/);
+  assert.match(hero, /bangga menjaganya/);
+  assert.match(hero, /LOMBA KEBERSIHAN NURUS SUNNAH 2026/);
+  assert.match(hero, /HR\. Muslim no\. 328/);
+  assert.match(hero, /@nurussunnah\.ig/);
+  assert.match(hero, /FONT_ARABIC/);
+  assert.match(hero, /height=\{58\}/);
+  assert.match(hero, /slot="hero"/);
+});
+
+test("slide 1 keeps the rotated HUT-81 badge and logo plate", () => {
+  const hero = readFileSync(`${SLIDES_DIR}/slide-hero.tsx`, "utf8");
+  assert.match(hero, /rotate\(3deg\)/);
+  assert.match(hero, /\/kebersihan\/hut81\.webp/);
+  assert.match(hero, /\/kebersihan\/logo\.png/);
+  assert.match(hero, /YAYASAN ISLAM/);
+});
+
+test("no slide file leaves a port placeholder behind", () => {
+  const files = [
+    "slide-hero.tsx",
+    "slide-wide.tsx",
+    "slide-detail.tsx",
+    "slide-improvement.tsx",
+  ];
+  for (const file of files) {
+    let source;
+    try {
+      source = readFileSync(`${SLIDES_DIR}/${file}`, "utf8");
+    } catch {
+      continue; // not ported yet
+    }
+    assert.doesNotMatch(
+      source,
+      /port from reference|\.\.\.\s*port|TODO|FIXME/i,
+      `${file} still contains a port placeholder`
+    );
+  }
+});
