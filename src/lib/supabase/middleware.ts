@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { AUTH_PASS_THROUGH_ROUTES, isPublicRoute } from '@/lib/auth/public-routes.mjs'
 import type { Database } from '@/types/database'
 
 export async function updateSession(request: NextRequest) {
@@ -37,20 +38,13 @@ export async function updateSession(request: NextRequest) {
 
   const url = request.nextUrl.clone()
   const isAuthRoute = url.pathname.startsWith('/auth')
-  const authPassThroughRoutes = ['/auth/callback', '/auth/logout', '/auth/reset-password']
-  const isPublicRoute = [
-    '/auth/login',
-    '/auth/forgot-password',
-    '/register',
-    ...authPassThroughRoutes,
-  ].includes(url.pathname)
 
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute(url.pathname)) {
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
 
-  if (user && isAuthRoute && !authPassThroughRoutes.includes(url.pathname)) {
+  if (user && isAuthRoute && !AUTH_PASS_THROUGH_ROUTES.includes(url.pathname)) {
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
