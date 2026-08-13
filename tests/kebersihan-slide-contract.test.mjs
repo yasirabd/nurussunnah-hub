@@ -119,6 +119,37 @@ test("slide 2 and slide 3 keep their distinct framing and copy", () => {
   }
 });
 
+test("slide 4 shows before and after with their pills", () => {
+  const slide = readFileSync(`${SLIDES_DIR}/slide-improvement.tsx`, "utf8");
+  assert.match(slide, /export function SlideImprovement/);
+  assert.match(slide, /SEBELUM/);
+  assert.match(slide, /SESUDAH/);
+  assert.match(slide, /rotate\(-2deg\)/);
+  assert.match(slide, /rotate\(1\.5deg\)/);
+  assert.match(slide, /Kami menjaga,/);
+  assert.match(slide, /bukan hanya membersihkan/);
+  assert.match(slide, /zIndex=\{3\}/);
+  assert.match(slide, /slot="before"/);
+  assert.match(slide, /slot="after"/);
+  assert.match(slide, /6px solid #C9A24B/);
+});
+
+test("every slide component is locked to 1080x1350", () => {
+  const slides = {
+    "slide-hero.tsx": "SlideHero",
+    "slide-wide.tsx": "SlideWide",
+    "slide-detail.tsx": "SlideDetail",
+    "slide-improvement.tsx": "SlideImprovement",
+  };
+  for (const [file, name] of Object.entries(slides)) {
+    const source = readFileSync(`${SLIDES_DIR}/${file}`, "utf8");
+    assert.match(source, new RegExp(`export function ${name}`));
+    assert.match(source, /width: SLIDE_WIDTH/);
+    assert.match(source, /height: SLIDE_HEIGHT/);
+    assert.match(source, /fontFamily: FONT_SANS/);
+  }
+});
+
 test("no slide file leaves a port placeholder behind", () => {
   const files = [
     "slide-hero.tsx",
