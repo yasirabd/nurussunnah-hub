@@ -43,3 +43,27 @@ test("header points at the self-hosted assets", () => {
   assert.match(header, /\/kebersihan\/hut81\.webp/);
   assert.match(header, /Lomba Kebersihan Nurus Sunnah 2026/);
 });
+
+test("decorations expose the reusable ornament primitives", () => {
+  const deco = readFileSync(`${SLIDES_DIR}/decorations.tsx`, "utf8");
+  for (const name of ["Sparkle", "Bubble", "Broom", "SprayBottle", "Bucket"]) {
+    assert.match(deco, new RegExp(`export function ${name}`), `missing ${name}`);
+  }
+  assert.match(
+    deco,
+    /polygon\(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%\)/
+  );
+});
+
+test("the broom supports both the solid head and slide 3's bristles", () => {
+  const deco = readFileSync(`${SLIDES_DIR}/decorations.tsx`, "utf8");
+  assert.match(deco, /bristles/);
+  assert.match(deco, /#F4E3B8/);
+  assert.match(deco, /repeating-linear-gradient\(90deg, rgba\(140,95,30,0\.35\) 0 5px, transparent 5px 13px\)/);
+});
+
+test("the bucket keeps its handle arc and tapered body", () => {
+  const deco = readFileSync(`${SLIDES_DIR}/decorations.tsx`, "utf8");
+  assert.match(deco, /6px solid #801A1F/);
+  assert.match(deco, /polygon\(4% 0, 96% 0, 84% 100%, 16% 100%\)/);
+});
