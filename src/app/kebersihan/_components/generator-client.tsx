@@ -8,6 +8,7 @@ import { UNIT_OTHER } from "@/lib/kebersihan/units.mjs";
 import { instagramCaption } from "@/lib/kebersihan/caption.mjs";
 import { decodePhoto } from "@/lib/kebersihan/image-decode";
 import { rasterizeSlide } from "@/lib/kebersihan/rasterize";
+import { slideSignature } from "@/lib/kebersihan/slide-signature.mjs";
 import { AreaForm } from "./area-form";
 import { ExportActions } from "./export-actions";
 import { InAppBrowserNotice } from "./in-app-browser-notice";
@@ -62,6 +63,20 @@ export function GeneratorClient() {
   const previewArea = cleanArea || "Nama Area";
   const previewUnit = resolvedUnit || "Nama Unit";
 
+  // Exports are only valid for the content they were rendered from. Change a
+  // name or a crop afterwards and the saved JPEGs quietly disagree with the
+  // caption, so they are discarded and the button comes back.
+  const signature = slideSignature({
+    area: previewArea,
+    unit: previewUnit,
+    slots,
+  });
+  useEffect(() => {
+    setBlobs([]);
+  }, [signature]);
+
+  const slidesReady = blobs.length === 4;
+
   async function pickPhoto(id: SlotId, file: File) {
     try {
       const decoded = await decodePhoto(file);
@@ -70,7 +85,6 @@ export function GeneratorClient() {
         if (previous) URL.revokeObjectURL(previous.src);
         return { ...current, [id]: { ...decoded, zoom: 1, posX: 50, posY: 50 } };
       });
-      setBlobs([]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Foto gagal dibaca.");
     }
@@ -114,7 +128,11 @@ export function GeneratorClient() {
   const slideProps = { areaName: previewArea, unitName: previewUnit };
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-10 px-4 pt-10 pb-32">
+    <div
+      className={`mx-auto w-full max-w-2xl space-y-10 px-4 pt-10 ${
+        slidesReady ? "pb-12" : "pb-32"
+      }`}
+    >
       <header className="space-y-4 text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -255,7 +273,7 @@ export function GeneratorClient() {
       </section>
 
       <div ref={resultRef} className="scroll-mt-4">
-        {blobs.length === 4 ? (
+        {slidesReady ? (
           <div className="ks-reveal">
             <ExportActions
               blobs={blobs}
@@ -269,28 +287,32 @@ export function GeneratorClient() {
         ) : null}
       </div>
 
-      {/* Always-visible next action. On a long form the primary button is
-          otherwise off-screen most of the time, and the count answers the only
-          question the participant has: what is still missing? */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <div className="mx-auto w-full max-w-2xl">
-          <button
-            type="button"
-            onClick={generate}
-            disabled={!ready || busy}
-            className="ks-press min-h-14 w-full rounded-xl bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:opacity-50"
-          >
-            {busy ? "Sedang membuat slide…" : "Buat 4 Slide"}
-          </button>
-          {!ready ? (
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              {!identityDone
-                ? "Lengkapi unit, nama area, dan anggota dulu."
-                : `Kurang ${5 - photosDone} foto lagi.`}
-            </p>
-          ) : null}
+      {/* The next action, kept on screen while there still is one. On a long
+          form the primary button is otherwise off-screen most of the time, and
+          the count answers the participant's only question: what is missing?
+          Once the slides exist the bar retires — the work has moved to the
+          numbered steps, and a stale button would just cover them. */}
+      {!slidesReady ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto w-full max-w-2xl">
+            <button
+              type="button"
+              onClick={generate}
+              disabled={!ready || busy}
+              className="ks-press min-h-14 w-full rounded-xl bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              {busy ? "Sedang membuat slide…" : "Buat 4 Slide"}
+            </button>
+            {!ready ? (
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                {!identityDone
+                  ? "Lengkapi unit, nama area, dan anggota dulu."
+                  : `Kurang ${5 - photosDone} foto lagi.`}
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
