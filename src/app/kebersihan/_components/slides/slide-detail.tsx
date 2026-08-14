@@ -137,7 +137,7 @@ export function SlideDetail({
             marginBottom: 12,
           }}
         >
-          TERTIB & AMANAH
+          RESIK SAMPAI SUDUT
         </div>
         <div
           style={{

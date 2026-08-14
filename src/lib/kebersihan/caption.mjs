@@ -1,9 +1,9 @@
 export const HASHTAGS = [
-  '#LombaKebersihanNurusSunnah',
+  '#Lomba5RNurusSunnah',
+  '#RingkasRapiResikRawatRajin',
   '#BersihTempatnyaBanggaMenjaganya',
   '#NurusSunnah',
   '#HUTRI81',
-  '#CerdasMandiriBerkarakterQurani',
 ]
 
 const LINK_PLACEHOLDER = '(tempel link postingan di sini)'
@@ -22,7 +22,7 @@ export function instagramCaption({ unit, area, members }) {
   return [
     '🇮🇩 Bersih Tempatnya, Bangga Menjaganya',
     '',
-    'Hari ini kami membenahi tempat kami sendiri. Menyapu, merapikan, mengembalikan setiap barang ke tempatnya. Pekerjaan yang sederhana, tapi rasanya berbeda setelah selesai.',
+    'Hari ini kami membenahi tempat kami sendiri. Menyisihkan barang yang tidak lagi terpakai, mengembalikan sisanya ke tempatnya, lalu membersihkan sampai ke sudut. Pekerjaan yang sederhana, tapi rasanya berbeda setelah selesai.',
     '',
     `📍 ${area}`,
     `🏫 ${unit}`,
@@ -30,12 +30,13 @@ export function instagramCaption({ unit, area, members }) {
     'Terima kasih untuk yang mengerjakannya bersama-sama:',
     numberedMembers(members),
     '',
-    'Bagi kami, menjaga kebersihan bukan karena akan dinilai, tapi karena tempat ini amanah yang Allah titipkan. Semoga yang kami rawat hari ini tetap terjaga sampai seterusnya.',
+    'Bagi kami, 5R bukan soal dinilai, tapi soal merawat tempat yang Allah titipkan. Semoga yang kami benahi hari ini menjadi kebiasaan, bukan kerja sekali jalan.',
     '',
     'Selamat HUT ke-81 Republik Indonesia.',
     'Indonesia Berdaulat, Adil, dan Makmur.',
     '',
     'Bersih Tempatnya, Bangga Menjaganya',
+    'Ringkas • Rapi • Resik • Rawat • Rajin',
     'Cerdas • Mandiri • Berkarakter Qur’ani',
     '',
     '@nurussunnah.ig',
@@ -58,6 +59,7 @@ export function instagramCaptionShort({ unit, area, members }) {
     '',
     'Selamat HUT ke-81 Republik Indonesia.',
     '',
+    'Ringkas • Rapi • Resik • Rawat • Rajin',
     'Cerdas • Mandiri • Berkarakter Qur’ani',
     '@nurussunnah.ig',
     '',
@@ -72,7 +74,7 @@ export function instagramCaptionShort({ unit, area, members }) {
 // use, where legibility beats decoration.
 export function whatsappSubmission({ unit, area, members, link }) {
   return [
-    'Lomba Kebersihan Nurus Sunnah 2026',
+    'Lomba 5R Nurus Sunnah 2026',
     '',
     `🏫 Unit: ${unit}`,
     `📍 Area: ${area}`,

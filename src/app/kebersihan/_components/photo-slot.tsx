@@ -4,6 +4,7 @@ import type { SlotId } from "@/lib/kebersihan/slot-sizes.mjs";
 import {
   SLOT_HINTS,
   SLOT_LABELS,
+  SLOT_PRINCIPLES,
   SLOT_SIZES,
 } from "@/lib/kebersihan/slot-sizes.mjs";
 import { positionAxes } from "@/lib/kebersihan/crop-axes.mjs";
@@ -95,6 +96,11 @@ export function PhotoSlotControls({
           <h3 className="text-lg font-semibold leading-tight">
             {SLOT_LABELS[slot]}
           </h3>
+          {SLOT_PRINCIPLES[slot] ? (
+            <span className="mt-1 inline-block rounded-full bg-primary/10 px-3 py-0.5 text-sm font-semibold text-primary">
+              Menilai {SLOT_PRINCIPLES[slot]}
+            </span>
+          ) : null}
           <p className="mt-1 text-base leading-snug text-muted-foreground">
             {SLOT_HINTS[slot]}
           </p>

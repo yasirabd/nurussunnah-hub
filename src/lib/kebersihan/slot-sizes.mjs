@@ -19,10 +19,20 @@ export const SLOT_LABELS = {
   after: 'Sesudah Dibersihkan',
 }
 
+// Which of the five R each photo is there to show. Naming them tells the
+// participant what the judges will actually look for in that frame.
+export const SLOT_PRINCIPLES = {
+  hero: null,
+  wide: 'Ringkas & Rapi',
+  detail: 'Resik',
+  before: 'Rawat & Rajin',
+  after: 'Rawat & Rajin',
+}
+
 export const SLOT_HINTS = {
   hero: 'Foto terbaik area kerja Anda. Inilah yang pertama dilihat orang di Instagram.',
-  wide: 'Ambil dari pintu atau sudut ruangan, supaya lantai, meja, dan lemari terlihat semua.',
-  detail: 'Dekatkan kamera ke meja, rak, label, atau sudut yang paling rapi.',
-  before: 'Kondisi area sebelum dibersihkan.',
-  after: 'Sudut yang sama setelah dibersihkan dan ditata.',
+  wide: 'Ambil dari pintu atau sudut ruangan. Terlihat bahwa tidak ada barang menumpuk dan semuanya pada tempatnya.',
+  detail: 'Dekatkan kamera ke meja, rak, label, atau sudut yang paling bersih.',
+  before: 'Kondisi area sebelum dibenahi.',
+  after: 'Sudut yang sama setelah dibenahi, lengkap dengan label atau checklist bila ada.',
 }

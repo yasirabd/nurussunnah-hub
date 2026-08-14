@@ -184,7 +184,7 @@
   .state-hover { @apply transition-colors duration-200; }
 }
 
-/* ── Lomba Kebersihan generator ───────────────────────────────────────────
+/* ── Lomba 5R generator ───────────────────────────────────────────────────
    Public page used by staff of every age on their own phones, so the
    controls are sized for imprecise taps rather than for density. */
 @layer components {

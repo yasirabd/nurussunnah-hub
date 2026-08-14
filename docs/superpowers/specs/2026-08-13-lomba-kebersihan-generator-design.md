@@ -1,8 +1,20 @@
-# Desain: Generator Carousel Lomba Kebersihan Nurus Sunnah 2026
+# Desain: Generator Carousel Lomba 5R Nurus Sunnah 2026
 
 **Tanggal:** 13 Agustus 2026
-**Status:** Revisi 2 — mesin render diganti setelah desain resmi tersedia
+**Status:** Revisi 3 — lomba diketahui berkerangka 5R, bukan sekadar kebersihan
 **Route:** `/kebersihan` (publik, tanpa login) — target `hub.nurussunnah.com/kebersihan`
+
+> **Revisi 3 mengubah kerangka lombanya, bukan mekanismenya.** Lomba ini adalah
+> **Lomba 5R — Ringkas, Rapi, Resik, Rawat, Rajin** (padanan Indonesia untuk 5S
+> Jepang), di mana Resik hanya satu dari lima. Seluruh arsitektur, rasterisasi,
+> route, dan struktur foto revisi 2 tetap berlaku. Yang berubah: penyebutan
+> lomba di slide dan halaman, teks caption, hashtag, dan penambahan `SLOT_PRINCIPLES`
+> yang menamai R mana yang dinilai dari tiap foto.
+>
+> Karena teks itu tercetak **di dalam slide** hasil port desain, berkas rujukan
+> `docs/superpowers/reference/twibbon-lomba-kebersihan-v2.html` ikut disunting
+> agar port dan rujukannya tidak berselisih. **Proyek Claude Design milik PIC
+> belum diperbarui**, jadi berkas rujukan di repo inilah yang sekarang berlaku.
 
 > **Revisi 2 mengganti keputusan inti revisi 1.** Revisi 1 menggambar slide manual
 > dengan Canvas 2D karena belum ada desain resmi. Desain resmi kini tersedia
@@ -219,6 +231,30 @@ Lima slot, dimensi diambil dari kontainer masing-masing di desain:
 | `before` | 4 | 620 × 440 | 1,409 |
 | `after` | 4 | 740 × 450 | 1,644 |
 
+### 6.3.1 R yang dinilai tiap slot
+
+`SLOT_PRINCIPLES` menamai prinsip mana yang dibuktikan oleh tiap foto, dan
+ditampilkan sebagai lencana di atas pemilih fotonya. Tanpa ini peserta menebak
+apa yang dicari juri dari sebuah frame.
+
+| Slot | R yang dinilai |
+|---|---|
+| `hero` | — (foto sampul, bukan bukti satu prinsip) |
+| `wide` | Ringkas & Rapi |
+| `detail` | Resik |
+| `before` | Rawat & Rajin |
+| `after` | Rawat & Rajin |
+
+Struktur foto **tidak berubah** dari revisi 2. Lima slot yang sama tetap
+memberi makan empat slide yang sama; yang bertambah hanya penamaan prinsipnya.
+Alternatif "satu foto per R" ditolak karena akan mengubah makna tiap slot dan
+memaksa desain slide dirombak dua hari sebelum lomba.
+
+Kelima R juga muncul di slide itu sendiri: `Ringkas • Rapi • resik` sebagai
+headline slide 2, `RESIK SAMPAI SUDUT` sebagai kicker slide 3, dan
+`RAWAT & RAJIN` sebagai kicker baru di kartu slide 4. Sebuah test menolak
+keadaan di mana salah satu R tidak disebut di slide mana pun.
+
 `wide` dan `detail` berasal dari kontainer `top:130 left:36 right:36 bottom:340`
 pada kanvas 1080×1350 → 1008 × 880.
 
@@ -414,9 +450,9 @@ menyentuh `units.mjs`.
 ```
 🇮🇩 Bersih Tempatnya, Bangga Menjaganya
 
-Hari ini kami membenahi tempat kami sendiri. Menyapu, merapikan,
-mengembalikan setiap barang ke tempatnya. Pekerjaan yang sederhana, tapi
-rasanya berbeda setelah selesai.
+Hari ini kami membenahi tempat kami sendiri. Menyisihkan barang yang tidak
+lagi terpakai, mengembalikan sisanya ke tempatnya, lalu membersihkan sampai
+ke sudut. Pekerjaan yang sederhana, tapi rasanya berbeda setelah selesai.
 
 📍 {AREA}
 🏫 {UNIT}
@@ -425,20 +461,21 @@ Terima kasih untuk yang mengerjakannya bersama-sama:
 1. {ANGGOTA_1}
 2. {ANGGOTA_2}
 
-Bagi kami, menjaga kebersihan bukan karena akan dinilai, tapi karena tempat
-ini amanah yang Allah titipkan. Semoga yang kami rawat hari ini tetap
-terjaga sampai seterusnya.
+Bagi kami, 5R bukan soal dinilai, tapi soal merawat tempat yang Allah
+titipkan. Semoga yang kami benahi hari ini menjadi kebiasaan, bukan kerja
+sekali jalan.
 
 Selamat HUT ke-81 Republik Indonesia.
 Indonesia Berdaulat, Adil, dan Makmur.
 
 Bersih Tempatnya, Bangga Menjaganya
+Ringkas • Rapi • Resik • Rawat • Rajin
 Cerdas • Mandiri • Berkarakter Qur'ani
 
 @nurussunnah.ig
 
-#LombaKebersihanNurusSunnah #BersihTempatnyaBanggaMenjaganya #NurusSunnah
-#HUTRI81 #CerdasMandiriBerkarakterQurani
+#Lomba5RNurusSunnah #RingkasRapiResikRawatRajin
+#BersihTempatnyaBanggaMenjaganya #NurusSunnah #HUTRI81
 ```
 
 Tepat 5 hashtag.

@@ -41,7 +41,7 @@ test("header points at the self-hosted assets", () => {
   const header = readFileSync(`${SLIDES_DIR}/slide-header.tsx`, "utf8");
   assert.match(header, /\/kebersihan\/logo\.png/);
   assert.match(header, /\/kebersihan\/hut81\.webp/);
-  assert.match(header, /Lomba Kebersihan Nurus Sunnah 2026/);
+  assert.match(header, /Lomba 5R Nurus Sunnah 2026/);
 });
 
 test("decorations expose the reusable ornament primitives", () => {
@@ -75,7 +75,7 @@ test("slide 1 renders a full-size canvas with the designed copy", () => {
   assert.match(hero, /height: SLIDE_HEIGHT/);
   assert.match(hero, /BERSIH TEMPATNYA,/);
   assert.match(hero, /bangga menjaganya/);
-  assert.match(hero, /LOMBA KEBERSIHAN NURUS SUNNAH 2026/);
+  assert.match(hero, /LOMBA 5R NURUS SUNNAH 2026/);
   assert.match(hero, /HR\. Muslim no\. 328/);
   assert.match(hero, /@nurussunnah\.ig/);
   assert.match(hero, /FONT_ARABIC/);
@@ -102,7 +102,7 @@ test("slide 2 and slide 3 keep their distinct framing and copy", () => {
   assert.match(wide, /slot="wide"/);
 
   assert.match(detail, /export function SlideDetail/);
-  assert.match(detail, /TERTIB & AMANAH/);
+  assert.match(detail, /RESIK SAMPAI SUDUT/);
   assert.match(detail, /36px 300px 36px 36px/);
   assert.match(detail, /rotate\(1deg\)/);
   assert.match(detail, /slot="detail"/);
@@ -202,6 +202,37 @@ test("the rasterized node carries no scale transform", () => {
 test("the page loads the self-hosted carousel fonts", () => {
   const page = readFileSync("src/app/kebersihan/page.tsx", "utf8");
   assert.match(page, /kebersihanFontVariables/);
+});
+
+test("every one of the five R is named across the slides", () => {
+  // The competition is judged on all five, so a carousel that only ever says
+  // "resik" misrepresents what the area was assessed on.
+  const combined = [
+    "slide-hero.tsx",
+    "slide-wide.tsx",
+    "slide-detail.tsx",
+    "slide-improvement.tsx",
+  ]
+    .map((file) => readFileSync(`${SLIDES_DIR}/${file}`, "utf8"))
+    .join("\n")
+    .toLowerCase();
+
+  for (const principle of ["ringkas", "rapi", "resik", "rawat", "rajin"]) {
+    assert.ok(combined.includes(principle), `no slide mentions ${principle}`);
+  }
+});
+
+test("slides no longer call it a cleanliness contest", () => {
+  const combined = [
+    "slide-hero.tsx",
+    "slide-wide.tsx",
+    "slide-detail.tsx",
+    "slide-improvement.tsx",
+    "slide-header.tsx",
+  ]
+    .map((file) => readFileSync(`${SLIDES_DIR}/${file}`, "utf8"))
+    .join("\n");
+  assert.doesNotMatch(combined, /Lomba Kebersihan/i);
 });
 
 test("no slide file leaves a port placeholder behind", () => {

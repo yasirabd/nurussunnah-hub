@@ -237,7 +237,7 @@ export function SlideHero({
             whiteSpace: "nowrap",
           }}
         >
-          LOMBA KEBERSIHAN NURUS SUNNAH 2026
+          LOMBA 5R NURUS SUNNAH 2026
         </div>
 
         <div

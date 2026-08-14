@@ -144,7 +144,7 @@ export function SlideWide({
             lineHeight: 1.05,
           }}
         >
-          Bersih • Rapi •{" "}
+          Ringkas • Rapi •{" "}
           <span
             style={{
               fontFamily: FONT_SERIF_ITALIC,
@@ -153,7 +153,7 @@ export function SlideWide({
               color: COLORS.goldLight,
             }}
           >
-            nyaman
+            resik
           </span>
         </div>
         <div

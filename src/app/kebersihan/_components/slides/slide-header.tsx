@@ -25,7 +25,7 @@ export function SlideHeader({ zIndex = 2 }: { zIndex?: number }) {
           style={{ width: 64, height: "auto" }}
         />
         <div style={{ color: COLORS.green, fontSize: 23, fontWeight: 700 }}>
-          Lomba Kebersihan Nurus Sunnah 2026
+          Lomba 5R Nurus Sunnah 2026
         </div>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}

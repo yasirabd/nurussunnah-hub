@@ -6,6 +6,7 @@ import type { SlotId } from "@/lib/kebersihan/slot-sizes.mjs";
 import { SLOT_IDS } from "@/lib/kebersihan/slot-sizes.mjs";
 import { UNIT_OTHER } from "@/lib/kebersihan/units.mjs";
 import { instagramCaption } from "@/lib/kebersihan/caption.mjs";
+import { FIVE_R } from "@/lib/kebersihan/principles.mjs";
 import { decodePhoto } from "@/lib/kebersihan/image-decode";
 import { rasterizeSlide } from "@/lib/kebersihan/rasterize";
 import { slideSignature } from "@/lib/kebersihan/slide-signature.mjs";
@@ -22,7 +23,7 @@ import { SlideWide } from "./slides/slide-wide";
 type Slots = Partial<Record<SlotId, SlotState>>;
 
 const STEPS = [
-  "Bersihkan dan tata area kerja Anda.",
+  "Benahi area kerja Anda dengan 5R.",
   "Foto areanya, lalu isi data dan unggah fotonya di halaman ini.",
   "Simpan 4 slide yang dihasilkan, lalu salin captionnya.",
   "Unggah ke Instagram sebagai satu carousel, lalu bagikan linknya.",
@@ -142,7 +143,7 @@ export function GeneratorClient() {
         />
         <div>
           <h1 className="text-2xl font-bold text-primary">
-            Lomba Kebersihan Area Kerja
+            Lomba 5R Area Kerja
           </h1>
           <p className="text-muted-foreground">
             Yayasan Islam Nurus Sunnah 2026
@@ -153,7 +154,7 @@ export function GeneratorClient() {
           Bersih Tempatnya, Bangga Menjaganya
         </p>
         <p className="text-base text-muted-foreground">
-          Cerdas • Mandiri • Berkarakter Qur’ani
+          Ringkas • Rapi • Resik • Rawat • Rajin
         </p>
         <a
           href="#mulai"
@@ -164,6 +165,26 @@ export function GeneratorClient() {
       </header>
 
       <InAppBrowserNotice />
+
+      {/* Most people know the term "5R" without knowing Resik is only one
+          fifth of it, and a spotless room full of unused furniture still fails
+          Ringkas. Spelling it out is what makes the judging legible. */}
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+        <h2 className="text-lg font-semibold">Apa itu 5R?</h2>
+        <p className="mt-1 text-base text-muted-foreground">
+          Inilah lima hal yang dinilai juri.
+        </p>
+        <dl className="mt-3 space-y-3">
+          {FIVE_R.map((principle) => (
+            <div key={principle.name} className="flex gap-3">
+              <dt className="w-20 shrink-0 text-base font-bold text-primary">
+                {principle.name}
+              </dt>
+              <dd className="text-base leading-snug">{principle.meaning}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <h2 className="text-lg font-semibold">Cara Mengikuti</h2>

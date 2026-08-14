@@ -65,7 +65,7 @@ export function ExportActions({
     try {
       await navigator.share({
         files,
-        title: "Lomba Kebersihan Nurus Sunnah 2026",
+        title: "Lomba 5R Nurus Sunnah 2026",
       });
     } catch {
       // The participant dismissed the share sheet; the download buttons remain.

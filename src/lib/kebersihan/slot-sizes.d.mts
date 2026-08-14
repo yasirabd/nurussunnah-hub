@@ -6,4 +6,6 @@ export const SLOT_SIZES: Record<SlotId, { width: number; height: number }>;
 
 export const SLOT_LABELS: Record<SlotId, string>;
 
+export const SLOT_PRINCIPLES: Record<SlotId, string | null>;
+
 export const SLOT_HINTS: Record<SlotId, string>;

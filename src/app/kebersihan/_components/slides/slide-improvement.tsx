@@ -252,6 +252,17 @@ export function SlideImprovement({
       >
         <div
           style={{
+            color: COLORS.goldLight,
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: "0.2em",
+            marginBottom: 12,
+          }}
+        >
+          RAWAT & RAJIN
+        </div>
+        <div
+          style={{
             color: COLORS.cream,
             fontSize: 48,
             fontWeight: 800,
