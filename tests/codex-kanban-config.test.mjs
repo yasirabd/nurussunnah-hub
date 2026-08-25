@@ -45,11 +45,16 @@ test("production launcher keeps safety boundaries", () => {
   assert.match(source, /git pull --ff-only/);
   assert.match(source, /127\.0\.0\.1/);
   assert.match(source, /20128/);
-  assert.match(source, /cmd\.exe/);
   assert.match(source, /9router/);
   assert.match(source, /-WindowStyle Hidden/);
   assert.match(source, /--sandbox workspace-write/);
   assert.match(source, /--ask-for-approval on-request/);
+  assert.match(source, /Resolve-CodexCommandPath "9router"/);
+  assert.match(source, /Resolve-CodexCommandPath "codex"/);
+  assert.match(source, /New-NineRouterArguments/);
+  assert.match(source, /New-CodexTerminalArguments/);
+  assert.doesNotMatch(source, /cmd\.exe[\s\S]*?9router/);
+  assert.doesNotMatch(source, /"-Command", \$command/);
   assert.doesNotMatch(queueFunction, /"--field"/);
   assert.doesNotMatch(source, /reset --hard|checkout --|git stash/);
 });

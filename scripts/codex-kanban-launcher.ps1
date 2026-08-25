@@ -64,6 +64,8 @@ function Invoke-CheckedCommand {
 }
 
 $script:ProjectMetadata = $null
+$script:CodexPath = $null
+$script:NineRouterPath = $null
 
 function Get-ProjectMetadataCached {
   if ($null -eq $script:ProjectMetadata) {
@@ -177,11 +179,12 @@ function Ensure-NineRouter {
   }
 
   if ($DryRun) {
-    Write-LauncherLog "Info" "Dry-run: would start 9router with cmd.exe /c 9router."
+    Write-LauncherLog "Info" "Dry-run: would start the resolved 9router script through PowerShell."
     return
   }
 
-  Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "9router" -WindowStyle Hidden
+  $arguments = @(New-NineRouterArguments $script:NineRouterPath)
+  Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -WindowStyle Hidden
   for ($attempt = 1; $attempt -le 30; $attempt++) {
     Start-Sleep -Seconds 1
     if (Test-TcpPort "127.0.0.1" 20128 500) {
@@ -199,23 +202,23 @@ function Open-CodexTerminal {
     [Parameter(Mandatory)][string]$Prompt
   )
 
-  $command = New-CodexTerminalCommand $Prompt
+  $command = New-CodexTerminalCommand $Prompt $script:CodexPath
   $codexSafetyFlags = "--sandbox workspace-write --ask-for-approval on-request"
   if (-not $command.Contains($codexSafetyFlags)) {
     throw "Codex terminal command is missing the required safety flags."
   }
 
-  Start-Process -FilePath "wt.exe" -ArgumentList @(
-    "-d", (Get-Location).Path,
-    "powershell.exe", "-NoExit", "-Command", $command
-  )
+  $arguments = @(New-CodexTerminalArguments (Get-Location).Path $Prompt $script:CodexPath)
+  Start-Process -FilePath "wt.exe" -ArgumentList $arguments
 }
 
 $runtime = @{
   AssertDependencies = {
-    foreach ($commandName in @("git", "gh", "codex", "9router", "wt.exe", "powershell.exe")) {
+    foreach ($commandName in @("git", "gh", "wt.exe", "powershell.exe")) {
       Assert-CommandAvailable $commandName
     }
+    $script:CodexPath = Resolve-CodexCommandPath "codex"
+    $script:NineRouterPath = Resolve-CodexCommandPath "9router"
     Invoke-CheckedCommand "gh" @("auth", "status") | Out-Null
   }
   GetRunningItems = { param($owner, $project) Get-ProjectQueueItems "label:codex-running is:issue is:open" }
