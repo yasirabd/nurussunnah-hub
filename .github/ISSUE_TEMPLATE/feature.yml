@@ -1,0 +1,29 @@
+name: Fitur
+description: Usulkan fitur atau peningkatan baru
+title: ""
+labels: ["feature"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Tujuan
+      description: Apa yang ingin ditambahkan?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Perilaku
+      description: Bagaimana fitur digunakan?
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Selesai jika
+      description: Tuliskan acceptance criteria sebagai checklist Markdown.
+      placeholder: |-
+        - [ ] Kriteria hasil pertama
+        - [ ] Kriteria hasil kedua
+    validations:
+      required: true

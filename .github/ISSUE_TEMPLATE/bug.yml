@@ -1,0 +1,31 @@
+name: Bug
+description: Laporkan sesuatu yang tidak bekerja
+title: ""
+labels: ["bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah
+      description: Apa yang tidak bekerja?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Cara reproduksi
+      description: Langkah singkat untuk memunculkan error.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Hasil yang diharapkan
+      description: Apa yang seharusnya terjadi?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Bukti
+      description: Error log atau screenshot jika ada.
