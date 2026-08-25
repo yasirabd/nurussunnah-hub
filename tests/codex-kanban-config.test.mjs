@@ -61,3 +61,14 @@ test("installer registers the scheduled task safely", () => {
   assert.match(source, /LogonType Interactive/);
   assert.match(source, /RunLevel Limited/);
 });
+
+test("Codex kanban guide documents setup and recovery", () => {
+  const source = read("docs/codex-kanban.md");
+  assert.match(source, /winget install --id GitHub\.cli/);
+  assert.match(source, /gh auth refresh -s project/);
+  assert.match(source, /Backlog.*Ready.*Doing.*Done/s);
+  assert.match(source, /codex-ready/);
+  assert.match(source, /-DryRun/);
+  assert.match(source, /codex resume --last/);
+  assert.match(source, /Unregister-ScheduledTask/);
+});
