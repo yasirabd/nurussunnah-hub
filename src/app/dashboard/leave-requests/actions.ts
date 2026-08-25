@@ -8,8 +8,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import {
   EvidenceValidationError,
+  validateEvidenceFileSignatures,
   validateSingleEvidenceImage,
 } from "@/lib/evidence-upload-server";
+import { PREPARED_EVIDENCE_MIME_TYPES } from "@/lib/evidence-file.mjs";
+import { requiresLeaveEvidence } from "@/lib/leave-evidence.mjs";
 import {
   uploadToDrive,
   leaveRootFolderId,
@@ -52,16 +55,38 @@ export async function submitLeaveRequestAction(formData: FormData) {
 
   const startDate = text(formData, "start_date");
   const endDate = text(formData, "end_date") || startDate;
+  const leaveCategory = text(formData, "leave_category");
+  const multiDay = endDate !== startDate;
+  const evidenceRequired = requiresLeaveEvidence(leaveCategory, multiDay);
   const noEvidenceAck = text(formData, "no_evidence_ack") === "on";
+  if (noEvidenceAck && evidenceRequired) {
+    redirectWith(
+      false,
+      "Bukti izin wajib untuk jenis atau durasi izin ini.",
+      "ajukan"
+    );
+  }
   let evidence: File[];
   let unitHeadSs: File[];
   try {
     evidence = noEvidenceAck
       ? []
-      : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin");
+      : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin", {
+          required: evidenceRequired,
+          allowedMimeTypes: PREPARED_EVIDENCE_MIME_TYPES,
+        });
     unitHeadSs = validateSingleEvidenceImage(
       formData,
       "bukti_ss_kepala_unit",
+      "Bukti screenshot izin kepala unit",
+      {
+        required: true,
+        allowedMimeTypes: PREPARED_EVIDENCE_MIME_TYPES,
+      }
+    );
+    await validateEvidenceFileSignatures(evidence, "Bukti izin");
+    await validateEvidenceFileSignatures(
+      unitHeadSs,
       "Bukti screenshot izin kepala unit"
     );
   } catch (error) {
@@ -74,7 +99,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
   const { data: newId, error } = await supabase.rpc("submit_leave_request", {
     p_start_date: startDate,
     p_end_date: endDate,
-    p_leave_category: text(formData, "leave_category"),
+    p_leave_category: leaveCategory,
     p_leave_time_type: text(formData, "leave_time_type") as Database["public"]["Enums"]["leave_time_type_enum"],
     p_reason: text(formData, "reason"),
     p_unit_head_approved: unitHeadApproved,
@@ -133,15 +158,17 @@ export async function submitLeaveRequestAction(formData: FormData) {
     }
 
     if (rows.length) {
-      await supabase.from("leave_request_attachments").insert(rows);
+      const { error: attachmentError } = await supabase
+        .from("leave_request_attachments")
+        .insert(rows);
+      if (attachmentError) throw new Error("Metadata bukti izin gagal disimpan.");
     }
   } catch (e) {
+    console.error("Leave evidence upload failed", e);
     revalidatePath(PATH);
     redirectWith(
       false,
-      `Pengajuan tersimpan, tetapi upload bukti ke Drive gagal: ${
-        e instanceof Error ? e.message : "unknown"
-      }. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.`,
+      "Pengajuan tersimpan, tetapi bukti gagal diupload atau ditautkan. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.",
       "riwayat"
     );
   }
