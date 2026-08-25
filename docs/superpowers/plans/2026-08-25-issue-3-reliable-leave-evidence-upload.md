@@ -1,10 +1,10 @@
-# Reliable Leave Evidence Upload Implementation Plan
+# Reliable Evidence Upload Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Reliably submit prepared employee-leave gallery images without depending on `DataTransfer`, convert every browser-decodable image to JPEG, and surface attachment persistence failures.
+**Goal:** Reliably submit prepared leave and attendance-correction gallery images without depending on `DataTransfer`, while supporting safe original HEIC/HEIF/AVIF fallbacks.
 
-**Architecture:** Extend the shared browser preparation utility with an opt-in JPEG conversion mode while preserving other consumers. Keep prepared leave files in refs and inject them into `FormData` through a client action wrapper. Tighten the leave Server Action to require prepared JPEG files and check the attachment metadata insert result.
+**Architecture:** Detect supported image formats by signature, convert browser-decodable sources to JPEG, and fall back to valid original HEIC/HEIF/AVIF files when decoding is unavailable. Keep prepared files in form refs and inject them into `FormData` through client action wrappers. Apply the same server validation and attachment-insert error handling to leave and attendance correction.
 
 **Tech Stack:** Next.js 16 Server Actions, React 19, TypeScript, Node test runner, Supabase, Google Drive API
 
@@ -108,7 +108,7 @@ Run: `node --test tests/attendance-correction-upload.test.mjs tests/leave-eviden
 
 Expected: PASS.
 
-### Task 5: Verify and deliver
+### Task 5: Verify the initial leave implementation
 
 **Files:**
 - Verify: all modified files
@@ -135,6 +135,25 @@ Expected: production build succeeds.
 
 Run: `git diff --check`, inspect the focused diff, and confirm no deploy, migration, or production-data files changed.
 
-- [ ] **Step 5: Commit, push, and open the Pull Request.**
+- [ ] **Step 5: Commit the initial leave implementation.**
 
-Commit the implementation, push `codex/issue-3-reliable-leave-evidence-upload`, and create a PR whose body includes `Closes #3` plus the verification commands.
+Commit the initial leave implementation before extending the same contract to attendance correction.
+
+### Task 6: Extend the contract to safe original mobile formats and attendance correction
+
+**Files:**
+- Create: `src/lib/evidence-file.mjs`
+- Modify: `src/lib/evidence-upload-client.ts`
+- Modify: `src/lib/evidence-upload-server.ts`
+- Modify: `src/app/dashboard/attendance-corrections/_components/correction-form.tsx`
+- Modify: `src/app/dashboard/attendance-corrections/actions.ts`
+- Modify: `src/app/dashboard/leave-requests/actions.ts`
+- Modify: `tests/attendance-correction-upload.test.mjs`
+- Modify: `tests/leave-evidence-rules.test.mjs`
+
+- [ ] **Step 1: Add failing behavioral tests for JPEG, PNG, WebP, GIF, BMP, AVIF, HEIC, and HEIF signature detection plus original-fallback eligibility.**
+- [ ] **Step 2: Add failing assertions that attendance correction uses a prepared-file ref and client FormData wrapper instead of `DataTransfer`.**
+- [ ] **Step 3: Implement shared signature detection and allow original fallback only for valid HEIC/HEIF/AVIF files at or below 5 MB.**
+- [ ] **Step 4: Apply the prepared-file submission path to Attendance Correction.**
+- [ ] **Step 5: Enforce MIME/signature validation and checked attachment inserts in both Server Actions.**
+- [ ] **Step 6: Run focused tests, full tests, lint, build, diff review, code review, push, and PR creation.**
