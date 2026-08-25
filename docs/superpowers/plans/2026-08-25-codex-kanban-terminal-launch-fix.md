@@ -198,9 +198,12 @@ assert.match(source, /Resolve-CodexCommandPath "9router"/);
 assert.match(source, /Resolve-CodexCommandPath "codex"/);
 assert.match(source, /New-NineRouterArguments/);
 assert.match(source, /New-CodexTerminalArguments/);
-assert.doesNotMatch(source, /cmd\.exe.*9router/);
+assert.doesNotMatch(source, /cmd\.exe[\s\S]*?9router/);
 assert.doesNotMatch(source, /"-Command", \$command/);
 ```
+
+Remove the preceding contract assertion that requires `/cmd\.exe/`, because the
+repaired launcher no longer uses Command Prompt to start 9router.
 
 - [ ] **Step 2: Run the contract test and verify RED**
 
