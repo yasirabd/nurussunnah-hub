@@ -75,13 +75,14 @@ test("installer removes legacy polling instead of registering it", () => {
   assert.doesNotMatch(library, /function New-ScheduledTaskArgumentString/);
 });
 
-test("Codex kanban guide documents setup and recovery", () => {
+test("Codex kanban guide documents manual execution and recovery", () => {
   const source = read("docs/codex-kanban.md");
   assert.match(source, /winget install --id GitHub\.cli/);
   assert.match(source, /gh auth refresh -s project/);
   assert.match(source, /Backlog.*Ready.*Doing.*Done/s);
   assert.match(source, /codex-ready/);
-  assert.match(source, /-DryRun/);
-  assert.match(source, /codex resume --last/);
+  assert.match(source, /npm run codex:kanban/);
   assert.match(source, /Unregister-ScheduledTask/);
+  assert.match(source, /codex resume --last/);
+  assert.doesNotMatch(source, /Tunggu maksimal satu menit|berjalan setiap satu menit|Instal Scheduled Task/);
 });

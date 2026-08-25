@@ -1,7 +1,8 @@
 # Codex Kanban Lokal
 
 Workflow ini memakai GitHub Issues dan GitHub Projects sebagai antrean, lalu
-membuka satu sesi Codex CLI interaktif di komputer Windows. GitHub Free cukup
+membuka satu sesi Codex CLI interaktif hanya ketika operator menjalankan command
+manual. GitHub Free cukup
 untuk board, issue, label, branch, dan Pull Request pada workflow lokal ini.
 Biaya atau batas penggunaan 9router/model AI terpisah dari GitHub.
 
@@ -55,10 +56,9 @@ Cari nomor Project:
 gh project list --owner yasirabd
 ```
 
-Nomor pada kolom `NUMBER` digunakan sebagai `<PROJECT_NUMBER>` pada perintah di
-bagian berikut.
+Workflow ini memakai Project `Nurussunnah Hub` nomor `2`.
 
-## 4. Validasi Installer
+## 4. Validasi Setup
 
 Jalankan tanpa mutasi terlebih dahulu:
 
@@ -66,12 +66,12 @@ Jalankan tanpa mutasi terlebih dahulu:
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File scripts\install-codex-kanban-task.ps1 `
   -ProjectOwner yasirabd `
-  -ProjectNumber <PROJECT_NUMBER> `
+  -ProjectNumber 2 `
   -WhatIf
 ```
 
-Installer memvalidasi dependency, login, akses Project, dan empat Status.
-Installer kemudian akan membuat label berikut ketika dijalankan tanpa
+Setup memvalidasi dependency, login, akses Project, dan empat Status.
+Setup kemudian akan membuat label berikut ketika dijalankan tanpa
 `-WhatIf`:
 
 - `bug`
@@ -82,11 +82,7 @@ Installer kemudian akan membuat label berikut ketika dijalankan tanpa
 ## 5. Dry-Run Launcher
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File scripts\codex-kanban-launcher.ps1 `
-  -ProjectOwner yasirabd `
-  -ProjectNumber <PROJECT_NUMBER> `
-  -DryRun
+npm run codex:kanban -- -DryRun
 ```
 
 Dry-run memeriksa dependency, autentikasi, antrean, working tree, default
@@ -99,28 +95,36 @@ Log launcher disimpan di:
 %LOCALAPPDATA%\NurusSunnahHub\CodexKanban\launcher.log
 ```
 
-## 6. Instal Scheduled Task
+## 6. Aktifkan Mode Manual
 
-Setelah `-WhatIf` dan `-DryRun` berhasil:
+Jalankan setup tanpa `-WhatIf` untuk menyinkronkan label dan menghapus Scheduled
+Task lama jika masih ada:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File scripts\install-codex-kanban-task.ps1 `
   -ProjectOwner yasirabd `
-  -ProjectNumber <PROJECT_NUMBER>
+  -ProjectNumber 2
 ```
 
-Task `NurusSunnahHub Codex Kanban` berjalan setiap satu menit hanya ketika user
-Windows sedang login. Named mutex memastikan dua polling tidak berjalan
-bersamaan.
+Tidak ada proses polling yang berjalan setelah setup selesai. PowerShell,
+9router, dan Codex hanya dipanggil ketika command manual dijalankan.
 
-## 7. Memulai Task Codex
+## 7. Menjalankan Codex Saat Dibutuhkan
 
 1. Buat issue melalui template Bug atau Fitur.
 2. Lengkapi masalah/tujuan dan hasil akhir.
 3. Pindahkan kartu ke `Ready`.
 4. Tambahkan label `codex-ready`.
-5. Tunggu maksimal satu menit.
+5. Buka PowerShell di root repository.
+6. Jalankan:
+
+```powershell
+npm run codex:kanban
+```
+
+Jika tidak ada issue yang memenuhi syarat, launcher menampilkan `Idle` dan
+selesai tanpa memulai 9router atau membuka Windows Terminal.
 
 Launcher menolak memulai ketika working tree kotor, branch bukan default branch,
 `git pull --ff-only` gagal, atau ada issue `codex-running` lain. Jika port
@@ -142,7 +146,7 @@ tidak mengubah data production.
 ## 9. Recovery
 
 Jika terminal tertutup tanpa Pull Request, label `codex-running` sengaja tetap
-terpasang agar task tidak dimulai ulang otomatis.
+terpasang agar issue tidak dipilih lagi pada command manual berikutnya.
 
 Lanjutkan sesi terakhir:
 
@@ -159,9 +163,10 @@ Atau pulihkan issue secara manual:
 Jika startup terminal gagal, launcher otomatis mengembalikan label dan Status
 ke `Ready`.
 
-## 10. Uninstall
+## 10. Menghapus Polling Lama
 
-Hapus Scheduled Task tanpa menghapus issue, Project, atau label:
+Setup mode manual sudah menghapus Scheduled Task lama. Jika perlu melakukan
+pembersihan langsung tanpa menghapus issue, Project, atau label:
 
 ```powershell
 Unregister-ScheduledTask `
