@@ -137,6 +137,7 @@ export function LeaveRequestForm({
       const prepared = await prepareEvidenceFiles(selectedFiles, {
         maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
         convertToJpeg: true,
+        allowOriginalOnDecodeFailure: true,
       });
 
       const preparedFile = prepared.files[0] ?? null;
@@ -146,7 +147,9 @@ export function LeaveRequestForm({
         leavePreparedEvidenceRef.current = preparedFile;
       }
       setEvidenceMessage(
-        prepared.wasOptimized
+        preparedFile?.type !== "image/jpeg"
+          ? "Format asli HEIC, HEIF, atau AVIF siap diupload ke Google Drive."
+          : prepared.wasOptimized
           ? "Foto sudah dikonversi ke JPG, diperkecil, dan siap diupload."
           : "Foto sudah dikonversi ke JPG dan siap diupload."
       );
@@ -284,7 +287,7 @@ export function LeaveRequestForm({
               onChange={prepareLeaveEvidence}
             />
             <p className="text-xs text-muted-foreground">
-              Maksimal 1 foto, 5 MB. Foto galeri dikonversi ke JPG; format yang tidak didukung perlu dikonversi manual.
+              Maksimal 1 foto, 5 MB. Foto dikonversi ke JPG; HEIC, HEIF, atau AVIF dapat diupload dalam format asli.
             </p>
             {evidenceMessageFor === "bukti_ss_kepala_unit" && evidenceMessage && (
               <p className="text-xs text-muted-foreground" aria-live="polite">
@@ -314,7 +317,7 @@ export function LeaveRequestForm({
             onChange={prepareLeaveEvidence}
           />
           <p className="text-xs text-muted-foreground">
-            {evidenceHelper} Maksimal 1 foto, 5 MB. Foto galeri dikonversi ke JPG; format yang tidak didukung perlu dikonversi manual. Foto yang lebih besar akan diperkecil otomatis.
+            {evidenceHelper} Maksimal 1 foto, 5 MB. Foto dikonversi ke JPG; HEIC, HEIF, atau AVIF dapat diupload dalam format asli. Foto yang lebih besar akan diperkecil otomatis.
           </p>
           {evidenceMessageFor === "bukti_izin" && evidenceMessage && (
             <p className="text-xs text-muted-foreground" aria-live="polite">

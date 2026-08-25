@@ -1,7 +1,10 @@
 import "server-only";
 
 import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
-import { hasJpegSignature } from "@/lib/leave-evidence.mjs";
+import {
+  detectEvidenceImageFormat,
+  evidenceFormatMatchesMimeType,
+} from "@/lib/evidence-file.mjs";
 
 export class EvidenceValidationError extends Error {}
 
@@ -37,7 +40,7 @@ export function validateSingleEvidenceImage(
     !options.allowedMimeTypes.includes(file.type)
   ) {
     throw new EvidenceValidationError(
-      `${label} harus disiapkan sebagai foto JPG.`
+      `${label} harus berupa foto JPG, HEIC, HEIF, atau AVIF yang valid.`
     );
   }
 
@@ -54,15 +57,16 @@ export function validateSingleEvidenceImage(
   return [file];
 }
 
-export async function validateJpegFileSignatures(
+export async function validateEvidenceFileSignatures(
   files: File[],
   label: string
 ) {
   for (const file of files) {
-    const bytes = new Uint8Array(await file.slice(0, 3).arrayBuffer());
-    if (!hasJpegSignature(bytes)) {
+    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const format = detectEvidenceImageFormat(bytes);
+    if (!format || !evidenceFormatMatchesMimeType(format, file.type)) {
       throw new EvidenceValidationError(
-        `${label} bukan file JPG yang valid.`
+        `${label} memiliki format atau tipe file yang tidak valid.`
       );
     }
   }

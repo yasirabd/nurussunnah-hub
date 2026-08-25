@@ -58,6 +58,8 @@ test("attendance correction and leave request share browser image preparation", 
 
   assert.match(clientUtility, /export async function prepareEvidenceFiles/);
   assert.match(clientUtility, /convertToJpeg/);
+  assert.match(clientUtility, /allowOriginalOnDecodeFailure/);
+  assert.match(clientUtility, /prepareOriginalEvidenceFallback/);
   assert.match(
     clientUtility,
     /convertToJpeg\s*\|\|\s*shouldOptimizeEvidenceFile/
@@ -153,6 +155,29 @@ test("leave submission uses prepared files instead of DataTransfer mutation", ()
   assert.doesNotMatch(leaveForm, /replaceInputFiles/);
 });
 
+test("attendance correction submits its prepared evidence without DataTransfer", () => {
+  const correctionForm = readFileSync(
+    "src/app/dashboard/attendance-corrections/_components/correction-form.tsx",
+    "utf8"
+  );
+  const correctionAction = readFileSync(
+    "src/app/dashboard/attendance-corrections/actions.ts",
+    "utf8"
+  );
+
+  assert.match(correctionForm, /preparedEvidenceRef/);
+  assert.match(correctionForm, /convertToJpeg:\s*true/);
+  assert.match(correctionForm, /allowOriginalOnDecodeFailure:\s*true/);
+  assert.match(correctionForm, /submitPreparedCorrection/);
+  assert.match(correctionForm, /applyPreparedEvidenceFile\(formData/);
+  assert.doesNotMatch(correctionForm, /replaceInputFiles/);
+  assert.match(correctionAction, /validateEvidenceFileSignatures/);
+  assert.match(
+    correctionAction,
+    /const \{ error: attachmentError \} = await supabase[\s\S]*?attendance_correction_attachments[\s\S]*?if \(attachmentError\)[\s\S]*?throw new Error/
+  );
+});
+
 test("attendance correction and leave evidence inputs accept one image only", () => {
   const correctionForm = readFileSync(
     "src/app/dashboard/attendance-corrections/_components/correction-form.tsx",
@@ -200,7 +225,7 @@ test("server validates each evidence field before creating a request", () => {
 
   assert.match(
     correctionAction,
-    /validateSingleEvidenceImage\(formData, "bukti", "Bukti pendukung"\)/
+    /validateSingleEvidenceImage\(formData, "bukti", "Bukti pendukung", \{[\s\S]*?allowedMimeTypes:\s*PREPARED_EVIDENCE_MIME_TYPES[\s\S]*?\}\)/
   );
   assert.ok(
     correctionAction.indexOf("validateSingleEvidenceImage") <
@@ -209,21 +234,21 @@ test("server validates each evidence field before creating a request", () => {
 
   assert.match(
     leaveAction,
-    /validateSingleEvidenceImage\(\s*formData,\s*"bukti_ss_kepala_unit",\s*"Bukti screenshot izin kepala unit",[\s\S]*?required:\s*true[\s\S]*?allowedMimeTypes:\s*\["image\/jpeg"\][\s\S]*?\)/
+    /validateSingleEvidenceImage\(\s*formData,\s*"bukti_ss_kepala_unit",\s*"Bukti screenshot izin kepala unit",[\s\S]*?required:\s*true[\s\S]*?allowedMimeTypes:\s*PREPARED_EVIDENCE_MIME_TYPES[\s\S]*?\)/
   );
   assert.match(
     leaveAction,
-    /validateSingleEvidenceImage\(formData, "bukti_izin", "Bukti izin", \{[\s\S]*?allowedMimeTypes:\s*\["image\/jpeg"\][\s\S]*?\}\)/
+    /validateSingleEvidenceImage\(formData, "bukti_izin", "Bukti izin", \{[\s\S]*?allowedMimeTypes:\s*PREPARED_EVIDENCE_MIME_TYPES[\s\S]*?\}\)/
   );
-  assert.match(leaveAction, /allowedMimeTypes:\s*\["image\/jpeg"\]/);
+  assert.match(leaveAction, /PREPARED_EVIDENCE_MIME_TYPES/);
   assert.match(leaveAction, /required:\s*true/);
   assert.match(leaveAction, /requiresLeaveEvidence\(leaveCategory, multiDay\)/);
   assert.match(leaveAction, /if \(noEvidenceAck && evidenceRequired\)/);
   assert.match(leaveAction, /required:\s*evidenceRequired/);
-  assert.match(leaveAction, /await validateJpegFileSignatures\(evidence/);
+  assert.match(leaveAction, /await validateEvidenceFileSignatures\(evidence/);
   assert.match(
     leaveAction,
-    /await validateJpegFileSignatures\(\s*unitHeadSs/
+    /await validateEvidenceFileSignatures\(\s*unitHeadSs/
   );
   assert.match(
     leaveAction,

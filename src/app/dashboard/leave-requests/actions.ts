@@ -8,9 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import {
   EvidenceValidationError,
-  validateJpegFileSignatures,
+  validateEvidenceFileSignatures,
   validateSingleEvidenceImage,
 } from "@/lib/evidence-upload-server";
+import { PREPARED_EVIDENCE_MIME_TYPES } from "@/lib/evidence-file.mjs";
 import { requiresLeaveEvidence } from "@/lib/leave-evidence.mjs";
 import {
   uploadToDrive,
@@ -72,7 +73,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
       ? []
       : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin", {
           required: evidenceRequired,
-          allowedMimeTypes: ["image/jpeg"],
+          allowedMimeTypes: PREPARED_EVIDENCE_MIME_TYPES,
         });
     unitHeadSs = validateSingleEvidenceImage(
       formData,
@@ -80,11 +81,11 @@ export async function submitLeaveRequestAction(formData: FormData) {
       "Bukti screenshot izin kepala unit",
       {
         required: true,
-        allowedMimeTypes: ["image/jpeg"],
+        allowedMimeTypes: PREPARED_EVIDENCE_MIME_TYPES,
       }
     );
-    await validateJpegFileSignatures(evidence, "Bukti izin");
-    await validateJpegFileSignatures(
+    await validateEvidenceFileSignatures(evidence, "Bukti izin");
+    await validateEvidenceFileSignatures(
       unitHeadSs,
       "Bukti screenshot izin kepala unit"
     );

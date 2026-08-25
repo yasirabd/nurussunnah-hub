@@ -5,6 +5,9 @@ import {
   isEvidenceFileWithinLimit,
   shouldOptimizeEvidenceFile,
 } from "@/lib/attendance-correction-upload.mjs";
+import {
+  prepareOriginalEvidenceFallback,
+} from "@/lib/evidence-file.mjs";
 
 function decodeImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -36,13 +39,23 @@ function canvasToJpeg(canvas: HTMLCanvasElement, quality: number) {
 async function optimizeEvidenceImage(
   file: File,
   maxFileBytes?: number,
-  convertToJpeg = false
+  convertToJpeg = false,
+  allowOriginalOnDecodeFailure = false
 ): Promise<File> {
   const shouldPrepare =
     convertToJpeg || shouldOptimizeEvidenceFile(file.type, file.size);
   if (!shouldPrepare) return file;
 
-  const image = await decodeImage(file);
+  let image: HTMLImageElement;
+  try {
+    image = await decodeImage(file);
+  } catch (error) {
+    if (allowOriginalOnDecodeFailure) {
+      const fallback = await prepareOriginalEvidenceFallback(file, maxFileBytes);
+      if (fallback) return fallback;
+    }
+    throw error;
+  }
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Browser tidak dapat menyiapkan foto untuk upload.");
@@ -86,16 +99,27 @@ async function optimizeEvidenceImage(
 
 export async function prepareEvidenceFiles(
   files: File[],
-  options: { maxFileBytes?: number; convertToJpeg?: boolean } = {
+  options: {
+    maxFileBytes?: number;
+    convertToJpeg?: boolean;
+    allowOriginalOnDecodeFailure?: boolean;
+  } = {
     maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
   }
 ) {
   const maxFileBytes = options.maxFileBytes;
   const convertToJpeg = options.convertToJpeg ?? false;
+  const allowOriginalOnDecodeFailure =
+    options.allowOriginalOnDecodeFailure ?? false;
   const preparedFiles: File[] = [];
   for (const file of files) {
     preparedFiles.push(
-      await optimizeEvidenceImage(file, maxFileBytes, convertToJpeg)
+      await optimizeEvidenceImage(
+        file,
+        maxFileBytes,
+        convertToJpeg,
+        allowOriginalOnDecodeFailure
+      )
     );
   }
 

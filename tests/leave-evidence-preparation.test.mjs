@@ -25,7 +25,7 @@ test("evidence preparation reads the input before awaiting", () => {
 test("leave evidence enforces 5 MB for its single photo", () => {
   assert.match(
     form,
-    /prepareEvidenceFiles\(selectedFiles, \{\s*maxFileBytes: EVIDENCE_MAX_FILE_BYTES,\s*convertToJpeg: true/
+    /prepareEvidenceFiles\(selectedFiles, \{\s*maxFileBytes: EVIDENCE_MAX_FILE_BYTES,\s*convertToJpeg: true,\s*allowOriginalOnDecodeFailure: true/
   );
   assert.match(form, /Maksimal 1 foto, 5 MB/);
   assert.match(form, /Foto yang lebih besar akan diperkecil otomatis/);

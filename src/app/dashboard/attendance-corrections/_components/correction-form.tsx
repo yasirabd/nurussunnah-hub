@@ -1,16 +1,13 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EVIDENCE_MAX_TOTAL_BYTES } from "@/lib/attendance-correction-upload.mjs";
-import {
-  prepareEvidenceFiles,
-  replaceInputFiles,
-  totalFileBytes,
-} from "@/lib/evidence-upload-client";
+import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import { prepareEvidenceFiles } from "@/lib/evidence-upload-client";
+import { applyPreparedEvidenceFile } from "@/lib/evidence-file.mjs";
 import { submitCorrectionAction } from "../actions";
 
 const KINDS = [
@@ -41,6 +38,7 @@ export function CorrectionForm({
 }) {
   const [kind, setKind] = useState("");
   const [timeParts, setTimeParts] = useState<string[]>([]);
+  const preparedEvidenceRef = useRef<File | null>(null);
   const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
   const [evidenceMessage, setEvidenceMessage] = useState("");
   const today = localDateString();
@@ -53,12 +51,18 @@ export function CorrectionForm({
     );
   }
 
+  async function submitPreparedCorrection(formData: FormData) {
+    applyPreparedEvidenceFile(formData, "bukti", preparedEvidenceRef.current);
+    await submitCorrectionAction(formData);
+  }
+
   async function prepareEvidence(event: React.ChangeEvent<HTMLInputElement>) {
     // `currentTarget` is nulled out once this handler awaits, so hold on to
     // `target` which stays valid across the async compression step below.
     const input = event.target;
     const selectedFiles = Array.from(input.files ?? []);
     if (!selectedFiles.length) {
+      preparedEvidenceRef.current = null;
       setEvidenceMessage("");
       return;
     }
@@ -67,17 +71,22 @@ export function CorrectionForm({
     setEvidenceMessage("Menyiapkan foto untuk upload...");
 
     try {
-      const prepared = await prepareEvidenceFiles(selectedFiles);
-      if (totalFileBytes(prepared.files) > EVIDENCE_MAX_TOTAL_BYTES) {
-        throw new Error("Total bukti terlalu besar. Maksimal 10 MB setelah foto dikompresi.");
-      }
-      replaceInputFiles(input, prepared.files);
+      const prepared = await prepareEvidenceFiles(selectedFiles, {
+        maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
+        convertToJpeg: true,
+        allowOriginalOnDecodeFailure: true,
+      });
+      const preparedFile = prepared.files[0] ?? null;
+      preparedEvidenceRef.current = preparedFile;
       setEvidenceMessage(
-        prepared.wasOptimized
+        preparedFile?.type !== "image/jpeg"
+          ? "Format asli HEIC, HEIF, atau AVIF siap diupload ke Google Drive."
+          : prepared.wasOptimized
           ? "Foto kamera sudah diperkecil dan siap diupload."
-          : "Bukti siap diupload."
+          : "Foto sudah dikonversi ke JPG dan siap diupload."
       );
     } catch (error) {
+      preparedEvidenceRef.current = null;
       input.value = "";
       setEvidenceMessage(
         error instanceof Error ? error.message : "Bukti gagal disiapkan untuk upload."
@@ -88,7 +97,7 @@ export function CorrectionForm({
   }
 
   return (
-    <form action={submitCorrectionAction} className="space-y-5">
+    <form action={submitPreparedCorrection} className="space-y-5">
       <div className="rounded-lg border bg-muted/30 p-4 text-sm">
         <p className="font-medium">Koreksi presensi hanya untuk pegawai yang tetap masuk kerja.</p>
         <p className="mt-1 text-muted-foreground">
@@ -217,7 +226,7 @@ export function CorrectionForm({
             onChange={prepareEvidence}
           />
           <p className="text-xs text-muted-foreground">
-            Maksimal 1 foto, 5 MB. Untuk kasus lupa tap biasanya tidak ada bukti fisik.
+            Maksimal 1 foto, 5 MB. Foto dikonversi ke JPG; HEIC, HEIF, atau AVIF dapat diupload asli. Untuk kasus lupa tap biasanya tidak ada bukti fisik.
           </p>
           {evidenceMessage && (
             <p className="text-xs text-muted-foreground" aria-live="polite">
