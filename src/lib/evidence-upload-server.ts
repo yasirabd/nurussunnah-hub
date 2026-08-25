@@ -1,13 +1,23 @@
 import "server-only";
 
 import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import {
+  detectEvidenceImageFormat,
+  evidenceFormatMatchesMimeType,
+} from "@/lib/evidence-file.mjs";
 
 export class EvidenceValidationError extends Error {}
+
+type EvidenceValidationOptions = {
+  required?: boolean;
+  allowedMimeTypes?: readonly string[];
+};
 
 export function validateSingleEvidenceImage(
   formData: FormData,
   key: string,
-  label: string
+  label: string,
+  options: EvidenceValidationOptions = {}
 ): File[] {
   const files = formData
     .getAll(key)
@@ -18,9 +28,23 @@ export function validateSingleEvidenceImage(
   }
 
   const file = files[0];
-  if (!file) return [];
+  if (!file) {
+    if (options.required) {
+      throw new EvidenceValidationError(`${label} wajib diunggah.`);
+    }
+    return [];
+  }
 
-  if (!file.type.startsWith("image/")) {
+  if (
+    options.allowedMimeTypes &&
+    !options.allowedMimeTypes.includes(file.type)
+  ) {
+    throw new EvidenceValidationError(
+      `${label} harus berupa foto JPG, HEIC, HEIF, atau AVIF yang valid.`
+    );
+  }
+
+  if (!options.allowedMimeTypes && !file.type.startsWith("image/")) {
     throw new EvidenceValidationError(`${label} harus berupa foto. PDF tidak didukung.`);
   }
 
@@ -31,4 +55,19 @@ export function validateSingleEvidenceImage(
   }
 
   return [file];
+}
+
+export async function validateEvidenceFileSignatures(
+  files: File[],
+  label: string
+) {
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const format = detectEvidenceImageFormat(bytes);
+    if (!format || !evidenceFormatMatchesMimeType(format, file.type)) {
+      throw new EvidenceValidationError(
+        `${label} memiliki format atau tipe file yang tidak valid.`
+      );
+    }
+  }
 }

@@ -8,8 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import { deriveAttendanceTimeScope } from "@/lib/attendance-correction.mjs";
 import {
   EvidenceValidationError,
+  validateEvidenceFileSignatures,
   validateSingleEvidenceImage,
 } from "@/lib/evidence-upload-server";
+import { PREPARED_EVIDENCE_MIME_TYPES } from "@/lib/evidence-file.mjs";
 import type { Database } from "@/types/database";
 import {
   uploadToDrive,
@@ -48,7 +50,10 @@ export async function submitCorrectionAction(formData: FormData) {
 
   let files: File[];
   try {
-    files = validateSingleEvidenceImage(formData, "bukti", "Bukti pendukung");
+    files = validateSingleEvidenceImage(formData, "bukti", "Bukti pendukung", {
+      allowedMimeTypes: PREPARED_EVIDENCE_MIME_TYPES,
+    });
+    await validateEvidenceFileSignatures(files, "Bukti pendukung");
   } catch (error) {
     if (error instanceof EvidenceValidationError) {
       redirectWith(false, error.message, "ajukan");
@@ -92,14 +97,18 @@ export async function submitCorrectionAction(formData: FormData) {
           mime_type: r.mimeType,
         });
       }
-      await supabase.from("attendance_correction_attachments").insert(rows);
+      const { error: attachmentError } = await supabase
+        .from("attendance_correction_attachments")
+        .insert(rows);
+      if (attachmentError) {
+        throw new Error("Metadata bukti koreksi presensi gagal disimpan.");
+      }
     } catch (e) {
+      console.error("Attendance correction evidence upload failed", e);
       revalidatePath(PATH);
       redirectWith(
         false,
-        `Pengajuan tersimpan, tetapi upload bukti ke Drive gagal: ${
-          e instanceof Error ? e.message : "unknown"
-        }. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.`,
+        "Pengajuan tersimpan, tetapi bukti gagal diupload atau ditautkan. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.",
         "riwayat"
       );
     }

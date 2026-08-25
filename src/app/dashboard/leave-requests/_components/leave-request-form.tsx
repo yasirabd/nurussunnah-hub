@@ -6,10 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import { prepareEvidenceFiles } from "@/lib/evidence-upload-client";
 import {
-  prepareEvidenceFiles,
-  replaceInputFiles,
-} from "@/lib/evidence-upload-client";
+  applyPreparedLeaveEvidence,
+  requiresLeaveEvidence,
+} from "@/lib/leave-evidence.mjs";
 import { submitLeaveRequestAction } from "../actions";
 
 const LEAVE_CATEGORIES = [
@@ -63,6 +64,8 @@ export function LeaveRequestForm({
   const [category, setCategory] = useState("");
   const unitHeadEvidenceRef = useRef<HTMLInputElement>(null);
   const leaveEvidenceRef = useRef<HTMLInputElement>(null);
+  const unitHeadPreparedEvidenceRef = useRef<File | null>(null);
+  const leavePreparedEvidenceRef = useRef<File | null>(null);
   const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
   const [evidenceMessage, setEvidenceMessage] = useState("");
   const [evidenceMessageFor, setEvidenceMessageFor] = useState("");
@@ -71,22 +74,43 @@ export function LeaveRequestForm({
   const maxStartDate = localDateString(addDays(new Date(), 7));
 
   const blocked = unitHead === "BELUM";
-  const evidenceRequired =
-    category === "Duka Cita (Kedukaan)" ||
-    category === "Acara Khusus (Wisuda/Pernikahan/Ibadah)" ||
-    category === "Administrasi Pribadi" ||
-    (category === "Sakit" && multiDay);
+  const evidenceRequired = requiresLeaveEvidence(category, multiDay);
   const evidenceHelper = evidenceRequired
-    ? "Bukti wajib untuk jenis izin ini. Upload foto atau PDF pendukung."
+    ? "Bukti wajib untuk jenis izin ini. Upload foto pendukung."
     : "Bukti opsional. Jika tidak ada bukti fisik, centang pernyataan di bawah.";
 
   function handleNoEvidenceAck(checked: boolean) {
     setNoEvidenceAck(checked);
+    if (checked) leavePreparedEvidenceRef.current = null;
     if (checked && leaveEvidenceRef.current) {
       leaveEvidenceRef.current.value = "";
       setEvidenceMessage("");
       setEvidenceMessageFor("");
     }
+  }
+
+  function handleCategoryChange(nextCategory: string) {
+    setCategory(nextCategory);
+    if (requiresLeaveEvidence(nextCategory, multiDay)) {
+      setNoEvidenceAck(false);
+    }
+  }
+
+  function handleMultiDayChange(checked: boolean) {
+    setMultiDay(checked);
+    if (requiresLeaveEvidence(category, checked)) {
+      setNoEvidenceAck(false);
+    }
+  }
+
+  async function submitPreparedLeaveRequest(formData: FormData) {
+    applyPreparedLeaveEvidence(formData, {
+      unitHeadFile: unitHeadPreparedEvidenceRef.current,
+      leaveFile: leavePreparedEvidenceRef.current,
+      noEvidenceAck,
+    });
+
+    await submitLeaveRequestAction(formData);
   }
 
   async function prepareLeaveEvidence(event: React.ChangeEvent<HTMLInputElement>) {
@@ -95,6 +119,11 @@ export function LeaveRequestForm({
     const input = event.target;
     const selectedFiles = Array.from(input.files ?? []);
     if (!selectedFiles.length) {
+      if (input.name === "bukti_ss_kepala_unit") {
+        unitHeadPreparedEvidenceRef.current = null;
+      } else {
+        leavePreparedEvidenceRef.current = null;
+      }
       setEvidenceMessage("");
       setEvidenceMessageFor("");
       return;
@@ -107,15 +136,29 @@ export function LeaveRequestForm({
     try {
       const prepared = await prepareEvidenceFiles(selectedFiles, {
         maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
+        convertToJpeg: true,
+        allowOriginalOnDecodeFailure: true,
       });
 
-      replaceInputFiles(input, prepared.files);
+      const preparedFile = prepared.files[0] ?? null;
+      if (input.name === "bukti_ss_kepala_unit") {
+        unitHeadPreparedEvidenceRef.current = preparedFile;
+      } else {
+        leavePreparedEvidenceRef.current = preparedFile;
+      }
       setEvidenceMessage(
-        prepared.wasOptimized
-          ? "Foto kamera sudah diperkecil dan siap diupload."
-          : "Bukti siap diupload."
+        preparedFile?.type !== "image/jpeg"
+          ? "Format asli HEIC, HEIF, atau AVIF siap diupload ke Google Drive."
+          : prepared.wasOptimized
+          ? "Foto sudah dikonversi ke JPG, diperkecil, dan siap diupload."
+          : "Foto sudah dikonversi ke JPG dan siap diupload."
       );
     } catch (error) {
+      if (input.name === "bukti_ss_kepala_unit") {
+        unitHeadPreparedEvidenceRef.current = null;
+      } else {
+        leavePreparedEvidenceRef.current = null;
+      }
       input.value = "";
       setEvidenceMessage(
         error instanceof Error ? error.message : "Bukti gagal disiapkan untuk upload."
@@ -126,7 +169,7 @@ export function LeaveRequestForm({
   }
 
   return (
-    <form action={submitLeaveRequestAction} className="space-y-5">
+    <form action={submitPreparedLeaveRequest} className="space-y-5">
       <FormSection title="Data Pegawai" description="Data diambil otomatis dari profil akun.">
         <div className="rounded-lg border bg-muted/30 p-4 text-sm">
           <p className="font-medium">{fullName}</p>
@@ -162,7 +205,7 @@ export function LeaveRequestForm({
               <input
                 type="checkbox"
                 checked={multiDay}
-                onChange={(e) => setMultiDay(e.target.checked)}
+                onChange={(e) => handleMultiDayChange(e.target.checked)}
               />
               Izin lebih dari 1 hari
             </Label>
@@ -185,7 +228,7 @@ export function LeaveRequestForm({
               required
               className={selectCls}
               defaultValue=""
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
             >
               <option value="" disabled>Pilih jenis izin</option>
               {LEAVE_CATEGORIES.map((c) => (
@@ -244,7 +287,7 @@ export function LeaveRequestForm({
               onChange={prepareLeaveEvidence}
             />
             <p className="text-xs text-muted-foreground">
-              Maksimal 1 foto, 5 MB. Foto yang lebih besar akan diperkecil otomatis.
+              Maksimal 1 foto, 5 MB. Foto dikonversi ke JPG; HEIC, HEIF, atau AVIF dapat diupload dalam format asli.
             </p>
             {evidenceMessageFor === "bukti_ss_kepala_unit" && evidenceMessage && (
               <p className="text-xs text-muted-foreground" aria-live="polite">
@@ -274,7 +317,7 @@ export function LeaveRequestForm({
             onChange={prepareLeaveEvidence}
           />
           <p className="text-xs text-muted-foreground">
-            {evidenceHelper} Maksimal 1 foto, 5 MB. Foto yang lebih besar akan diperkecil otomatis.
+            {evidenceHelper} Maksimal 1 foto, 5 MB. Foto dikonversi ke JPG; HEIC, HEIF, atau AVIF dapat diupload dalam format asli. Foto yang lebih besar akan diperkecil otomatis.
           </p>
           {evidenceMessageFor === "bukti_izin" && evidenceMessage && (
             <p className="text-xs text-muted-foreground" aria-live="polite">
