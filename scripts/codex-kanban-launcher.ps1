@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot "codex-kanban-lib.ps1")
+Set-Location (Split-Path $PSScriptRoot -Parent)
 
 $mutex = [Threading.Mutex]::new($false, "Local\NurusSunnahHubCodexKanban")
 if (-not $mutex.WaitOne(0)) {

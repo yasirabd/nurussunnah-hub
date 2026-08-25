@@ -38,6 +38,7 @@ test("PowerShell launcher tests pass on Windows", { skip: process.platform !== "
 test("production launcher keeps safety boundaries", () => {
   const source = read("scripts/codex-kanban-launcher.ps1");
   assert.match(source, /Local\\NurusSunnahHubCodexKanban/);
+  assert.match(source, /Set-Location.*Split-Path/s);
   assert.match(source, /git status --porcelain/);
   assert.match(source, /git pull --ff-only/);
   assert.match(source, /127\.0\.0\.1/);
@@ -48,4 +49,15 @@ test("production launcher keeps safety boundaries", () => {
   assert.match(source, /--sandbox workspace-write/);
   assert.match(source, /--ask-for-approval on-request/);
   assert.doesNotMatch(source, /reset --hard|checkout --|git stash/);
+});
+
+test("installer registers the scheduled task safely", () => {
+  const source = read("scripts/install-codex-kanban-task.ps1");
+  for (const value of ["codex-ready", "codex-running", "Backlog", "Ready", "Doing", "Done"]) {
+    assert.match(source, new RegExp(value));
+  }
+  assert.match(source, /SupportsShouldProcess/);
+  assert.match(source, /New-TimeSpan -Minutes 1/);
+  assert.match(source, /LogonType Interactive/);
+  assert.match(source, /RunLevel Limited/);
 });
