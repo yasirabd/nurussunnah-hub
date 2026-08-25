@@ -178,10 +178,45 @@ Assert-True (Test-TcpPort "127.0.0.1" $openPort 500) "open TCP port"
 $listener.Stop()
 Assert-True (-not (Test-TcpPort "127.0.0.1" $openPort 100)) "closed TCP port"
 
-$terminalCommand = New-CodexTerminalCommand "Prompt with 'quotes' and `$variables"
-Assert-True ($terminalCommand.Contains("FromBase64String")) "terminal command decodes Base64"
-Assert-True (-not $terminalCommand.Contains("Prompt with")) "terminal command hides raw prompt"
-Assert-True ($terminalCommand.Contains("--sandbox workspace-write")) "terminal command uses workspace sandbox"
-Assert-True ($terminalCommand.Contains("--ask-for-approval on-request")) "terminal command asks for approval"
+$knownPowerShell = (Get-Command powershell.exe).Path
+Assert-Equal $knownPowerShell (Resolve-CodexCommandPath "powershell.exe") "external command path"
+Assert-Throws { Resolve-CodexCommandPath "missing-codex-command-for-test" } "is not available in PATH" "missing external command"
+
+$childScript = "`$value = 'one; two'; Write-Output `$value"
+$encodedArguments = @(New-EncodedPowerShellArguments $childScript)
+$encodedIndex = [Array]::IndexOf($encodedArguments, "-EncodedCommand")
+Assert-True ($encodedIndex -ge 0) "encoded arguments select EncodedCommand"
+$decodedScript = [Text.Encoding]::Unicode.GetString(
+  [Convert]::FromBase64String($encodedArguments[$encodedIndex + 1])
+)
+Assert-Equal $childScript $decodedScript "encoded command round trip"
+
+$codexPath = "C:\Users\Example User\AppData\Roaming\npm\codex.ps1"
+$terminalArguments = @(
+  New-CodexTerminalArguments "C:\repo path" "Prompt with 'quotes' and `$variables" $codexPath
+)
+Assert-Equal "-d" $terminalArguments[0] "terminal working-directory switch"
+Assert-Equal "C:\repo path" $terminalArguments[1] "terminal working directory"
+Assert-True (-not $terminalArguments.Contains("-Command")) "terminal avoids raw Command"
+$terminalEncodedIndex = [Array]::IndexOf($terminalArguments, "-EncodedCommand")
+Assert-True ($terminalEncodedIndex -ge 0) "terminal uses EncodedCommand"
+$decodedTerminalCommand = [Text.Encoding]::Unicode.GetString(
+  [Convert]::FromBase64String($terminalArguments[$terminalEncodedIndex + 1])
+)
+Assert-True ($decodedTerminalCommand.Contains("FromBase64String")) "terminal command decodes prompt"
+Assert-True ($decodedTerminalCommand.Contains("& 'C:\Users\Example User\AppData\Roaming\npm\codex.ps1'")) "terminal invokes resolved codex path"
+Assert-True ($decodedTerminalCommand.Contains("--sandbox workspace-write")) "terminal command uses workspace sandbox"
+Assert-True ($decodedTerminalCommand.Contains("--ask-for-approval on-request")) "terminal command asks for approval"
+Assert-True (-not $decodedTerminalCommand.Contains("Prompt with")) "terminal command hides raw prompt"
+
+$routerPath = "C:\Users\Example User\AppData\Roaming\npm\9router.ps1"
+$routerArguments = @(New-NineRouterArguments $routerPath)
+Assert-True (-not $routerArguments.Contains("/c")) "router avoids cmd shell"
+$routerEncodedIndex = [Array]::IndexOf($routerArguments, "-EncodedCommand")
+Assert-True ($routerEncodedIndex -ge 0) "router uses EncodedCommand"
+$decodedRouterCommand = [Text.Encoding]::Unicode.GetString(
+  [Convert]::FromBase64String($routerArguments[$routerEncodedIndex + 1])
+)
+Assert-Equal "& 'C:\Users\Example User\AppData\Roaming\npm\9router.ps1'" $decodedRouterCommand "router invokes resolved path"
 
 Write-Output "$script:Passed PowerShell assertions passed"

@@ -163,9 +163,64 @@ function Test-TcpPort {
   }
 }
 
+function Resolve-CodexCommandPath {
+  param([Parameter(Mandatory)][string]$Name)
+
+  $command = Get-Command $Name -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($null -eq $command -or [string]::IsNullOrWhiteSpace([string]$command.Path)) {
+    throw "Required command '$Name' is not available in PATH."
+  }
+
+  return [string]$command.Path
+}
+
+function ConvertTo-PowerShellSingleQuotedLiteral {
+  param([Parameter(Mandatory)][string]$Value)
+
+  return "'$($Value.Replace("'", "''"))'"
+}
+
+function New-EncodedPowerShellArguments {
+  param(
+    [Parameter(Mandatory)][string]$Command,
+    [switch]$NoExit
+  )
+
+  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
+  $arguments = @("-NoProfile", "-ExecutionPolicy", "Bypass")
+  if ($NoExit) {
+    $arguments += "-NoExit"
+  }
+  $arguments += @("-EncodedCommand", $encoded)
+  return $arguments
+}
+
 function New-CodexTerminalCommand {
-  param([Parameter(Mandatory)][string]$Prompt)
+  param(
+    [Parameter(Mandatory)][string]$Prompt,
+    [Parameter(Mandatory)][string]$CodexPath
+  )
 
   $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Prompt))
-  return "`$p=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('$encoded')); codex --sandbox workspace-write --ask-for-approval on-request `$p"
+  $codexLiteral = ConvertTo-PowerShellSingleQuotedLiteral $CodexPath
+  return "`$p=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('$encoded')); & $codexLiteral --sandbox workspace-write --ask-for-approval on-request `$p"
+}
+
+function New-CodexTerminalArguments {
+  param(
+    [Parameter(Mandatory)][string]$WorkingDirectory,
+    [Parameter(Mandatory)][string]$Prompt,
+    [Parameter(Mandatory)][string]$CodexPath
+  )
+
+  $command = New-CodexTerminalCommand $Prompt $CodexPath
+  $childArguments = @(New-EncodedPowerShellArguments $command -NoExit)
+  return @("-d", $WorkingDirectory, "powershell.exe") + $childArguments
+}
+
+function New-NineRouterArguments {
+  param([Parameter(Mandatory)][string]$NineRouterPath)
+
+  $routerLiteral = ConvertTo-PowerShellSingleQuotedLiteral $NineRouterPath
+  return @(New-EncodedPowerShellArguments "& $routerLiteral")
 }
