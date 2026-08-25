@@ -338,3 +338,67 @@ Expected:
 git add docs/codex-kanban.md tests/codex-kanban-config.test.mjs
 git commit -m "docs: explain encoded Codex startup"
 ```
+
+### Task 5: Keep the initial prompt as one native argument
+
+**Files:**
+- Modify: `scripts/test-codex-kanban-launcher.ps1`
+- Modify: `scripts/codex-kanban-lib.ps1`
+
+- [ ] **Step 1: Add a failing prompt compatibility assertion**
+
+Immediately after creating `$prompt = New-CodexPrompt 42`, require the fixed
+template to avoid double quotes:
+
+```powershell
+Assert-True (-not $prompt.Contains('"')) "prompt avoids native argument splitting"
+```
+
+- [ ] **Step 2: Run the native test and verify RED**
+
+Run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-codex-kanban-launcher.ps1
+```
+
+Expected: FAIL with `prompt avoids native argument splitting expected true`.
+
+- [ ] **Step 3: Remove the unsafe quotes from the fixed prompt template**
+
+Change the final instruction in `New-CodexPrompt` to:
+
+```text
+9. Buat Pull Request yang mencantumkan Closes #$IssueNumber.
+```
+
+- [ ] **Step 4: Verify the exact full prompt reaches Node.js as one argument**
+
+Run the native PowerShell assertions, then execute this diagnostic:
+
+```powershell
+. .\scripts\codex-kanban-lib.ps1
+$prompt = New-CodexPrompt 3
+& node -e "console.log(JSON.stringify(process.argv.slice(1)))" marker $prompt
+```
+
+Expected: the JSON array contains only `marker` and one complete multi-line
+prompt; there is no separate `#3.` element.
+
+- [ ] **Step 5: Run focused and full tests**
+
+```powershell
+npm run test:codex-kanban
+npm test
+git diff --check
+```
+
+Expected: focused tests pass, full tests report zero failures, and diff checking
+exits `0`.
+
+- [ ] **Step 6: Commit the compatibility fix**
+
+```powershell
+git add scripts/codex-kanban-lib.ps1 scripts/test-codex-kanban-launcher.ps1
+git commit -m "fix: keep Codex prompt in one argument"
+```

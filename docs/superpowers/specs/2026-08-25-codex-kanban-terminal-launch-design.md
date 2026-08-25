@@ -28,6 +28,13 @@ The same environment exposes `9router.ps1`, while `cmd.exe /c 9router` cannot
 resolve it. That path is currently hidden when port `20128` is already open but
 would fail when the launcher needs to start 9router itself.
 
+After the encoded boundary was introduced, a second Windows PowerShell 5.1
+compatibility issue was reproduced. The fixed prompt text contained the literal
+`"Closes #<issue>"`. When the npm PowerShell shim forwarded that multi-line
+string to native Node.js, the embedded double quotes split the final text into a
+second positional argument such as `#3.`. Because Codex accepts only one initial
+`PROMPT`, it rejected that second argument.
+
 ## Selected Approach
 
 Use PowerShell `-EncodedCommand` at both process boundaries.
@@ -90,6 +97,11 @@ command path, and preserve these required flags:
 The prompt remains Base64-embedded inside the child script so issue text cannot
 be reinterpreted as PowerShell syntax.
 
+The fixed launcher prompt will avoid embedded double quotes. Its Pull Request
+instruction will use `Closes #<issue>` without surrounding quotes, preserving
+the required GitHub closing keyword while keeping the prompt one native
+argument through the npm shim.
+
 ## Runtime Flow
 
 1. Validate Git, GitHub CLI, Codex, 9router, Windows Terminal, and PowerShell.
@@ -122,10 +134,13 @@ Implementation follows test-driven development:
    containing the required safety flags.
 3. Add a failing test proving 9router startup is constructed for PowerShell and
    the resolved script path rather than `cmd.exe /c 9router`.
-4. Implement the smallest launcher and library changes that satisfy those tests.
-5. Run the native PowerShell tests, the Codex Kanban contract tests, and the full
+4. Add a failing regression test proving the complete generated prompt contains
+   no double quotes and survives native Node.js argument forwarding as one
+   positional value.
+5. Implement the smallest launcher and library changes that satisfy those tests.
+6. Run the native PowerShell tests, the Codex Kanban contract tests, and the full
    repository test suite.
-6. Perform a launcher dry-run to verify GitHub and repository preflight without
+7. Perform a launcher dry-run to verify GitHub and repository preflight without
    mutating the board or opening a terminal.
 
 ## Out Of Scope
