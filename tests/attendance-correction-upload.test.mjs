@@ -148,15 +148,7 @@ test("leave submission uses prepared files instead of DataTransfer mutation", ()
   assert.match(leaveForm, /leavePreparedEvidenceRef/);
   assert.match(leaveForm, /convertToJpeg:\s*true/);
   assert.match(leaveForm, /function submitPreparedLeaveRequest/);
-  assert.match(
-    leaveForm,
-    /formData\.set\("bukti_ss_kepala_unit",\s*unitHeadPreparedEvidenceRef\.current\)/
-  );
-  assert.match(
-    leaveForm,
-    /formData\.set\("bukti_izin",\s*leavePreparedEvidenceRef\.current\)/
-  );
-  assert.match(leaveForm, /formData\.delete\("bukti_izin"\)/);
+  assert.match(leaveForm, /applyPreparedLeaveEvidence\(formData/);
   assert.match(leaveForm, /<form action=\{submitPreparedLeaveRequest\}/);
   assert.doesNotMatch(leaveForm, /replaceInputFiles/);
 });
@@ -225,6 +217,14 @@ test("server validates each evidence field before creating a request", () => {
   );
   assert.match(leaveAction, /allowedMimeTypes:\s*\["image\/jpeg"\]/);
   assert.match(leaveAction, /required:\s*true/);
+  assert.match(leaveAction, /requiresLeaveEvidence\(leaveCategory, multiDay\)/);
+  assert.match(leaveAction, /if \(noEvidenceAck && evidenceRequired\)/);
+  assert.match(leaveAction, /required:\s*evidenceRequired/);
+  assert.match(leaveAction, /await validateJpegFileSignatures\(evidence/);
+  assert.match(
+    leaveAction,
+    /await validateJpegFileSignatures\(\s*unitHeadSs/
+  );
   assert.match(
     leaveAction,
     /const \{ error: attachmentError \} = await supabase[\s\S]*?leave_request_attachments[\s\S]*?if \(attachmentError\) throw/

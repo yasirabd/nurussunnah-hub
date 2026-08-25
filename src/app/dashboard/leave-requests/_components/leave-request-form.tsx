@@ -7,6 +7,10 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
 import { prepareEvidenceFiles } from "@/lib/evidence-upload-client";
+import {
+  applyPreparedLeaveEvidence,
+  requiresLeaveEvidence,
+} from "@/lib/leave-evidence.mjs";
 import { submitLeaveRequestAction } from "../actions";
 
 const LEAVE_CATEGORIES = [
@@ -43,15 +47,6 @@ function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
-}
-
-function requiresLeaveEvidence(category: string, multiDay: boolean) {
-  return (
-    category === "Duka Cita (Kedukaan)" ||
-    category === "Acara Khusus (Wisuda/Pernikahan/Ibadah)" ||
-    category === "Administrasi Pribadi" ||
-    (category === "Sakit" && multiDay)
-  );
 }
 
 export function LeaveRequestForm({
@@ -109,15 +104,11 @@ export function LeaveRequestForm({
   }
 
   async function submitPreparedLeaveRequest(formData: FormData) {
-    formData.delete("bukti_ss_kepala_unit");
-    if (unitHeadPreparedEvidenceRef.current) {
-      formData.set("bukti_ss_kepala_unit", unitHeadPreparedEvidenceRef.current);
-    }
-
-    formData.delete("bukti_izin");
-    if (!noEvidenceAck && leavePreparedEvidenceRef.current) {
-      formData.set("bukti_izin", leavePreparedEvidenceRef.current);
-    }
+    applyPreparedLeaveEvidence(formData, {
+      unitHeadFile: unitHeadPreparedEvidenceRef.current,
+      leaveFile: leavePreparedEvidenceRef.current,
+      noEvidenceAck,
+    });
 
     await submitLeaveRequestAction(formData);
   }

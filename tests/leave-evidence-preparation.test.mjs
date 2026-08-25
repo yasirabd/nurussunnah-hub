@@ -37,8 +37,7 @@ test("leave evidence keeps prepared files outside the native file input", () => 
   assert.match(form, /unitHeadPreparedEvidenceRef/);
   assert.match(form, /leavePreparedEvidenceRef/);
   assert.match(form, /submitPreparedLeaveRequest/);
-  assert.match(form, /formData\.delete\("bukti_ss_kepala_unit"\)/);
-  assert.match(form, /formData\.delete\("bukti_izin"\)/);
+  assert.match(form, /applyPreparedLeaveEvidence\(formData/);
   assert.doesNotMatch(form, /replaceInputFiles/);
 });
 

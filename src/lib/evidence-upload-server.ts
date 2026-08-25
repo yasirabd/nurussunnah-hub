@@ -1,6 +1,7 @@
 import "server-only";
 
 import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
+import { hasJpegSignature } from "@/lib/leave-evidence.mjs";
 
 export class EvidenceValidationError extends Error {}
 
@@ -51,4 +52,18 @@ export function validateSingleEvidenceImage(
   }
 
   return [file];
+}
+
+export async function validateJpegFileSignatures(
+  files: File[],
+  label: string
+) {
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.slice(0, 3).arrayBuffer());
+    if (!hasJpegSignature(bytes)) {
+      throw new EvidenceValidationError(
+        `${label} bukan file JPG yang valid.`
+      );
+    }
+  }
 }

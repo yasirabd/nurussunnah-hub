@@ -8,8 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import {
   EvidenceValidationError,
+  validateJpegFileSignatures,
   validateSingleEvidenceImage,
 } from "@/lib/evidence-upload-server";
+import { requiresLeaveEvidence } from "@/lib/leave-evidence.mjs";
 import {
   uploadToDrive,
   leaveRootFolderId,
@@ -52,13 +54,24 @@ export async function submitLeaveRequestAction(formData: FormData) {
 
   const startDate = text(formData, "start_date");
   const endDate = text(formData, "end_date") || startDate;
+  const leaveCategory = text(formData, "leave_category");
+  const multiDay = endDate !== startDate;
+  const evidenceRequired = requiresLeaveEvidence(leaveCategory, multiDay);
   const noEvidenceAck = text(formData, "no_evidence_ack") === "on";
+  if (noEvidenceAck && evidenceRequired) {
+    redirectWith(
+      false,
+      "Bukti izin wajib untuk jenis atau durasi izin ini.",
+      "ajukan"
+    );
+  }
   let evidence: File[];
   let unitHeadSs: File[];
   try {
     evidence = noEvidenceAck
       ? []
       : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin", {
+          required: evidenceRequired,
           allowedMimeTypes: ["image/jpeg"],
         });
     unitHeadSs = validateSingleEvidenceImage(
@@ -70,6 +83,11 @@ export async function submitLeaveRequestAction(formData: FormData) {
         allowedMimeTypes: ["image/jpeg"],
       }
     );
+    await validateJpegFileSignatures(evidence, "Bukti izin");
+    await validateJpegFileSignatures(
+      unitHeadSs,
+      "Bukti screenshot izin kepala unit"
+    );
   } catch (error) {
     if (error instanceof EvidenceValidationError) {
       redirectWith(false, error.message, "ajukan");
@@ -80,7 +98,7 @@ export async function submitLeaveRequestAction(formData: FormData) {
   const { data: newId, error } = await supabase.rpc("submit_leave_request", {
     p_start_date: startDate,
     p_end_date: endDate,
-    p_leave_category: text(formData, "leave_category"),
+    p_leave_category: leaveCategory,
     p_leave_time_type: text(formData, "leave_time_type") as Database["public"]["Enums"]["leave_time_type_enum"],
     p_reason: text(formData, "reason"),
     p_unit_head_approved: unitHeadApproved,
