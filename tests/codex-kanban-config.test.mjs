@@ -60,6 +60,10 @@ test("Codex kanban is invoked manually with the configured project", () => {
     packageJson.scripts["codex:kanban"],
     "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/codex-kanban-launcher.ps1 -ProjectOwner yasirabd -ProjectNumber 2",
   );
+  assert.equal(
+    packageJson.scripts["codex:kanban:dry-run"],
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/codex-kanban-launcher.ps1 -ProjectOwner yasirabd -ProjectNumber 2 -DryRun",
+  );
 });
 
 test("installer removes legacy polling instead of registering it", () => {
@@ -82,6 +86,7 @@ test("Codex kanban guide documents manual execution and recovery", () => {
   assert.match(source, /Backlog.*Ready.*Doing.*Done/s);
   assert.match(source, /codex-ready/);
   assert.match(source, /npm run codex:kanban/);
+  assert.match(source, /npm run codex:kanban:dry-run/);
   assert.match(source, /Unregister-ScheduledTask/);
   assert.match(source, /codex resume --last/);
   assert.doesNotMatch(source, /Tunggu maksimal satu menit|berjalan setiap satu menit|Instal Scheduled Task/);

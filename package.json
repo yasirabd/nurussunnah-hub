@@ -10,6 +10,7 @@
         "test": "node --test tests/*.test.mjs",
         "test:codex-kanban": "node --test tests/codex-kanban-config.test.mjs",
         "codex:kanban": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/codex-kanban-launcher.ps1 -ProjectOwner yasirabd -ProjectNumber 2",
+        "codex:kanban:dry-run": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/codex-kanban-launcher.ps1 -ProjectOwner yasirabd -ProjectNumber 2 -DryRun",
         "start": "next start",
         "lint": "eslint",
         "migrate": "node scripts/migrate.mjs",

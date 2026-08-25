@@ -82,7 +82,7 @@ Setup kemudian akan membuat label berikut ketika dijalankan tanpa
 ## 5. Dry-Run Launcher
 
 ```powershell
-npm run codex:kanban -- -DryRun
+npm run codex:kanban:dry-run
 ```
 
 Dry-run memeriksa dependency, autentikasi, antrean, working tree, default
