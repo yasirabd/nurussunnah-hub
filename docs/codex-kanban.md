@@ -128,8 +128,13 @@ selesai tanpa memulai 9router atau membuka Windows Terminal.
 
 Launcher menolak memulai ketika working tree kotor, branch bukan default branch,
 `git pull --ff-only` gagal, atau ada issue `codex-running` lain. Jika port
-`127.0.0.1:20128` belum aktif, launcher menjalankan `cmd.exe /c 9router`,
-menunggu maksimal 30 detik, lalu membuka Windows Terminal dan Codex CLI.
+`127.0.0.1:20128` belum aktif, launcher menemukan lokasi `9router.ps1` dari
+PowerShell, memulainya secara tersembunyi, dan menunggu maksimal 30 detik.
+
+Launcher juga menemukan lokasi `codex.ps1` dari PowerShell. Seluruh perintah
+anak dikirim menggunakan `powershell.exe -EncodedCommand`, sehingga Windows
+Terminal menerima satu perintah utuh dan tidak memecahnya pada tanda titik koma
+atau spasi. Setelah itu launcher membuka Windows Terminal dan Codex CLI.
 
 Ketika berhasil, label menjadi `codex-running` dan kartu pindah ke `Doing`.
 Codex diminta membuat branch, menjalankan test/lint/build, dan membuka Pull
@@ -161,7 +166,13 @@ Atau pulihkan issue secara manual:
 - pindahkan ke `Backlog` jika requirement perlu diperjelas.
 
 Jika startup terminal gagal, launcher otomatis mengembalikan label dan Status
-ke `Ready`.
+ke `Ready` jika kegagalan terdeteksi oleh proses launcher.
+
+Versi launcher lama dapat menampilkan error `0x80070002` setelah Windows
+Terminal terbuka. Pada kasus itu launcher sudah selesai dan kartu mungkin
+tertinggal di `Doing` dengan label `codex-running`. Setelah memperbarui launcher,
+ganti label kembali menjadi `codex-ready`, pindahkan kartu ke `Ready`, lalu
+jalankan ulang `npm run codex:kanban` satu kali.
 
 ## 10. Menghapus Polling Lama
 

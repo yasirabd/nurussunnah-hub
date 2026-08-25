@@ -94,5 +94,7 @@ test("Codex kanban guide documents manual execution and recovery", () => {
   assert.match(source, /npm run codex:kanban:dry-run/);
   assert.match(source, /Unregister-ScheduledTask/);
   assert.match(source, /codex resume --last/);
+  assert.match(source, /EncodedCommand/);
+  assert.match(source, /0x80070002/);
   assert.doesNotMatch(source, /Tunggu maksimal satu menit|berjalan setiap satu menit|Instal Scheduled Task/);
 });
