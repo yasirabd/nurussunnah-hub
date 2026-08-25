@@ -97,6 +97,7 @@ Assert-True ($prompt.Contains("npm run lint")) "prompt lints"
 Assert-True ($prompt.Contains("npm run build")) "prompt builds"
 Assert-True ($prompt.Contains('Closes #42')) "prompt closes issue"
 Assert-True ($prompt.Contains("Jangan menjalankan deploy")) "prompt blocks deploy"
+Assert-True (-not $prompt.Contains('"')) "prompt avoids native argument splitting"
 
 $items = @(
   [pscustomobject]@{ IssueNumber = 9; Title = "Second"; ItemId = "B"; Url = "b" },

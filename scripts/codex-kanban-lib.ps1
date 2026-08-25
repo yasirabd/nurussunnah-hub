@@ -38,7 +38,7 @@ Kerjakan GitHub issue #$IssueNumber di repository nurussunnah-hub.
 6. Tambahkan atau perbarui test jika relevan.
 7. Jalankan npm test, npm run lint, dan npm run build.
 8. Jangan menjalankan deploy, migration, atau mengubah data production.
-9. Buat Pull Request yang mencantumkan "Closes #$IssueNumber".
+9. Buat Pull Request yang mencantumkan Closes #$IssueNumber.
 "@
 }
 
