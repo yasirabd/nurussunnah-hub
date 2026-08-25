@@ -23,11 +23,23 @@ test("evidence preparation reads the input before awaiting", () => {
 });
 
 test("leave evidence enforces 5 MB for its single photo", () => {
-  assert.match(form, /prepareEvidenceFiles\(selectedFiles, \{\s*maxFileBytes: EVIDENCE_MAX_FILE_BYTES/);
+  assert.match(
+    form,
+    /prepareEvidenceFiles\(selectedFiles, \{\s*maxFileBytes: EVIDENCE_MAX_FILE_BYTES,\s*convertToJpeg: true/
+  );
   assert.match(form, /Maksimal 1 foto, 5 MB/);
   assert.match(form, /Foto yang lebih besar akan diperkecil otomatis/);
   assert.doesNotMatch(form, /EVIDENCE_MAX_TOTAL_BYTES/);
   assert.doesNotMatch(form, /totalFileBytes/);
+});
+
+test("leave evidence keeps prepared files outside the native file input", () => {
+  assert.match(form, /unitHeadPreparedEvidenceRef/);
+  assert.match(form, /leavePreparedEvidenceRef/);
+  assert.match(form, /submitPreparedLeaveRequest/);
+  assert.match(form, /formData\.delete\("bukti_ss_kepala_unit"\)/);
+  assert.match(form, /formData\.delete\("bukti_izin"\)/);
+  assert.doesNotMatch(form, /replaceInputFiles/);
 });
 
 test("server rejects oversized leave evidence before persisting the request", () => {

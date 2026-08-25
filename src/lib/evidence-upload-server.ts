@@ -4,10 +4,16 @@ import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs"
 
 export class EvidenceValidationError extends Error {}
 
+type EvidenceValidationOptions = {
+  required?: boolean;
+  allowedMimeTypes?: readonly string[];
+};
+
 export function validateSingleEvidenceImage(
   formData: FormData,
   key: string,
-  label: string
+  label: string,
+  options: EvidenceValidationOptions = {}
 ): File[] {
   const files = formData
     .getAll(key)
@@ -18,9 +24,23 @@ export function validateSingleEvidenceImage(
   }
 
   const file = files[0];
-  if (!file) return [];
+  if (!file) {
+    if (options.required) {
+      throw new EvidenceValidationError(`${label} wajib diunggah.`);
+    }
+    return [];
+  }
 
-  if (!file.type.startsWith("image/")) {
+  if (
+    options.allowedMimeTypes &&
+    !options.allowedMimeTypes.includes(file.type)
+  ) {
+    throw new EvidenceValidationError(
+      `${label} harus disiapkan sebagai foto JPG.`
+    );
+  }
+
+  if (!options.allowedMimeTypes && !file.type.startsWith("image/")) {
     throw new EvidenceValidationError(`${label} harus berupa foto. PDF tidak didukung.`);
   }
 

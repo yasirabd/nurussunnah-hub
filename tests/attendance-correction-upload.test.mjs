@@ -57,6 +57,11 @@ test("attendance correction and leave request share browser image preparation", 
   const clientUtility = readFileSync("src/lib/evidence-upload-client.ts", "utf8");
 
   assert.match(clientUtility, /export async function prepareEvidenceFiles/);
+  assert.match(clientUtility, /convertToJpeg/);
+  assert.match(
+    clientUtility,
+    /convertToJpeg\s*\|\|\s*shouldOptimizeEvidenceFile/
+  );
   assert.match(clientUtility, /evidenceCompressionAttempts/);
   assert.match(clientUtility, /EVIDENCE_MAX_FILE_BYTES/);
   assert.match(clientUtility, /isEvidenceFileWithinLimit\(blob\.size, maxFileBytes\)/);
@@ -76,6 +81,10 @@ test("attendance correction and leave request share browser image preparation", 
     /name="bukti_izin"[\s\S]*?onChange=\{prepareLeaveEvidence\}/
   );
   assert.match(leaveForm, /blocked \|\| isPreparingEvidence/);
+  assert.match(
+    clientUtility,
+    /Pilih atau konversi foto ke JPG, PNG, atau WebP/
+  );
 });
 
 test("attendance correction note is optional", () => {
@@ -109,6 +118,7 @@ test("no-evidence acknowledgement clears and disables leave evidence", () => {
   );
   assert.match(leaveForm, /function handleNoEvidenceAck/);
   assert.match(leaveForm, /leaveEvidenceRef\.current\.value = ""/);
+  assert.match(leaveForm, /leavePreparedEvidenceRef\.current = null/);
   assert.match(
     leaveForm,
     /disabled=\{isPreparingEvidence \|\| \(!evidenceRequired && noEvidenceAck\)\}/
@@ -126,6 +136,29 @@ test("no-evidence acknowledgement clears and disables leave evidence", () => {
     leaveAction,
     /evidence = noEvidenceAck\s*\? \[\]\s*:\s*validateSingleEvidenceImage\(formData, "bukti_izin"/
   );
+});
+
+test("leave submission uses prepared files instead of DataTransfer mutation", () => {
+  const leaveForm = readFileSync(
+    "src/app/dashboard/leave-requests/_components/leave-request-form.tsx",
+    "utf8"
+  );
+
+  assert.match(leaveForm, /unitHeadPreparedEvidenceRef/);
+  assert.match(leaveForm, /leavePreparedEvidenceRef/);
+  assert.match(leaveForm, /convertToJpeg:\s*true/);
+  assert.match(leaveForm, /function submitPreparedLeaveRequest/);
+  assert.match(
+    leaveForm,
+    /formData\.set\("bukti_ss_kepala_unit",\s*unitHeadPreparedEvidenceRef\.current\)/
+  );
+  assert.match(
+    leaveForm,
+    /formData\.set\("bukti_izin",\s*leavePreparedEvidenceRef\.current\)/
+  );
+  assert.match(leaveForm, /formData\.delete\("bukti_izin"\)/);
+  assert.match(leaveForm, /<form action=\{submitPreparedLeaveRequest\}/);
+  assert.doesNotMatch(leaveForm, /replaceInputFiles/);
 });
 
 test("attendance correction and leave evidence inputs accept one image only", () => {
@@ -184,11 +217,17 @@ test("server validates each evidence field before creating a request", () => {
 
   assert.match(
     leaveAction,
-    /validateSingleEvidenceImage\(\s*formData,\s*"bukti_ss_kepala_unit",\s*"Bukti screenshot izin kepala unit"\s*\)/
+    /validateSingleEvidenceImage\(\s*formData,\s*"bukti_ss_kepala_unit",\s*"Bukti screenshot izin kepala unit",[\s\S]*?required:\s*true[\s\S]*?allowedMimeTypes:\s*\["image\/jpeg"\][\s\S]*?\)/
   );
   assert.match(
     leaveAction,
-    /validateSingleEvidenceImage\(formData, "bukti_izin", "Bukti izin"\)/
+    /validateSingleEvidenceImage\(formData, "bukti_izin", "Bukti izin", \{[\s\S]*?allowedMimeTypes:\s*\["image\/jpeg"\][\s\S]*?\}\)/
+  );
+  assert.match(leaveAction, /allowedMimeTypes:\s*\["image\/jpeg"\]/);
+  assert.match(leaveAction, /required:\s*true/);
+  assert.match(
+    leaveAction,
+    /const \{ error: attachmentError \} = await supabase[\s\S]*?leave_request_attachments[\s\S]*?if \(attachmentError\) throw/
   );
   assert.ok(
     leaveAction.indexOf("validateSingleEvidenceImage") <

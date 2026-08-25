@@ -58,11 +58,17 @@ export async function submitLeaveRequestAction(formData: FormData) {
   try {
     evidence = noEvidenceAck
       ? []
-      : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin");
+      : validateSingleEvidenceImage(formData, "bukti_izin", "Bukti izin", {
+          allowedMimeTypes: ["image/jpeg"],
+        });
     unitHeadSs = validateSingleEvidenceImage(
       formData,
       "bukti_ss_kepala_unit",
-      "Bukti screenshot izin kepala unit"
+      "Bukti screenshot izin kepala unit",
+      {
+        required: true,
+        allowedMimeTypes: ["image/jpeg"],
+      }
     );
   } catch (error) {
     if (error instanceof EvidenceValidationError) {
@@ -133,15 +139,17 @@ export async function submitLeaveRequestAction(formData: FormData) {
     }
 
     if (rows.length) {
-      await supabase.from("leave_request_attachments").insert(rows);
+      const { error: attachmentError } = await supabase
+        .from("leave_request_attachments")
+        .insert(rows);
+      if (attachmentError) throw new Error("Metadata bukti izin gagal disimpan.");
     }
   } catch (e) {
+    console.error("Leave evidence upload failed", e);
     revalidatePath(PATH);
     redirectWith(
       false,
-      `Pengajuan tersimpan, tetapi upload bukti ke Drive gagal: ${
-        e instanceof Error ? e.message : "unknown"
-      }. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.`,
+      "Pengajuan tersimpan, tetapi bukti gagal diupload atau ditautkan. Pengajuan sudah tersimpan; jangan kirim ulang. Silakan hubungi admin.",
       "riwayat"
     );
   }

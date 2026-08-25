@@ -17,7 +17,11 @@ function decodeImage(file: File): Promise<HTMLImageElement> {
     };
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      reject(new Error("Format foto tidak dapat diproses oleh browser."));
+      reject(
+        new Error(
+          "Format foto tidak dapat diproses oleh browser. Pilih atau konversi foto ke JPG, PNG, atau WebP."
+        )
+      );
     };
     image.src = objectUrl;
   });
@@ -31,9 +35,12 @@ function canvasToJpeg(canvas: HTMLCanvasElement, quality: number) {
 
 async function optimizeEvidenceImage(
   file: File,
-  maxFileBytes?: number
+  maxFileBytes?: number,
+  convertToJpeg = false
 ): Promise<File> {
-  if (!shouldOptimizeEvidenceFile(file.type, file.size)) return file;
+  const shouldPrepare =
+    convertToJpeg || shouldOptimizeEvidenceFile(file.type, file.size);
+  if (!shouldPrepare) return file;
 
   const image = await decodeImage(file);
   const canvas = document.createElement("canvas");
@@ -60,7 +67,7 @@ async function optimizeEvidenceImage(
     const isSmaller = blob.size < file.size;
     const isWithinLimit =
       !maxFileBytes || isEvidenceFileWithinLimit(blob.size, maxFileBytes);
-    if (isSmaller && isWithinLimit) {
+    if ((convertToJpeg || isSmaller) && isWithinLimit) {
       const baseName = file.name.replace(/\.[^.]+$/, "") || "bukti";
       return new File([blob], `${baseName}.jpg`, {
         type: "image/jpeg",
@@ -69,7 +76,7 @@ async function optimizeEvidenceImage(
     }
   }
 
-  if (maxFileBytes && file.size > maxFileBytes) {
+  if (maxFileBytes && (convertToJpeg || file.size > maxFileBytes)) {
     throw new Error(
       `Foto ${file.name} tidak dapat diperkecil hingga di bawah 5 MB.`
     );
@@ -79,14 +86,17 @@ async function optimizeEvidenceImage(
 
 export async function prepareEvidenceFiles(
   files: File[],
-  options: { maxFileBytes?: number } = {
+  options: { maxFileBytes?: number; convertToJpeg?: boolean } = {
     maxFileBytes: EVIDENCE_MAX_FILE_BYTES,
   }
 ) {
   const maxFileBytes = options.maxFileBytes;
+  const convertToJpeg = options.convertToJpeg ?? false;
   const preparedFiles: File[] = [];
   for (const file of files) {
-    preparedFiles.push(await optimizeEvidenceImage(file, maxFileBytes));
+    preparedFiles.push(
+      await optimizeEvidenceImage(file, maxFileBytes, convertToJpeg)
+    );
   }
 
   const oversizedFile = maxFileBytes
