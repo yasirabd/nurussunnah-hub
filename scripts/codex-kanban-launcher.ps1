@@ -82,7 +82,6 @@ function Get-ProjectQueueItems {
     "project", "item-list", "$ProjectNumber",
     "--owner", $ProjectOwner,
     "--query", $Query,
-    "--field", "Status",
     "--limit", "100",
     "--format", "json"
   )

@@ -37,6 +37,8 @@ test("PowerShell launcher tests pass on Windows", { skip: process.platform !== "
 
 test("production launcher keeps safety boundaries", () => {
   const source = read("scripts/codex-kanban-launcher.ps1");
+  const queueFunction = source.match(/function Get-ProjectQueueItems \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(queueFunction, "Get-ProjectQueueItems function must exist");
   assert.match(source, /Local\\NurusSunnahHubCodexKanban/);
   assert.match(source, /Set-Location.*Split-Path/s);
   assert.match(source, /git status --porcelain/);
@@ -48,6 +50,7 @@ test("production launcher keeps safety boundaries", () => {
   assert.match(source, /-WindowStyle Hidden/);
   assert.match(source, /--sandbox workspace-write/);
   assert.match(source, /--ask-for-approval on-request/);
+  assert.doesNotMatch(queueFunction, /"--field"/);
   assert.doesNotMatch(source, /reset --hard|checkout --|git stash/);
 });
 
