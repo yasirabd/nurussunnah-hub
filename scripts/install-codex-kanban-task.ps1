@@ -38,8 +38,7 @@ function Invoke-CheckedGh {
 
 foreach ($commandName in @(
   "git", "gh", "codex", "9router", "powershell.exe",
-  "Register-ScheduledTask", "New-ScheduledTaskAction",
-  "New-ScheduledTaskTrigger", "New-ScheduledTaskPrincipal"
+  "Get-ScheduledTask", "Unregister-ScheduledTask"
 )) {
   Assert-CommandAvailable $commandName
 }
@@ -85,26 +84,9 @@ foreach ($label in $labels) {
   }
 }
 
-$launcherPath = Join-Path $PSScriptRoot "codex-kanban-launcher.ps1"
-$arguments = New-ScheduledTaskArgumentString $launcherPath $ProjectOwner $ProjectNumber
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $arguments
-$trigger = New-ScheduledTaskTrigger `
-  -Once `
-  -At ((Get-Date).AddMinutes(1)) `
-  -RepetitionInterval (New-TimeSpan -Minutes 1)
-$principal = New-ScheduledTaskPrincipal `
-  -UserId ([Security.Principal.WindowsIdentity]::GetCurrent().Name) `
-  -LogonType Interactive `
-  -RunLevel Limited
-
-if ($PSCmdlet.ShouldProcess("Scheduled Task '$TaskName'", "Register")) {
-  Register-ScheduledTask `
-    -TaskName $TaskName `
-    -Action $action `
-    -Trigger $trigger `
-    -Principal $principal `
-    -Description "Open one local Codex session for the first codex-ready issue." `
-    -Force | Out-Null
+$legacyTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($null -ne $legacyTask -and $PSCmdlet.ShouldProcess("Scheduled Task '$TaskName'", "Unregister legacy polling")) {
+  Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
 }
 
-Write-Output "Codex kanban Scheduled Task validation completed."
+Write-Output "Codex kanban manual setup validation completed. Run: npm run codex:kanban"

@@ -54,15 +54,25 @@ test("production launcher keeps safety boundaries", () => {
   assert.doesNotMatch(source, /reset --hard|checkout --|git stash/);
 });
 
-test("installer registers the scheduled task safely", () => {
-  const source = read("scripts/install-codex-kanban-task.ps1");
+test("Codex kanban is invoked manually with the configured project", () => {
+  const packageJson = JSON.parse(read("package.json"));
+  assert.equal(
+    packageJson.scripts["codex:kanban"],
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/codex-kanban-launcher.ps1 -ProjectOwner yasirabd -ProjectNumber 2",
+  );
+});
+
+test("installer removes legacy polling instead of registering it", () => {
+  const installer = read("scripts/install-codex-kanban-task.ps1");
+  const library = read("scripts/codex-kanban-lib.ps1");
   for (const value of ["codex-ready", "codex-running", "Backlog", "Ready", "Doing", "Done"]) {
-    assert.match(source, new RegExp(value));
+    assert.match(installer, new RegExp(value));
   }
-  assert.match(source, /SupportsShouldProcess/);
-  assert.match(source, /New-TimeSpan -Minutes 1/);
-  assert.match(source, /LogonType Interactive/);
-  assert.match(source, /RunLevel Limited/);
+  assert.match(installer, /SupportsShouldProcess/);
+  assert.match(installer, /Get-ScheduledTask/);
+  assert.match(installer, /Unregister-ScheduledTask/);
+  assert.doesNotMatch(installer, /Register-ScheduledTask|New-ScheduledTaskAction|New-ScheduledTaskTrigger|New-ScheduledTaskPrincipal|New-TimeSpan -Minutes 1/);
+  assert.doesNotMatch(library, /function New-ScheduledTaskArgumentString/);
 });
 
 test("Codex kanban guide documents setup and recovery", () => {

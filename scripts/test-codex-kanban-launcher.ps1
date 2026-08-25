@@ -184,12 +184,4 @@ Assert-True (-not $terminalCommand.Contains("Prompt with")) "terminal command hi
 Assert-True ($terminalCommand.Contains("--sandbox workspace-write")) "terminal command uses workspace sandbox"
 Assert-True ($terminalCommand.Contains("--ask-for-approval on-request")) "terminal command asks for approval"
 
-$scheduledArguments = New-ScheduledTaskArgumentString `
-  "E:\Path With Space\scripts\codex-kanban-launcher.ps1" `
-  "yasirabd" `
-  7
-Assert-True ($scheduledArguments.Contains('-File "E:\Path With Space\scripts\codex-kanban-launcher.ps1"')) "scheduled task quotes launcher path"
-Assert-True ($scheduledArguments.Contains('-ProjectOwner "yasirabd"')) "scheduled task quotes owner"
-Assert-True ($scheduledArguments.Contains("-ProjectNumber 7")) "scheduled task includes project number"
-
 Write-Output "$script:Passed PowerShell assertions passed"

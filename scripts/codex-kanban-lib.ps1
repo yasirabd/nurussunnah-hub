@@ -169,17 +169,3 @@ function New-CodexTerminalCommand {
   $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Prompt))
   return "`$p=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('$encoded')); codex --sandbox workspace-write --ask-for-approval on-request `$p"
 }
-
-function New-ScheduledTaskArgumentString {
-  param(
-    [Parameter(Mandatory)][string]$LauncherPath,
-    [Parameter(Mandatory)][string]$ProjectOwner,
-    [Parameter(Mandatory)][int]$ProjectNumber
-  )
-
-  if ($LauncherPath.Contains('"') -or $ProjectOwner.Contains('"')) {
-    throw "Scheduled Task arguments cannot contain quote characters."
-  }
-
-  return "-NoProfile -ExecutionPolicy Bypass -File `"$LauncherPath`" -ProjectOwner `"$ProjectOwner`" -ProjectNumber $ProjectNumber"
-}
