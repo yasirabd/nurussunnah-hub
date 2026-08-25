@@ -51,3 +51,46 @@ function Select-CodexQueueItem {
 
   return $Items[0]
 }
+
+function Invoke-CodexKanban {
+  param(
+    [Parameter(Mandatory)][hashtable]$Runtime,
+    [Parameter(Mandatory)][string]$ProjectOwner,
+    [Parameter(Mandatory)][int]$ProjectNumber,
+    [switch]$DryRun
+  )
+
+  & $Runtime.AssertDependencies
+
+  $running = @(& $Runtime.GetRunningItems $ProjectOwner $ProjectNumber)
+  if ($running.Count -gt 0) {
+    & $Runtime.WriteLog "Info" "A Codex issue is already running."
+    return "Busy"
+  }
+
+  $ready = @(& $Runtime.GetReadyItems $ProjectOwner $ProjectNumber)
+  $item = Select-CodexQueueItem $ready
+  if ($null -eq $item) {
+    & $Runtime.WriteLog "Info" "No codex-ready issue found."
+    return "Idle"
+  }
+
+  & $Runtime.AssertRepository
+  & $Runtime.EnsureNineRouter
+  $prompt = New-CodexPrompt $item.IssueNumber
+
+  if ($DryRun) {
+    & $Runtime.WriteLog "Info" "Dry-run selected issue #$($item.IssueNumber)."
+    return "DryRun"
+  }
+
+  & $Runtime.SetIssueRunning $item
+  try {
+    & $Runtime.OpenCodex $item $prompt
+  } catch {
+    & $Runtime.SetIssueReady $item
+    throw
+  }
+
+  return "Started"
+}
