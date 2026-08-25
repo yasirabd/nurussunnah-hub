@@ -94,3 +94,78 @@ function Invoke-CodexKanban {
 
   return "Started"
 }
+
+function ConvertTo-CodexQueueItems {
+  param([Parameter(Mandatory)]$ProjectResponse)
+
+  foreach ($item in @($ProjectResponse.items)) {
+    $content = $item.content
+    if ($null -eq $content -or $null -eq $content.number) {
+      continue
+    }
+
+    [pscustomobject]@{
+      IssueNumber = [int]$content.number
+      Title = [string]$content.title
+      ItemId = [string]$item.id
+      Url = [string]$content.url
+    }
+  }
+}
+
+function Get-CodexProjectMetadata {
+  param(
+    [Parameter(Mandatory)]$ProjectJson,
+    [Parameter(Mandatory)]$FieldsJson
+  )
+
+  $statusField = @($FieldsJson.fields) | Where-Object { $_.name -eq "Status" } | Select-Object -First 1
+  if ($null -eq $statusField) {
+    throw "GitHub Project is missing the Status field."
+  }
+
+  $readyOption = @($statusField.options) | Where-Object { $_.name -eq "Ready" } | Select-Object -First 1
+  $doingOption = @($statusField.options) | Where-Object { $_.name -eq "Doing" } | Select-Object -First 1
+  if ($null -eq $readyOption) {
+    throw "GitHub Project Status is missing the Ready option."
+  }
+  if ($null -eq $doingOption) {
+    throw "GitHub Project Status is missing the Doing option."
+  }
+
+  return [pscustomobject]@{
+    ProjectId = [string]$ProjectJson.id
+    StatusFieldId = [string]$statusField.id
+    ReadyOptionId = [string]$readyOption.id
+    DoingOptionId = [string]$doingOption.id
+  }
+}
+
+function Test-TcpPort {
+  param(
+    [Parameter(Mandatory)][string]$HostName,
+    [Parameter(Mandatory)][int]$Port,
+    [int]$TimeoutMs = 500
+  )
+
+  $client = [Net.Sockets.TcpClient]::new()
+  try {
+    $result = $client.BeginConnect($HostName, $Port, $null, $null)
+    if (-not $result.AsyncWaitHandle.WaitOne($TimeoutMs)) {
+      return $false
+    }
+    $client.EndConnect($result)
+    return $true
+  } catch {
+    return $false
+  } finally {
+    $client.Dispose()
+  }
+}
+
+function New-CodexTerminalCommand {
+  param([Parameter(Mandatory)][string]$Prompt)
+
+  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Prompt))
+  return "`$p=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('$encoded')); codex --sandbox workspace-write --ask-for-approval on-request `$p"
+}

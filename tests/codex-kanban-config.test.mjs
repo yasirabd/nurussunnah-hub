@@ -34,3 +34,18 @@ test("PowerShell launcher tests pass on Windows", { skip: process.platform !== "
 
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });
+
+test("production launcher keeps safety boundaries", () => {
+  const source = read("scripts/codex-kanban-launcher.ps1");
+  assert.match(source, /Local\\NurusSunnahHubCodexKanban/);
+  assert.match(source, /git status --porcelain/);
+  assert.match(source, /git pull --ff-only/);
+  assert.match(source, /127\.0\.0\.1/);
+  assert.match(source, /20128/);
+  assert.match(source, /cmd\.exe/);
+  assert.match(source, /9router/);
+  assert.match(source, /-WindowStyle Hidden/);
+  assert.match(source, /--sandbox workspace-write/);
+  assert.match(source, /--ask-for-approval on-request/);
+  assert.doesNotMatch(source, /reset --hard|checkout --|git stash/);
+});

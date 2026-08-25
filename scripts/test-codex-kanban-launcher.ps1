@@ -136,4 +136,52 @@ $fake = New-FakeRuntime -Ready @($queueItem) -OpenCodexOk $false
 Assert-Throws { Invoke-CodexKanban $fake.Runtime "yasirabd" 1 } "Terminal failed" "terminal rollback"
 Assert-True ($fake.Trace.Contains("set-ready:42")) "terminal failure restores ready"
 
+$projectResponse = [pscustomobject]@{
+  items = @(
+    [pscustomobject]@{
+      id = "PVTI_1"
+      content = [pscustomobject]@{
+        number = 77
+        title = "Queue item"
+        url = "https://github.com/yasirabd/nurussunnah-hub/issues/77"
+      }
+    }
+  )
+}
+$mapped = @(ConvertTo-CodexQueueItems $projectResponse)
+Assert-Equal 77 $mapped[0].IssueNumber "project item number"
+Assert-Equal "PVTI_1" $mapped[0].ItemId "project item id"
+
+$projectJson = [pscustomobject]@{ id = "PVT_project" }
+$fieldsJson = [pscustomobject]@{
+  fields = @(
+    [pscustomobject]@{
+      id = "PVTF_status"
+      name = "Status"
+      options = @(
+        [pscustomobject]@{ id = "ready_id"; name = "Ready" },
+        [pscustomobject]@{ id = "doing_id"; name = "Doing" }
+      )
+    }
+  )
+}
+$metadata = Get-CodexProjectMetadata $projectJson $fieldsJson
+Assert-Equal "PVT_project" $metadata.ProjectId "project node id"
+Assert-Equal "PVTF_status" $metadata.StatusFieldId "status field id"
+Assert-Equal "ready_id" $metadata.ReadyOptionId "ready option id"
+Assert-Equal "doing_id" $metadata.DoingOptionId "doing option id"
+
+$listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
+$listener.Start()
+$openPort = ([Net.IPEndPoint]$listener.LocalEndpoint).Port
+Assert-True (Test-TcpPort "127.0.0.1" $openPort 500) "open TCP port"
+$listener.Stop()
+Assert-True (-not (Test-TcpPort "127.0.0.1" $openPort 100)) "closed TCP port"
+
+$terminalCommand = New-CodexTerminalCommand "Prompt with 'quotes' and `$variables"
+Assert-True ($terminalCommand.Contains("FromBase64String")) "terminal command decodes Base64"
+Assert-True (-not $terminalCommand.Contains("Prompt with")) "terminal command hides raw prompt"
+Assert-True ($terminalCommand.Contains("--sandbox workspace-write")) "terminal command uses workspace sandbox"
+Assert-True ($terminalCommand.Contains("--ask-for-approval on-request")) "terminal command asks for approval"
+
 Write-Output "$script:Passed PowerShell assertions passed"
