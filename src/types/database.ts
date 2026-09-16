@@ -6,12 +6,36 @@
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type PolicyDocument = {
+  id: string
+  title: string
+  kind: 'TATA_TERTIB' | 'SK'
+  document_number: string | null
+  effective_date: string
+  file_path: string
+  status: 'draft' | 'published' | 'archived'
+  replaces_id: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+  published_by: string | null
+  published_at: string | null
+  archived_by: string | null
+  archived_at: string | null
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      policy_documents: {
+        Row: PolicyDocument
+        Insert: Omit<PolicyDocument, 'created_at' | 'updated_at' | 'status' | 'published_by' | 'published_at' | 'archived_by' | 'archived_at'>
+        Update: Partial<PolicyDocument>
+        Relationships: []
+      }
       academic_years: {
         Row: {
           created_at: string
@@ -905,6 +929,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_policies: { Args: Record<PropertyKey, never>; Returns: boolean }
+      save_policy_draft: {
+        Args: {
+          p_id: string
+          p_title: string
+          p_kind: string
+          p_document_number: string | null
+          p_effective_date: string
+          p_file_path: string
+          p_replaces_id?: string | null
+          p_expected_updated_at?: string | null
+        }
+        Returns: string
+      }
+      publish_policy: { Args: { p_id: string }; Returns: undefined }
+      archive_policy: { Args: { p_id: string }; Returns: undefined }
       allocate_employee_no: {
         Args: {
           p_employee_status: string

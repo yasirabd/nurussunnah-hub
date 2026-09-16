@@ -26,6 +26,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Profil Saya", href: "/dashboard/profile", icon: Users },
+  { label: "Peraturan & SK Yayasan", href: "/dashboard/policies", icon: FileText },
   { label: "Feedback Rekan", href: "/dashboard/feedback", icon: MessageSquareMore },
   { label: "Izin Pegawai", href: "/dashboard/leave-requests", icon: CalendarClock },
   { label: "Koreksi Presensi", href: "/dashboard/attendance-corrections", icon: ClipboardClock },

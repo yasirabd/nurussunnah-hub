@@ -89,6 +89,7 @@ const guardedActionFiles = [
   "src/app/dashboard/employees/registrations/actions.ts",
   "src/app/dashboard/feedback/actions.ts",
   "src/app/dashboard/leave-requests/actions.ts",
+  "src/app/dashboard/policies/actions.ts",
   "src/app/dashboard/profile/actions.ts",
   "src/app/dashboard/units/actions.ts",
 ];
@@ -112,7 +113,14 @@ test("dashboard server-action inventory is explicit", () => {
 for (const path of guardedActionFiles) {
   test(`${path} gates every exported server action before feature work`, () => {
     const source = readFileSync(path, "utf8");
-    assert.match(source, /import \{ requireFeatureAccess \} from ["']@\/lib\/auth\/feature-access["']/);
+    const policyActions = path === "src/app/dashboard/policies/actions.ts";
+    if (policyActions) {
+      const policyAccess = readFileSync("src/app/dashboard/policies/access.ts", "utf8");
+      assert.match(policyAccess, /await requireFeatureAccess\(\)/);
+      assert.match(source, /import \{ requirePolicyAccess \} from ['"]\.\/access['"]/);
+    } else {
+      assert.match(source, /import \{ requireFeatureAccess \} from ["']@\/lib\/auth\/feature-access["']/);
+    }
 
     const names = [...source.matchAll(/export async function\s+(\w+)/g)].map((match) => match[1]);
     assert.ok(names.length > 0);
@@ -122,7 +130,7 @@ for (const path of guardedActionFiles) {
       const body = source.indexOf("{", signature);
       assert.match(
         source.slice(body, body + 120),
-        /^\{\s*await requireFeatureAccess\(\);/,
+        policyActions ? /^\{\s*const \{ supabase \} = await requirePolicyAccess\(true\);/ : /^\{\s*await requireFeatureAccess\(\);/,
         `${name} must call requireFeatureAccess() first`,
       );
     }
