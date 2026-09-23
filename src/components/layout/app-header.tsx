@@ -23,13 +23,6 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Admin",
 };
 
-const ROLE_COLORS: Record<string, string> = {
-  HRD: "bg-primary/10 text-primary",
-  ADMIN: "bg-warning/12 text-warning",
-  KEPALA_UNIT: "bg-accent text-accent-foreground",
-  PEGAWAI: "bg-success/12 text-success",
-};
-
 interface AppHeaderProps {
   profile: {
     full_name?: string | null;
@@ -116,12 +109,14 @@ export function AppHeader({ profile, roles, onToggleSidebar, sidebarOpen = true 
         <button
           onClick={onToggleSidebar}
           aria-label={sidebarOpen ? "Tutup sidebar" : "Buka sidebar"}
+          aria-expanded={sidebarOpen}
+          aria-controls="app-sidebar"
           className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-full)] border-0 bg-transparent text-foreground transition-colors hover:bg-muted"
         >
           {sidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
         </button>
         <div>
-          <p className="text-sm font-semibold tracking-normal">Dashboard SDM</p>
+          <p className="text-sm font-semibold tracking-normal">{visibleItems.find((item) => item.href === pathname || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`)))?.label ?? "Dashboard SDM"}</p>
           <p className="text-xs text-muted-foreground">Yayasan Islam Nurus Sunnah</p>
         </div>
       </div>
@@ -133,7 +128,7 @@ export function AppHeader({ profile, roles, onToggleSidebar, sidebarOpen = true 
             variant="secondary"
             className={cn(
               "hidden rounded-[var(--radius-full)] border-0 px-3 text-xs font-medium sm:inline-flex",
-              ROLE_COLORS[primaryRole]
+              "bg-primary/8 text-primary"
             )}
           >
             {ROLE_LABELS[primaryRole]}
@@ -143,10 +138,11 @@ export function AppHeader({ profile, roles, onToggleSidebar, sidebarOpen = true 
         <DropdownMenu>
           <DropdownMenuTrigger
             id="user-menu-trigger"
-            className="flex items-center gap-2 rounded-[var(--radius-full)] px-2 py-1.5 outline-none transition-colors hover:bg-muted"
+            aria-label={`Menu akun ${profile?.full_name ?? "Pengguna"}`}
+            className="flex items-center gap-2 rounded-[var(--radius-full)] px-2 py-1.5 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <Avatar className="h-8 w-8">
-              <AvatarImage src={profile?.avatar_url ?? undefined} />
+              <AvatarImage src={profile?.avatar_url ?? undefined} alt={profile?.full_name ?? "Pengguna"} />
               <AvatarFallback className="rounded-[var(--radius-full)] bg-primary/12 text-xs font-semibold text-primary">
                 {getInitials(profile?.full_name)}
               </AvatarFallback>

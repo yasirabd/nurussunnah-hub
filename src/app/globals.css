@@ -60,8 +60,8 @@
 /* Yayasan Islam Nurus Sunnah brand light tokens */
 :root {
   /* Surface */
-  --background: oklch(0.985 0.012 128);
-  --foreground: oklch(0.22 0.045 150);
+  --background: oklch(0.975 0.006 90);
+  --foreground: oklch(0.25 0.025 150);
 
   /* Card / Popover */
   --card: oklch(1 0 0);
@@ -78,16 +78,16 @@
   --on-primary-container: oklch(0.25 0.075 150);
 
   /* Secondary */
-  --secondary: oklch(0.955 0.025 132);
+  --secondary: oklch(0.95 0.009 100);
   --secondary-foreground: oklch(0.30 0.055 145);
 
   /* Muted */
-  --muted: oklch(0.95 0.016 130);
-  --muted-foreground: oklch(0.48 0.035 145);
+  --muted: oklch(0.95 0.009 100);
+  --muted-foreground: oklch(0.48 0.018 140);
 
   /* Accent - softened #e3b251 */
-  --accent: oklch(0.91 0.075 85);
-  --accent-foreground: oklch(0.28 0.055 95);
+  --accent: oklch(0.93 0.025 150);
+  --accent-foreground: oklch(0.28 0.055 150);
 
   /* Brand support */
   --success: oklch(0.64 0.145 128);
@@ -99,8 +99,8 @@
   --destructive: oklch(0.62 0.20 28);
 
   /* Border / Input */
-  --border: oklch(0.88 0.022 132);
-  --input: oklch(0.88 0.022 132);
+  --border: oklch(0.88 0.009 100);
+  --input: oklch(0.84 0.012 100);
   --ring: oklch(0.47 0.115 151);
 
   /* Charts - official brand palette */
@@ -114,14 +114,14 @@
   --radius: 0.75rem;
 
   /* Sidebar */
-  --sidebar: oklch(0.29 0.075 151);
-  --sidebar-foreground: oklch(0.97 0.012 128);
-  --sidebar-primary: oklch(0.78 0.115 82);
-  --sidebar-primary-foreground: oklch(0.24 0.065 151);
-  --sidebar-accent: oklch(0.36 0.075 151);
-  --sidebar-accent-foreground: oklch(0.99 0.01 128);
-  --sidebar-border: oklch(1 0 0 / 14%);
-  --sidebar-ring: oklch(0.78 0.115 82);
+  --sidebar: oklch(0.96 0.009 100);
+  --sidebar-foreground: oklch(0.30 0.025 150);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.91 0.027 150);
+  --sidebar-accent-foreground: oklch(0.30 0.065 151);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
@@ -174,6 +174,41 @@
   html {
     @apply font-sans;
   }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+  }
+  :where(table, progress) {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .portal-welcome {
+    background-image: radial-gradient(ellipse at top right, color-mix(in oklch, var(--primary) 9%, transparent), transparent 65%);
+  }
+  .portal-auth {
+    background-image: radial-gradient(ellipse at top left, color-mix(in oklch, var(--primary) 8%, transparent), transparent 60%);
+  }
+  .portal-progress {
+    appearance: none;
+    width: 100%;
+    height: 0.25rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: 1rem;
+    background: var(--muted);
+    color: var(--primary);
+  }
+  .portal-progress::-webkit-progress-bar { background: var(--muted); }
+  .portal-progress::-webkit-progress-value { background: var(--primary); }
+  .portal-progress::-moz-progress-bar { background: var(--primary); }
 }
 
 /* MD3 Elevation shadows */

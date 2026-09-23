@@ -79,7 +79,7 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
   const visibleItems = getVisibleNavItems(roles);
 
   return (
-    <aside className={cn("hidden h-full flex-col bg-sidebar text-sidebar-foreground md:flex overflow-hidden transition-[width] duration-300 ease-in-out", isOpen ? "w-72 shrink-0" : "w-0")}>
+    <aside id="app-sidebar" inert={!isOpen} className={cn("hidden h-full shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground", isOpen ? "w-64 md:flex" : "w-0")}>
       {/* Brand â€” MD3 NavigationDrawer header */}
       <div className="flex h-[72px] shrink-0 items-center gap-3 px-6">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-sidebar-primary shadow-sm">
@@ -89,7 +89,7 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
           <p className="truncate text-sm font-semibold leading-tight text-sidebar-foreground">
             Nurussunnah Hub
           </p>
-          <p className="truncate text-[11px] text-sidebar-foreground/55">
+          <p className="truncate text-[11px] text-sidebar-foreground/75">
             Yayasan Islam Nurus Sunnah
           </p>
         </div>
@@ -99,12 +99,12 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
       <div className="mx-4 h-px bg-sidebar-border" />
 
       {/* Nav section label */}
-      <p className="mt-5 mb-1 px-6 text-[11px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+      <p className="mt-5 mb-1 px-6 text-[11px] font-semibold uppercase tracking-widest text-sidebar-foreground/70">
         Menu
       </p>
 
       {/* Nav items â€” MD3 NavigationDrawer list */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
+      <nav aria-label="Navigasi utama" className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -116,11 +116,12 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "group flex items-center gap-3 rounded-[var(--radius-full)] px-4 py-3 text-sm font-medium transition-colors duration-200",
+                "group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors duration-200",
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/65 hover:bg-sidebar-border/40 hover:text-sidebar-foreground"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-border/40 hover:text-sidebar-foreground"
               )}
             >
               <Icon
@@ -128,7 +129,7 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
                   "h-5 w-5 shrink-0",
                   isActive
                     ? "text-sidebar-primary"
-                    : "text-sidebar-foreground/45 group-hover:text-sidebar-foreground/80"
+                    : "text-sidebar-foreground/65 group-hover:text-sidebar-foreground/80"
                 )}
               />
               <span className="truncate">{item.label}</span>
@@ -142,7 +143,7 @@ export function AppSidebar({ roles, isOpen = true }: AppSidebarProps) {
 
       {/* Footer */}
       <div className="shrink-0 border-t border-sidebar-border px-4 py-3">
-        <p className="text-center text-[10px] text-sidebar-foreground/38">
+        <p className="text-center text-[10px] text-sidebar-foreground/70">
           &copy; {new Date().getFullYear()} Nurussunnah Hub v1.0
         </p>
       </div>

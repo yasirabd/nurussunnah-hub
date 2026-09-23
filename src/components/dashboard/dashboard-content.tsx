@@ -83,15 +83,15 @@ export function DashboardContent({
   const firstName = profile?.full_name?.split(" ")[0] ?? "Pengguna";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <section className="overflow-hidden rounded-[var(--radius-lg)] border bg-card elevation-1">
-        <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <Badge className="h-7 rounded-[var(--radius-full)] border-0 bg-primary/10 px-3 text-primary">
+    <div className="mx-auto max-w-6xl space-y-8 lg:space-y-10">
+      <section className="portal-welcome overflow-hidden border-b border-border pb-8">
+        <div className="flex flex-col gap-8 pt-2 xl:flex-row xl:items-end xl:justify-between">
+          <div className="min-w-0 space-y-3">
+            <Badge className="h-auto rounded-none border-0 bg-transparent p-0 text-xs font-medium tracking-wide text-primary">
               {activeYear ? `Tahun Pelajaran ${activeYear.name}` : "Tahun pelajaran belum aktif"}
             </Badge>
             <div>
-              <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
+              <h1 className="max-w-xl break-words text-3xl font-medium leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                 Assalamu&apos;alaikum, {firstName}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -102,7 +102,7 @@ export function DashboardContent({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-4 border-t border-border pt-4 xl:min-w-72 xl:shrink-0 xl:border-t-0 xl:pt-0">
             <Metric label="Role" value={roles.length ? roles[0] : "Pegawai"} />
             <Metric label="Feedback" value={feedbackDoneCount.toString()} />
             <Metric label="Status" value={profile ? ACTIVE_STATUS_LABELS[profile.active_status] : "-"} />
@@ -114,7 +114,7 @@ export function DashboardContent({
         <OperationalSummarySection summary={operationalSummary} />
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-[1.3fr_1fr]">
 
         <ActionCard
           icon={MessageSquareMore}
@@ -148,7 +148,7 @@ export function DashboardContent({
       {(isHrd || isAdmin || isKepalaUnit) && (
         <section className="space-y-3">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold tracking-normal">Menu Manajemen</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Menu Manajemen</h2>
             <p className="text-sm leading-6 text-muted-foreground">
               Akses cepat untuk pekerjaan administrasi dan monitoring.
             </p>
@@ -191,7 +191,7 @@ function OperationalSummarySection({ summary }: { summary: OperationalSummary })
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold tracking-normal">{summary.title}</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{summary.title}</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {summary.description}
           </p>
@@ -202,8 +202,8 @@ function OperationalSummarySection({ summary }: { summary: OperationalSummary })
               key={cta.href}
               href={cta.href}
               className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "rounded-[var(--radius-full)]"
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "rounded-md text-primary"
               )}
             >
               {cta.label}
@@ -212,7 +212,7 @@ function OperationalSummarySection({ summary }: { summary: OperationalSummary })
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
         {summary.metrics.map((metric) => (
           <OperationalMetricCard key={metric.key} metric={metric} />
         ))}
@@ -238,8 +238,8 @@ function OperationalMetricCard({ metric }: { metric: OperationalMetric }) {
         : Users;
 
   return (
-    <Card className="rounded-[var(--radius-lg)] border-border/70 elevation-1">
-      <CardContent className="flex items-start gap-3 p-4">
+    <Card className="rounded-none border-0 py-2 shadow-none">
+      <CardContent className="flex flex-col items-start gap-4 p-5">
         <span
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
@@ -252,7 +252,7 @@ function OperationalMetricCard({ metric }: { metric: OperationalMetric }) {
           <span className="block text-xs font-medium text-muted-foreground">
             {metric.label}
           </span>
-          <span className="mt-1 block text-2xl font-semibold tracking-normal">
+          <span className="mt-2 block text-4xl font-medium tracking-tight tabular-nums">
             {metric.value}
           </span>
           <span className="mt-1 block text-xs leading-5 text-muted-foreground">
@@ -272,7 +272,7 @@ function AttentionList({
   items: OperationalAttentionItem[];
 }) {
   return (
-    <Card className="rounded-[var(--radius-lg)] border-border/70 elevation-1">
+    <Card className="rounded-xl border-0 bg-secondary/60 shadow-none">
       <CardHeader className="pb-2">
         <CardDescription className="flex items-center gap-2 text-xs font-medium">
           <AlertCircle className="h-4 w-4 text-warning" />
@@ -288,7 +288,7 @@ function AttentionList({
           items.map((item) => (
             <div
               key={item.key}
-              className="rounded-[var(--radius-md)] border bg-secondary/40 p-3"
+              className="border-t border-border py-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -307,12 +307,12 @@ function AttentionList({
                 )}
               </div>
               {item.percent !== null && (
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${item.percent}%` }}
-                  />
-                </div>
+                <progress
+                  className="portal-progress mt-3 block"
+                  aria-label={`Penyelesaian feedback ${item.title}`}
+                  value={item.percent}
+                  max={100}
+                />
               )}
             </div>
           ))
@@ -324,11 +324,11 @@ function AttentionList({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-24 rounded-[var(--radius-md)] bg-secondary px-3 py-2">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="min-w-0 border-l border-border pl-3">
+      <p className="text-xs font-medium text-muted-foreground">
         {label}
       </p>
-      <p className="truncate text-sm font-semibold">{value}</p>
+      <p className="break-words text-sm font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
@@ -350,7 +350,7 @@ function ActionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="min-h-48 rounded-[var(--radius-lg)] border-border/70 elevation-1 transition-shadow hover:elevation-2">
+    <Card className="min-h-52 rounded-xl border-border/70 py-6 shadow-none">
       <CardHeader className="pb-0">
         <CardDescription className="flex items-center gap-2 text-xs font-medium">
           <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
@@ -358,15 +358,15 @@ function ActionCard({
           </span>
           {label}
         </CardDescription>
-        <CardTitle className="text-lg font-semibold tracking-normal">{title}</CardTitle>
+        <CardTitle className="text-lg font-semibold tracking-tight">{title}</CardTitle>
       </CardHeader>
       <CardContent className="mt-auto space-y-4">
         <div>{children}</div>
         <Link
           href={href}
           className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "w-full justify-between rounded-[var(--radius-full)]"
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "w-full justify-between rounded-md border-t border-border px-0 text-primary"
           )}
         >
           {actionLabel}
@@ -391,7 +391,7 @@ function ManagementLink({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 rounded-[var(--radius-md)] border bg-card p-4 elevation-1 transition-colors hover:border-primary/30 hover:bg-primary/5"
+      className="group flex items-start gap-3 border-t border-border py-5 transition-colors hover:bg-primary/5"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-secondary text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
         <Icon className="h-4 w-4" />
@@ -405,4 +405,3 @@ function ManagementLink({
     </Link>
   );
 }
-

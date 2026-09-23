@@ -95,7 +95,7 @@ export default function LoginPage() {
         }
       }
 
-      toast.success("Login berhasil! Mengalihkan...");
+      toast.success("Login berhasil. Mengalihkan...");
       router.replace(nextPath);
       router.refresh();
     } finally {
@@ -104,9 +104,9 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pt-8 pb-6 text-center">
-        <div className="mb-5 flex items-center justify-center gap-3">
+    <Card className="rounded-2xl border-border/60 py-2 shadow-[0_16px_60px_-28px_color-mix(in_oklch,var(--primary)_25%,transparent)]">
+      <CardHeader className="px-6 pt-8 pb-6 sm:px-8">
+        <div className="mb-7 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-primary shadow-sm">
             <span className="text-base font-bold text-primary-foreground">N</span>
           </div>
@@ -118,11 +118,12 @@ export default function LoginPage() {
         <h1 className="text-xl font-arabic font-light tracking-wide text-foreground leading-relaxed" dir="rtl">
           السلام عليكم ورحمة الله وبركاته
         </h1>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+        <h2 className="mt-5 text-3xl font-medium tracking-tight">Selamat datang kembali.</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Masuk dengan email atau NIY untuk melanjutkan.
         </p>
       </CardHeader>
-      <CardContent className="px-8 pb-8">
+      <CardContent className="px-6 pb-8 sm:px-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
@@ -134,7 +135,7 @@ export default function LoginPage() {
                   <FormControl>
                     <Input
                       id="login-identifier"
-                      placeholder="Masukkan NIY (terdapat pada kartu pegawai)"
+                      placeholder="Email atau nomor induk yayasan"
                       autoComplete="username"
                       disabled={isLoading}
                       className="h-12 rounded-[var(--radius-sm)] px-4 text-sm"
@@ -174,7 +175,7 @@ export default function LoginPage() {
                       <button
                         type="button"
                         aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                        className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={isLoading}
                       >
