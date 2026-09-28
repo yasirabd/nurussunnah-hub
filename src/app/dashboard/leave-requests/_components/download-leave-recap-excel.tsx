@@ -31,12 +31,16 @@ export function DownloadLeaveRecapExcel({
   byUnit,
   stats,
   yearName,
+  startDate,
+  endDate,
 }: {
   perEmployee: LeaveRecapRow[];
   byCategory: LeaveCategoryRow[];
   byUnit: LeaveUnitRow[];
   stats: LeaveStats;
   yearName: string;
+  startDate: string;
+  endDate: string;
 }) {
   function handleDownload() {
     const employeeRows = perEmployee.map((r) => ({
@@ -49,6 +53,8 @@ export function DownloadLeaveRecapExcel({
     const summarySheet = XLSX.utils.json_to_sheet([
       {
         "Tahun Pelajaran": yearName,
+        "Tanggal Mulai": startDate,
+        "Tanggal Selesai": endDate,
         "Total Pengajuan": Number(stats.total_requests ?? 0),
         "Rata-rata Durasi (hari)": Number(stats.avg_duration_days ?? 0),
       },
@@ -67,7 +73,7 @@ export function DownloadLeaveRecapExcel({
     );
     const employeeSheet = XLSX.utils.json_to_sheet(employeeRows);
 
-    summarySheet["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 24 }];
+    summarySheet["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 24 }];
     categorySheet["!cols"] = [{ wch: 40 }, { wch: 12 }];
     unitSheet["!cols"] = [{ wch: 24 }, { wch: 12 }];
     employeeSheet["!cols"] = [{ wch: 30 }, { wch: 16 }, { wch: 20 }, { wch: 12 }];
@@ -77,7 +83,7 @@ export function DownloadLeaveRecapExcel({
     XLSX.utils.book_append_sheet(wb, categorySheet, "Per Jenis");
     XLSX.utils.book_append_sheet(wb, unitSheet, "Per Unit");
     XLSX.utils.book_append_sheet(wb, employeeSheet, "Per Pegawai");
-    XLSX.writeFile(wb, `rekap-izin-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `rekap-izin-${startDate}-${endDate}.xlsx`);
   }
 
   return (

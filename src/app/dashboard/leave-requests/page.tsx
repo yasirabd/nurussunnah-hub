@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DataPagination } from "@/components/ui/data-pagination";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { cn } from "@/lib/utils";
+import { leaveDateFilter } from "@/lib/leave-date-filter.mjs";
 import { LeaveRequestForm } from "./_components/leave-request-form";
 import { LeaveReviewForm } from "./_components/leave-review-form";
 import { DownloadLeaveRecapExcel } from "./_components/download-leave-recap-excel";
@@ -154,7 +157,7 @@ export default async function LeaveRequestsPage({ searchParams }: PageProps) {
       {activeTab === "riwayat" && (await MyHistory({ supabase, userId: user.id, yearName }))}
       {activeTab === "unit" && isKepalaUnit && (await UnitCounts({ supabase, yearName, searchParams: simpleSp }))}
       {activeTab === "validasi" && canValidate && (await ValidationList({ supabase }))}
-      {activeTab === "rekap" && canValidate && (await Recap({ supabase, yearName }))}
+      {activeTab === "rekap" && canValidate && (await Recap({ supabase, yearName, searchParams: simpleSp }))}
     </div>
   );
 }
@@ -244,7 +247,13 @@ async function UnitCounts({
   yearName: string;
   searchParams: Record<string, string>;
 }) {
-  const { data: rows } = await supabase.rpc("unit_leave_counts_active_year");
+  const dates = leaveDateFilter(searchParams);
+  const filter = <LeaveDateFilterForm tab="unit" dates={dates} />;
+  if (dates.error) return filter;
+  const { data: rows, error } = await supabase.rpc("unit_leave_counts_active_year", {
+    p_start_date: dates.startDate, p_end_date: dates.endDate,
+  });
+  if (error) return <>{filter}<p role="alert">Rekap izin gagal dimuat. Silakan coba lagi.</p></>;
   const allRows = rows ?? [];
   const page = positiveInt(searchParams.unitPage, 1);
   const pageSize = positiveInt(searchParams.unitPageSize, 10);
@@ -256,7 +265,8 @@ async function UnitCounts({
         <CardTitle>Rekap Izin Pegawai Unit</CardTitle>
         <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai aktif.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {filter}
         <Table>
           <TableHeader>
             <TableRow>
@@ -286,7 +296,7 @@ async function UnitCounts({
         </Table>
         <DataPagination
           basePath="/dashboard/leave-requests"
-          searchParams={{ ...searchParams, tab: "unit" }}
+          searchParams={{ ...searchParams, tab: "unit", leaveStartDate: dates.startDate, leaveEndDate: dates.endDate }}
           pageParam="unitPage"
           pageSizeParam="unitPageSize"
           page={page}
@@ -421,18 +431,26 @@ function ValidationSummaryCard({ label, value }: { label: string; value: number 
 }
 
 
-async function Recap({ supabase, yearName }: { supabase: any; yearName: string }) {
-  const [{ data: perEmployee }, { data: byCategory }, { data: byUnit }, { data: statsRows }] =
-    await Promise.all([
-      supabase.rpc("unit_leave_counts_active_year"),
-      supabase.rpc("leave_recap_by_category_active_year"),
-      supabase.rpc("leave_recap_by_unit_active_year"),
-      supabase.rpc("leave_recap_stats_active_year"),
-    ]);
+async function Recap({ supabase, yearName, searchParams }: { supabase: any; yearName: string; searchParams: Record<string, string> }) {
+  const dates = leaveDateFilter(searchParams);
+  const filter = <LeaveDateFilterForm tab="rekap" dates={dates} />;
+  if (dates.error) return filter;
+  const args = { p_start_date: dates.startDate, p_end_date: dates.endDate };
+  const results = await Promise.all([
+    supabase.rpc("unit_leave_counts_active_year", args),
+    supabase.rpc("leave_recap_by_category_active_year", args),
+    supabase.rpc("leave_recap_by_unit_active_year", args),
+    supabase.rpc("leave_recap_stats_active_year", args),
+  ]);
+  if (results.some((result) => result.error)) {
+    return <>{filter}<p role="alert">Rekap izin gagal dimuat. Silakan coba lagi.</p></>;
+  }
+  const [{ data: perEmployee }, { data: byCategory }, { data: byUnit }, { data: statsRows }] = results;
   const stats = (statsRows ?? [])[0] ?? { total_requests: 0, avg_duration_days: null };
 
   return (
     <div className="space-y-4">
+      {filter}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
@@ -521,6 +539,8 @@ async function Recap({ supabase, yearName }: { supabase: any; yearName: string }
               byUnit={(byUnit ?? []) as any}
               stats={stats}
               yearName={yearName}
+              startDate={dates.startDate}
+              endDate={dates.endDate}
             />
           </div>
         </CardHeader>
@@ -548,6 +568,31 @@ async function Recap({ supabase, yearName }: { supabase: any; yearName: string }
           </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function LeaveDateFilterForm({ tab, dates }: {
+  tab: "unit" | "rekap";
+  dates: ReturnType<typeof leaveDateFilter>;
+}) {
+  return (
+    <div className="space-y-2">
+      <form action="/dashboard/leave-requests" className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <input type="hidden" name="tab" value={tab} />
+        <div className="space-y-1.5">
+          <Label htmlFor="leave-start-date">Tanggal Mulai</Label>
+          <Input id="leave-start-date" name="leaveStartDate" type="date" required defaultValue={dates.startDate} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="leave-end-date">Tanggal Selesai</Label>
+          <Input id="leave-end-date" name="leaveEndDate" type="date" required defaultValue={dates.endDate} />
+        </div>
+        <Button type="submit" variant="outline">Terapkan Filter</Button>
+        <Link href={`/dashboard/leave-requests?tab=${tab}`} className="text-sm text-primary underline underline-offset-4">Bulan ini</Link>
+      </form>
+      <p className="text-sm text-muted-foreground">Setiap pengajuan yang masa izinnya bersinggungan dengan periode dihitung satu kali, dalam tahun pelajaran aktif.</p>
+      {dates.error && <p role="alert" className="text-sm text-destructive">{dates.error}</p>}
     </div>
   );
 }
