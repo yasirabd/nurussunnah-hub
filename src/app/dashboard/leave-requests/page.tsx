@@ -32,9 +32,11 @@ import {
 import { getDashboardUserContext } from "@/lib/auth/user-context";
 import { cn } from "@/lib/utils";
 import { leaveDateFilter } from "@/lib/leave-date-filter.mjs";
+import { LEAVE_CATEGORIES, LEAVE_DAY_DESCRIPTION, loadUnitLeaveDayRecap } from "@/lib/unit-leave-recap.mjs";
 import { LeaveRequestForm } from "./_components/leave-request-form";
 import { LeaveReviewForm } from "./_components/leave-review-form";
 import { DownloadLeaveRecapExcel } from "./_components/download-leave-recap-excel";
+import { DownloadUnitLeaveExcel, type UnitLeaveRow } from "./_components/download-unit-leave-excel";
 
 export const metadata: Metadata = { title: "Izin Pegawai" };
 
@@ -250,11 +252,13 @@ async function UnitCounts({
   const dates = leaveDateFilter(searchParams);
   const filter = <LeaveDateFilterForm tab="unit" dates={dates} />;
   if (dates.error) return filter;
-  const { data: rows, error } = await supabase.rpc("unit_leave_counts_active_year", {
-    p_start_date: dates.startDate, p_end_date: dates.endDate,
-  });
-  if (error) return <>{filter}<p role="alert">Rekap izin gagal dimuat. Silakan coba lagi.</p></>;
-  const allRows = rows ?? [];
+  let allRows: UnitLeaveRow[];
+  try {
+    allRows = await loadUnitLeaveDayRecap(supabase, dates);
+  } catch {
+    return <>{filter}<p role="alert">Rekap izin gagal dimuat. Silakan coba lagi.</p></>;
+  }
+  const categories = [...new Set([...LEAVE_CATEGORIES, ...allRows.flatMap((row) => Object.keys(row.category_days))])];
   const page = positiveInt(searchParams.unitPage, 1);
   const pageSize = positiveInt(searchParams.unitPageSize, 10);
   const pagedRows = allRows.slice((page - 1) * pageSize, page * pageSize);
@@ -262,8 +266,19 @@ async function UnitCounts({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Rekap Izin Pegawai Unit</CardTitle>
-        <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai aktif.</CardDescription>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <CardTitle>Rekap Izin Pegawai Unit</CardTitle>
+            <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai aktif.</CardDescription>
+          </div>
+          <DownloadUnitLeaveExcel
+            rows={allRows}
+            categories={categories}
+            yearName={yearName}
+            startDate={dates.startDate}
+            endDate={dates.endDate}
+          />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {filter}
@@ -273,21 +288,27 @@ async function UnitCounts({
               <TableHead>Nama</TableHead>
               <TableHead>No. Pegawai</TableHead>
               <TableHead>Unit</TableHead>
-              <TableHead className="text-right">Jumlah Izin</TableHead>
+              <TableHead className="text-right">Jumlah Hari Izin</TableHead>
+              {categories.map((category) => (
+                <TableHead key={category} className="min-w-32 max-w-52 whitespace-normal text-right">{category} (hari)</TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pagedRows.map((r: any) => (
+            {pagedRows.map((r) => (
               <TableRow key={r.user_id}>
                 <TableCell>{r.full_name}</TableCell>
                 <TableCell>{r.employee_no}</TableCell>
                 <TableCell>{r.unit_name ?? "-"}</TableCell>
-                <TableCell className="text-right">{r.total_leaves}</TableCell>
+                <TableCell className="text-right">{r.total_leave_days}</TableCell>
+                {categories.map((category) => (
+                  <TableCell key={category} className="text-right">{Object.hasOwn(r.category_days, category) ? r.category_days[category] : 0}</TableCell>
+                ))}
               </TableRow>
             ))}
             {pagedRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={4 + categories.length} className="text-center text-muted-foreground">
                   Belum ada data.
                 </TableCell>
               </TableRow>
@@ -578,7 +599,7 @@ function LeaveDateFilterForm({ tab, dates }: {
 }) {
   return (
     <div className="space-y-2">
-      <form action="/dashboard/leave-requests" className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <form key={`${tab}-${dates.startDate}-${dates.endDate}`} action="/dashboard/leave-requests" className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:flex-wrap sm:items-end">
         <input type="hidden" name="tab" value={tab} />
         <div className="space-y-1.5">
           <Label htmlFor="leave-start-date">Tanggal Mulai</Label>
@@ -589,11 +610,17 @@ function LeaveDateFilterForm({ tab, dates }: {
           <Input id="leave-end-date" name="leaveEndDate" type="date" required defaultValue={dates.endDate} />
         </div>
         <Button type="submit" variant="outline">Terapkan Filter</Button>
-        <Link href={`/dashboard/leave-requests?tab=${tab}`} className="text-sm text-primary underline underline-offset-4">Bulan ini</Link>
+        <Link
+          href={`/dashboard/leave-requests?tab=${tab}`}
+          className={tab === "unit" ? "inline-flex h-10 items-center justify-center rounded-[var(--radius-full)] px-5 text-sm font-medium hover:bg-primary/6 hover:text-primary" : "text-sm text-primary underline underline-offset-4"}
+        >
+          {tab === "unit" ? "Reset" : "Bulan ini"}
+        </Link>
       </form>
-      <p className="text-sm text-muted-foreground">Setiap pengajuan yang masa izinnya bersinggungan dengan periode dihitung satu kali, dalam tahun pelajaran aktif.</p>
+      <p className="text-sm text-muted-foreground">
+        {tab === "unit" ? `${LEAVE_DAY_DESCRIPTION} Reset kembali ke bulan berjalan.` : "Setiap pengajuan yang masa izinnya bersinggungan dengan periode dihitung satu kali, dalam tahun pelajaran aktif."}
+      </p>
       {dates.error && <p role="alert" className="text-sm text-destructive">{dates.error}</p>}
     </div>
   );
 }
-
