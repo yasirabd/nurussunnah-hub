@@ -12,19 +12,7 @@ import {
   requiresLeaveEvidence,
 } from "@/lib/leave-evidence.mjs";
 import { submitLeaveRequestAction } from "../actions";
-
-const LEAVE_CATEGORIES = [
-  "Sakit",
-  "Keperluan Keluarga",
-  "Terlambat/Kendala Perjalanan",
-  "Duka Cita (Kedukaan)",
-  "Acara Khusus (Wisuda/Pernikahan/Ibadah)",
-  "Mudik/Perjalanan Luar Kota",
-  "Pendidikan/Akademik",
-  "Kedinasan/Tugas Kantor",
-  "Administrasi Pribadi",
-  "Lainnya",
-];
+import { LEAVE_CATEGORIES } from "@/lib/unit-leave-recap.mjs";
 
 const TIME_TYPES = [
   { value: "SEHARIAN_PENUH", label: "Seharian Penuh" },
