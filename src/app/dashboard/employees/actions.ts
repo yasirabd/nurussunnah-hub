@@ -348,8 +348,8 @@ function intakePayload(formData: FormData) {
     emergency_relation: nullableText(formData, 'emergency_relation'),
     emergency_phone: nullableText(formData, 'emergency_phone'),
     uniform_size: (UNIFORM_SIZES.includes(uniform) ? uniform : null) as ('XS'|'S'|'M'|'L'|'XL'|'XXL'|'XXXL'|null),
-    ktp_url: nullableText(formData, 'ktp_url'),
-    photo_url: nullableText(formData, 'photo_url'),
+    ...(formData.has('ktp_url') ? { ktp_url: nullableText(formData, 'ktp_url') } : {}),
+    ...(formData.has('photo_url') ? { photo_url: nullableText(formData, 'photo_url') } : {}),
   };
 }
 
