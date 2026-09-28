@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import * as XLSX from "xlsx";
+import { requestDetailSheet } from "@/lib/request-recap-details.mjs";
 
 export type LeaveRecapRow = {
   full_name: string;
@@ -27,6 +28,7 @@ type LeaveStats = {
 
 export function DownloadLeaveRecapExcel({
   perEmployee,
+  details,
   byCategory,
   byUnit,
   stats,
@@ -34,6 +36,7 @@ export function DownloadLeaveRecapExcel({
   startDate,
   endDate,
 }: {
+  details: Record<string, string>[];
   perEmployee: LeaveRecapRow[];
   byCategory: LeaveCategoryRow[];
   byUnit: LeaveUnitRow[];
@@ -83,6 +86,7 @@ export function DownloadLeaveRecapExcel({
     XLSX.utils.book_append_sheet(wb, categorySheet, "Per Jenis");
     XLSX.utils.book_append_sheet(wb, unitSheet, "Per Unit");
     XLSX.utils.book_append_sheet(wb, employeeSheet, "Per Pegawai");
+    XLSX.utils.book_append_sheet(wb, requestDetailSheet(details, true), "Detail Per Pegawai");
     XLSX.writeFile(wb, `rekap-izin-${startDate}-${endDate}.xlsx`);
   }
 

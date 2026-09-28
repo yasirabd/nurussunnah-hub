@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
+import { loadRequestRecapDetails } from "@/lib/request-recap-details.mjs";
 import { cn } from "@/lib/utils";
 import { CorrectionForm } from "./_components/correction-form";
 import { CorrectionReviewForm } from "./_components/correction-review-form";
@@ -256,8 +257,15 @@ async function UnitCounts({
   searchParams: Record<string, string>;
 }) {
   const filters = dateFilterArgs(searchParams);
-  const { data: rows } = await supabase.rpc("unit_correction_day_recap_active_year", filters);
+  const { data: rows, error } = await supabase.rpc("unit_correction_day_recap_active_year", filters);
+  if (error) return <p role="alert">Rekap koreksi gagal dimuat. Silakan coba lagi.</p>;
   const allRows = rows ?? [];
+  let details: Record<string, string>[];
+  try {
+    details = await loadRequestRecapDetails(supabase, "attendance_corrections", allRows, filters.p_start_date, filters.p_end_date);
+  } catch {
+    return <p role="alert">Detail koreksi gagal dimuat. Silakan coba lagi.</p>;
+  }
   const page = positiveInt(searchParams.correctionUnitPage, 1);
   const pageSize = positiveInt(searchParams.correctionUnitPageSize, 10);
   const pagedRows = allRows.slice((page - 1) * pageSize, page * pageSize);
@@ -273,6 +281,7 @@ async function UnitCounts({
             <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai aktif.</CardDescription>
           </div>
           <DownloadCorrectionRecapExcel
+            details={details}
             perEmployee={allRows as any}
             byKind={[]}
             byUnit={[]}
@@ -509,13 +518,21 @@ async function Recap({
   searchParams: Record<string, string>;
 }) {
   const filters = dateFilterArgs(searchParams);
-  const [{ data: perEmployee }, { data: byKind }, { data: byUnit }, { data: statsRows }] =
+  const results =
     await Promise.all([
       supabase.rpc("unit_correction_day_recap_active_year", filters),
       supabase.rpc("correction_recap_by_kind_active_year"),
       supabase.rpc("correction_recap_by_unit_active_year"),
       supabase.rpc("correction_recap_stats_active_year"),
     ]);
+  if (results.some((result) => result.error)) return <p role="alert">Rekap koreksi gagal dimuat. Silakan coba lagi.</p>;
+  const [{ data: perEmployee }, { data: byKind }, { data: byUnit }, { data: statsRows }] = results;
+  let details: Record<string, string>[];
+  try {
+    details = await loadRequestRecapDetails(supabase, "attendance_corrections", perEmployee ?? [], filters.p_start_date, filters.p_end_date);
+  } catch {
+    return <p role="alert">Detail koreksi gagal dimuat. Silakan coba lagi.</p>;
+  }
   const stats = (statsRows ?? [])[0] ?? { total_requests: 0, distinct_employees: 0 };
 
   return (
@@ -603,6 +620,7 @@ async function Recap({
               <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai berstatus aktif.</CardDescription>
             </div>
             <DownloadCorrectionRecapExcel
+              details={details}
               perEmployee={(perEmployee ?? []) as any}
               byKind={(byKind ?? []) as any}
               byUnit={(byUnit ?? []) as any}
