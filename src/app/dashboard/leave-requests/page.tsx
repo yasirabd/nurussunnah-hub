@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getDashboardUserContext } from "@/lib/auth/user-context";
+import { loadRequestRecapDetails } from "@/lib/request-recap-details.mjs";
 import { cn } from "@/lib/utils";
 import { leaveDateFilter } from "@/lib/leave-date-filter.mjs";
 import { LEAVE_CATEGORIES, LEAVE_DAY_DESCRIPTION, loadUnitLeaveDayRecap } from "@/lib/unit-leave-recap.mjs";
@@ -253,8 +254,10 @@ async function UnitCounts({
   const filter = <LeaveDateFilterForm tab="unit" dates={dates} />;
   if (dates.error) return filter;
   let allRows: UnitLeaveRow[];
+  let details: Record<string, string>[];
   try {
     allRows = await loadUnitLeaveDayRecap(supabase, dates);
+    details = await loadRequestRecapDetails(supabase, "leave_requests", allRows, dates.startDate, dates.endDate);
   } catch {
     return <>{filter}<p role="alert">Rekap izin gagal dimuat. Silakan coba lagi.</p></>;
   }
@@ -273,6 +276,7 @@ async function UnitCounts({
           </div>
           <DownloadUnitLeaveExcel
             rows={allRows}
+            details={details}
             categories={categories}
             yearName={yearName}
             startDate={dates.startDate}
@@ -467,6 +471,12 @@ async function Recap({ supabase, yearName, searchParams }: { supabase: any; year
     return <>{filter}<p role="alert">Rekap izin gagal dimuat. Silakan coba lagi.</p></>;
   }
   const [{ data: perEmployee }, { data: byCategory }, { data: byUnit }, { data: statsRows }] = results;
+  let details: Record<string, string>[];
+  try {
+    details = await loadRequestRecapDetails(supabase, "leave_requests", perEmployee ?? [], dates.startDate, dates.endDate);
+  } catch {
+    return <>{filter}<p role="alert">Detail izin gagal dimuat. Silakan coba lagi.</p></>;
+  }
   const stats = (statsRows ?? [])[0] ?? { total_requests: 0, avg_duration_days: null };
 
   return (
@@ -555,6 +565,7 @@ async function Recap({ supabase, yearName, searchParams }: { supabase: any; year
               <CardDescription>Tahun Pelajaran {yearName}. Hanya pegawai berstatus aktif.</CardDescription>
             </div>
             <DownloadLeaveRecapExcel
+              details={details}
               perEmployee={(perEmployee ?? []) as any}
               byCategory={(byCategory ?? []) as any}
               byUnit={(byUnit ?? []) as any}

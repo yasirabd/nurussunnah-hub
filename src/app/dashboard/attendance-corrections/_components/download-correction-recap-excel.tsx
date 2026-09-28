@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import * as XLSX from "xlsx";
+import { requestDetailSheet } from "@/lib/request-recap-details.mjs";
 import { correctionRecapSheetNames } from "@/lib/attendance-correction-recap.mjs";
 
 export type CorrectionRecapRow = {
@@ -39,6 +40,7 @@ const KIND_LABEL: Record<string, string> = {
 
 export function DownloadCorrectionRecapExcel({
   perEmployee,
+  details,
   byKind,
   byUnit,
   stats,
@@ -46,6 +48,7 @@ export function DownloadCorrectionRecapExcel({
   dateRange,
   includeKindAndUnitSheets = true,
 }: {
+  details: Record<string, string>[];
   perEmployee: CorrectionRecapRow[];
   byKind: CorrectionKindRow[];
   byUnit: CorrectionUnitRow[];
@@ -110,6 +113,7 @@ export function DownloadCorrectionRecapExcel({
       if (sheetName === "Per Unit") XLSX.utils.book_append_sheet(wb, unitSheet, sheetName);
       if (sheetName === "Per Pegawai") XLSX.utils.book_append_sheet(wb, employeeSheet, sheetName);
     }
+    XLSX.utils.book_append_sheet(wb, requestDetailSheet(details, false), "Detail Per Pegawai");
     XLSX.writeFile(wb, `rekap-koreksi-presensi-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 

@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import * as XLSX from "xlsx";
+import { requestDetailSheet } from "@/lib/request-recap-details.mjs";
 import { LEAVE_DAY_DESCRIPTION, unitLeaveExcelRows } from "@/lib/unit-leave-recap.mjs";
 
 export type UnitLeaveRow = {
@@ -13,8 +14,9 @@ export type UnitLeaveRow = {
   category_days: Record<string, number>;
 };
 
-export function DownloadUnitLeaveExcel({ rows, categories, yearName, startDate, endDate }: {
+export function DownloadUnitLeaveExcel({ rows, details, categories, yearName, startDate, endDate }: {
   rows: UnitLeaveRow[];
+  details: Record<string, string>[];
   categories: string[];
   yearName: string;
   startDate: string;
@@ -35,6 +37,7 @@ export function DownloadUnitLeaveExcel({ rows, categories, yearName, startDate, 
     employees["!cols"] = [30, 16, 20, 20, ...categories.map((category) => category.length + 7)].map((wch) => ({ wch }));
     XLSX.utils.book_append_sheet(workbook, summary, "Ringkasan");
     XLSX.utils.book_append_sheet(workbook, employees, "Per Pegawai");
+    XLSX.utils.book_append_sheet(workbook, requestDetailSheet(details, true), "Detail Per Pegawai");
     XLSX.writeFile(workbook, `rekap-izin-unit-${startDate}-${endDate}.xlsx`);
   }
 
