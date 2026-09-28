@@ -995,15 +995,15 @@ export type Database = {
         Returns: undefined
       }
       leave_recap_by_category_active_year: {
-        Args: never
+        Args: Record<string, never> | { p_start_date: string; p_end_date: string }
         Returns: { leave_category: string; total: number }[]
       }
       leave_recap_by_unit_active_year: {
-        Args: never
+        Args: Record<string, never> | { p_start_date: string; p_end_date: string }
         Returns: { unit_name: string; total: number }[]
       }
       leave_recap_stats_active_year: {
-        Args: never
+        Args: Record<string, never> | { p_start_date: string; p_end_date: string }
         Returns: { total_requests: number; avg_duration_days: number | null }[]
       }
       submit_leave_request: {
@@ -1031,7 +1031,7 @@ export type Database = {
         Returns: { leave_category: string; total: number }[]
       }
       unit_leave_counts_active_year: {
-        Args: never
+        Args: Record<string, never> | { p_start_date: string; p_end_date: string }
         Returns: {
           user_id: string
           full_name: string
@@ -1300,7 +1300,6 @@ export type EmployeeStatus = Database["public"]["Enums"]["employee_status_enum"]
 export type GenderEnum = Database["public"]["Enums"]["gender_enum"]
 export type AssignmentType = Database["public"]["Enums"]["assignment_type_enum"]
 export type ReviewAction = Database["public"]["Enums"]["review_action_enum"]
-
 
 
 
