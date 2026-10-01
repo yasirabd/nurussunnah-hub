@@ -78,16 +78,23 @@ function Get-ProjectMetadataCached {
 }
 
 function Get-ProjectQueueItems {
-  param([Parameter(Mandatory)][string]$Query)
+  param(
+    [Parameter(Mandatory)][string]$Query,
+    [Parameter(Mandatory)][string]$Label
+  )
 
-  $response = Invoke-GhJson @(
+  $arguments = @(
     "project", "item-list", "$ProjectNumber",
     "--owner", $ProjectOwner,
     "--query", $Query,
-    "--limit", "100",
     "--format", "json"
   )
-  return @(ConvertTo-CodexQueueItems $response)
+  $response = Invoke-GhJson ($arguments + @("--limit", "100"))
+  # Local label filtering must include matches beyond the first page.
+  if ($response.totalCount -gt $response.items.Count) {
+    $response = Invoke-GhJson ($arguments + @("--limit", "$($response.totalCount)"))
+  }
+  return @(ConvertTo-CodexQueueItems $response -Label $Label)
 }
 
 function Set-ProjectStatus {
@@ -221,8 +228,8 @@ $runtime = @{
     $script:NineRouterPath = Resolve-CodexCommandPath "9router"
     Invoke-CheckedCommand "gh" @("auth", "status") | Out-Null
   }
-  GetRunningItems = { param($owner, $project) Get-ProjectQueueItems "label:codex-running is:issue is:open" }
-  GetReadyItems = { param($owner, $project) Get-ProjectQueueItems "status:Ready label:codex-ready is:issue is:open" }
+  GetRunningItems = { param($owner, $project) Get-ProjectQueueItems "is:issue is:open" -Label "codex-running" }
+  GetReadyItems = { param($owner, $project) Get-ProjectQueueItems "status:Ready is:issue is:open" -Label "codex-ready" }
   AssertRepository = { Assert-RepositoryReady }
   EnsureNineRouter = { Ensure-NineRouter }
   SetIssueRunning = { param($item) Set-IssueRunning $item }

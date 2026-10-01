@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { EVIDENCE_MAX_FILE_BYTES } from "@/lib/attendance-correction-upload.mjs";
 import { prepareEvidenceFiles } from "@/lib/evidence-upload-client";
 import { applyPreparedEvidenceFile } from "@/lib/evidence-file.mjs";
+import { todayWIB } from "@/lib/timezone";
 import { submitCorrectionAction } from "../actions";
 
 const KINDS = [
@@ -19,13 +20,6 @@ const KINDS = [
 
 const selectCls =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
-
-function localDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export function CorrectionForm({
   fullName,
@@ -41,7 +35,7 @@ export function CorrectionForm({
   const preparedEvidenceRef = useRef<File | null>(null);
   const [isPreparingEvidence, setIsPreparingEvidence] = useState(false);
   const [evidenceMessage, setEvidenceMessage] = useState("");
-  const today = localDateString();
+  const today = todayWIB();
   const needsCheckIn = timeParts.includes("MASUK");
   const needsCheckOut = timeParts.includes("PULANG");
 
