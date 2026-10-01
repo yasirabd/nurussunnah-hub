@@ -96,9 +96,16 @@ function Invoke-CodexKanban {
 }
 
 function ConvertTo-CodexQueueItems {
-  param([Parameter(Mandatory)]$ProjectResponse)
+  param(
+    [Parameter(Mandatory)]$ProjectResponse,
+    [Parameter(Mandatory)][string]$Label
+  )
 
   foreach ($item in @($ProjectResponse.items)) {
+    # GitHub Project label search can lag behind the labels returned on cards.
+    if (-not $item.PSObject.Properties["labels"] -or $item.labels -notcontains $Label) {
+      continue
+    }
     $content = $item.content
     if ($null -eq $content -or $null -eq $content.number) {
       continue

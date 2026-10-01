@@ -141,6 +141,7 @@ $projectResponse = [pscustomobject]@{
   items = @(
     [pscustomobject]@{
       id = "PVTI_1"
+      labels = @("bug", "codex-ready")
       content = [pscustomobject]@{
         number = 77
         title = "Queue item"
@@ -149,9 +150,16 @@ $projectResponse = [pscustomobject]@{
     }
   )
 }
-$mapped = @(ConvertTo-CodexQueueItems $projectResponse)
+$mapped = @(ConvertTo-CodexQueueItems $projectResponse -Label "codex-ready")
 Assert-Equal 77 $mapped[0].IssueNumber "project item number"
 Assert-Equal "PVTI_1" $mapped[0].ItemId "project item id"
+Assert-Equal 0 @(ConvertTo-CodexQueueItems $projectResponse -Label "codex-running").Count "other label excluded"
+$projectResponse.items += [pscustomobject]@{ id = "unlabelled" }
+$projectResponse.items += [pscustomobject]@{ id = "partial"; labels = @("codex-ready-later") }
+$mapped = @(ConvertTo-CodexQueueItems $projectResponse -Label "codex-ready")
+Assert-Equal 1 $mapped.Count "missing and partial labels excluded"
+$projectResponse.items[0].labels = @("codex-running")
+Assert-Equal 1 @(ConvertTo-CodexQueueItems $projectResponse -Label "codex-running").Count "running label detected"
 
 $projectJson = [pscustomobject]@{ id = "PVT_project" }
 $fieldsJson = [pscustomobject]@{
